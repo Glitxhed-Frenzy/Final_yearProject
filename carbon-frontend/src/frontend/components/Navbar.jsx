@@ -1,28 +1,40 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { User, LogOut, ChevronDown } from "lucide-react";
 
 export default function Navbar() {
-  return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur-lg shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">🌱</span>
-            </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              CarbonTracker
-            </h1>
-          </div>
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
 
-          <nav className="hidden md:flex items-center space-x-1">
+  // Check if user is logged in
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    setUser(null);
+    setShowDropdown(false);
+    navigate("/login");
+  };
+
+  return (
+    <header className="bg-white/80 backdrop-blur border-b sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <h1 className="text-xl font-bold text-green-600">Carbon Tracker</h1>
+
+        {/* Navigation Links - Only show when user is logged in */}
+        {user && (
+          <nav className="flex items-center gap-6 text-sm font-medium">
             <NavLink 
               to="/dashboard" 
               className={({ isActive }) => 
-                `px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-green-50 text-green-700 border border-green-200' 
-                    : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
-                }`
+                `hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
               }
             >
               Dashboard
@@ -30,11 +42,7 @@ export default function Navbar() {
             <NavLink 
               to="/add" 
               className={({ isActive }) => 
-                `px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-green-50 text-green-700 border border-green-200' 
-                    : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
-                }`
+                `hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
               }
             >
               Add Activity
@@ -42,30 +50,87 @@ export default function Navbar() {
             <NavLink 
               to="/reports" 
               className={({ isActive }) => 
-                `px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-green-50 text-green-700 border border-green-200' 
-                    : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
-                }`
+                `hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
               }
             >
               Reports
             </NavLink>
           </nav>
+        )}
 
-          <div className="flex items-center space-x-3">
-            <div className="hidden sm:block px-3 py-1 bg-gradient-to-r from-emerald-50 to-green-50 rounded-full border border-green-200">
-              <span className="text-sm font-medium text-emerald-700">1240 kg CO₂</span>
+        {/* Right side: User info or Sign In button */}
+        <div className="flex items-center gap-4">
+          {/* Show total emissions only when logged in */}
+          {user && (
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full border border-green-200">
+              <span className="text-sm font-medium">1240 kg CO₂</span>
             </div>
+          )}
+          
+          {user ? (
+            /* User dropdown when logged in */
+            <div className="relative">
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                  {user.name?.charAt(0) || "U"}
+                </div>
+                <span className="hidden md:inline text-sm font-medium text-gray-700">
+                  {user.name?.split(" ")[0] || "User"}
+                </span>
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              </button>
+              
+              {/* Dropdown Menu */}
+              {showDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="font-semibold text-gray-900">{user.name}</p>
+                    <p className="text-sm text-gray-600 truncate">{user.email}</p>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      setShowDropdown(false);
+                      navigate("/profile"); // Add profile page if needed
+                    }}
+                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                  >
+                    <User className="w-4 h-4" />
+                    Profile Settings
+                  </button>
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex items-center gap-3"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Sign In button when not logged in */
             <NavLink
               to="/login"
-              className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md"
+              className="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition font-medium"
             >
               Sign In
             </NavLink>
-          </div>
+          )}
         </div>
       </div>
+
+      {/* Close dropdown when clicking outside */}
+      {showDropdown && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowDropdown(false)}
+        />
+      )}
     </header>
   );
 }

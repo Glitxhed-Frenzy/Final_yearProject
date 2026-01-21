@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "./frontend/components/Navbar";
 
 import Dashboard from "./frontend/pages/Dashboard";
@@ -15,20 +15,34 @@ import Users from "./frontend/admin/Users";
 import AdminStats from "./frontend/admin/AdminStats";
 
 export default function App() {
+  const location = useLocation();
+  
+  // Define routes where Navbar should NOT appear
+  const hideNavbarRoutes = [
+    '/login',
+    '/admin/login',
+    '/register', // If you add this later
+    '/forgot-password' // If you add this later
+  ];
+  
+  // Check if current route should hide Navbar
+  const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 text-gray-900">
-      <Navbar />
+    <div className="min-h-screen bg-slate-100 text-gray-900">
+      {/* Conditionally render Navbar */}
+      {shouldShowNavbar && <Navbar />}
 
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        {/* User Routes */}
+        {/* User */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/add" element={<AddActivity />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Admin Routes */}
+        {/* Admin */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
