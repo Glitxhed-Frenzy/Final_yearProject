@@ -1,18 +1,18 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Navbar from "./components/Navbar";
+import Navbar from "./frontend/components/Navbar";
 
-import Dashboard from "./pages/Dashboard";
-import AddActivity from "./pages/AddActivity";
-import Reports from "./pages/Reports";
-import Login from "./pages/Login";
-import NotFound from "./pages/NotFound";
+import Dashboard from "./frontend/pages/Dashboard";
+import AddActivity from "./frontend/pages/AddActivity";
+import Reports from "./frontend/pages/Reports";
+import Login from "./frontend/pages/Login";
+import NotFound from "./frontend/pages/NotFound";
 
-import AdminLayout from "./admin/AdminLayout";
-import AdminLogin from "./admin/AdminLogin";
-import AdminDashboard from "./admin/AdminDashboard";
-import EmissionFactors from "./admin/EmissionFactors";
-import Users from "./admin/Users";
-import AdminStats from "./admin/AdminStats";
+import AdminLayout from "./frontend/admin/AdminLayout";
+import AdminLogin from "./frontend/admin/AdminLogin";
+import AdminDashboard from "./frontend/admin/AdminDashboard";
+import EmissionFactors from "./frontend/admin/EmissionFactors";
+import Users from "./frontend/admin/Users";
+import AdminStats from "./frontend/admin/AdminStats";
 
 export default function App() {
   return (
