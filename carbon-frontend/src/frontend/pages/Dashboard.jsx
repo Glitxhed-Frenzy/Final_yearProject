@@ -1,32 +1,27 @@
+// src/frontend/pages/Dashboard.jsx
 import MetricCard from "../components/MetricCard";
 import ActivityCard from "../components/ActivityCard";
 import DonutPlaceholder from "../components/DonutPlaceholder";
-import { Plus, Calendar, Leaf, Activity, TrendingDown, TrendingUp } from "lucide-react";
+import { Calendar, Leaf, Activity } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("Month");
   
-  // State for dynamic data - initially null/empty
   const [stats, setStats] = useState({
     total: null,
     electricity: null,
     transport: null,
     food: null,
-    purchases: null,
-    water: null,
-    electronics: null
+    purchases: null
   });
   
-  const [recentActivities, setRecentActivities] = useState([]);
+  const [activities, setActivities] = useState([]);
   const [categoryBreakdown, setCategoryBreakdown] = useState([]);
   const [hasData, setHasData] = useState(false);
 
-  // Load data whenever component mounts or period changes
   useEffect(() => {
     loadUserData();
     loadDashboardData();
@@ -37,18 +32,6 @@ export default function Dashboard() {
       loadDashboardData();
     }
   }, [selectedPeriod]);
-
-  // Listen for new activities (in case user adds from another tab)
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'carbon_activities') {
-        loadDashboardData();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
 
   const loadUserData = () => {
     const userData = localStorage.getItem("user");
@@ -62,22 +45,18 @@ export default function Dashboard() {
   };
 
   const loadDashboardData = () => {
-    // Get activities from localStorage
     const savedActivities = localStorage.getItem('carbon_activities');
     
     if (!savedActivities) {
-      // No data at all
       setHasData(false);
       setStats({
         total: null,
         electricity: null,
         transport: null,
         food: null,
-        purchases: null,
-        water: null,
-        electronics: null
+        purchases: null
       });
-      setRecentActivities([]);
+      setActivities([]);
       setCategoryBreakdown([]);
       setLoading(false);
       return;
@@ -88,47 +67,39 @@ export default function Dashboard() {
       
       if (!allActivities || allActivities.length === 0) {
         setHasData(false);
-        setRecentActivities([]);
+        setActivities([]);
         setLoading(false);
         return;
       }
 
-      // Filter activities based on selected period
       const filteredActivities = filterActivitiesByPeriod(allActivities, selectedPeriod);
       
       if (filteredActivities.length === 0) {
-        // Has data but none in selected period
         setHasData(true);
         setStats({
           total: null,
           electricity: null,
           transport: null,
           food: null,
-          purchases: null,
-          water: null,
-          electronics: null
+          purchases: null
         });
-        setRecentActivities(getRecentActivities(allActivities, 5));
+        setActivities(getRecentActivities(allActivities, 5));
         setCategoryBreakdown([]);
         setLoading(false);
         return;
       }
 
-      // Calculate stats from filtered activities
       const calculatedStats = calculateStats(filteredActivities);
       setStats(calculatedStats);
       
-      // Prepare chart data (only categories with values)
       const chartData = [];
       if (calculatedStats.electricity) chartData.push({ name: "Electricity", value: calculatedStats.electricity });
       if (calculatedStats.transport) chartData.push({ name: "Transport", value: calculatedStats.transport });
       if (calculatedStats.food) chartData.push({ name: "Food", value: calculatedStats.food });
       if (calculatedStats.purchases) chartData.push({ name: "Purchases", value: calculatedStats.purchases });
-      if (calculatedStats.water) chartData.push({ name: "Water", value: calculatedStats.water });
-      if (calculatedStats.electronics) chartData.push({ name: "Electronics", value: calculatedStats.electronics });
       
       setCategoryBreakdown(chartData);
-      setRecentActivities(getRecentActivities(allActivities, 5));
+      setActivities(getRecentActivities(allActivities, 5));
       setHasData(true);
       
     } catch (error) {
@@ -148,22 +119,18 @@ export default function Dashboard() {
       switch(period) {
         case "Today":
           return activityDate.toDateString() === today.toDateString();
-          
         case "Week":
           const weekAgo = new Date(today);
           weekAgo.setDate(weekAgo.getDate() - 7);
           return activityDate >= weekAgo;
-          
         case "Month":
           const monthAgo = new Date(today);
           monthAgo.setMonth(monthAgo.getMonth() - 1);
           return activityDate >= monthAgo;
-          
         case "Year":
           const yearAgo = new Date(today);
           yearAgo.setFullYear(yearAgo.getFullYear() - 1);
           return activityDate >= yearAgo;
-          
         default:
           return true;
       }
@@ -176,47 +143,29 @@ export default function Dashboard() {
       electricity: 0,
       transport: 0,
       food: 0,
-      purchases: 0,
-      water: 0,
-      electronics: 0
+      purchases: 0
     };
 
     activities.forEach(activity => {
-      // If activity has categoryTotals (from new format)
       if (activity.categoryTotals) {
         Object.entries(activity.categoryTotals).forEach(([category, value]) => {
-          if (totals.hasOwnProperty(category)) {
-            totals[category] += value;
-          } else if (category === 'home') {
+          if (category === 'home') {
             totals.electricity += value;
-          }
-        });
-      } 
-      // If activity has answers (from individual questions)
-      else if (activity.answers) {
-        Object.values(activity.answers).forEach(answer => {
-          const category = answer.category;
-          if (category === 'home' || category === 'electricity') {
-            totals.electricity += answer.emission || 0;
           } else if (totals.hasOwnProperty(category)) {
-            totals[category] += answer.emission || 0;
+            totals[category] += value;
           }
         });
       }
       
-      // Add total emissions if available
       if (activity.totalEmissions) {
         totals.total += parseFloat(activity.totalEmissions);
       }
     });
 
-    // Calculate total from categories if not already set
     if (totals.total === 0) {
-      totals.total = totals.electricity + totals.transport + totals.food + 
-                     totals.purchases + totals.water + totals.electronics;
+      totals.total = totals.electricity + totals.transport + totals.food + totals.purchases;
     }
 
-    // Round to 2 decimal places and convert null if zero
     Object.keys(totals).forEach(key => {
       totals[key] = totals[key] > 0 ? Math.round(totals[key] * 100) / 100 : null;
     });
@@ -233,7 +182,7 @@ export default function Dashboard() {
         title: getActivityTitle(activity),
         category: getMainCategory(activity),
         date: formatDate(activity.date),
-        emission: activity.totalEmissions || getTotalFromCategories(activity),
+        emission: activity.totalEmissions || 0,
         icon: getCategoryIcon(getMainCategory(activity))
       }));
   };
@@ -242,27 +191,19 @@ export default function Dashboard() {
     if (activity.category) {
       return `${activity.category.charAt(0).toUpperCase() + activity.category.slice(1)} Activity`;
     }
-    
     const categories = activity.categoryTotals ? Object.keys(activity.categoryTotals) : [];
     if (categories.length === 1) {
       return `${categories[0].charAt(0).toUpperCase() + categories[0].slice(1)} Activity`;
     } else if (categories.length > 1) {
-      return `Multi-category Activity (${categories.length} categories)`;
+      return `Multi-category Activity`;
     }
-    
     return "Carbon Activity";
   };
 
   const getMainCategory = (activity) => {
     if (activity.category) return activity.category;
-    
     const categories = activity.categoryTotals ? Object.keys(activity.categoryTotals) : [];
     return categories.length > 0 ? categories[0] : "general";
-  };
-
-  const getTotalFromCategories = (activity) => {
-    if (!activity.categoryTotals) return "0";
-    return Object.values(activity.categoryTotals).reduce((sum, val) => sum + val, 0).toFixed(2);
   };
 
   const getCategoryIcon = (category) => {
@@ -282,8 +223,7 @@ export default function Dashboard() {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(Math.abs(now - date) / (1000 * 60 * 60 * 24));
     
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
@@ -291,19 +231,12 @@ export default function Dashboard() {
     return date.toLocaleDateString();
   };
 
-  const handleAddActivity = () => {
-    navigate('/add');
-  };
-
-  // Loading state
   if (loading) {
     return (
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
           <div className="h-4 bg-gray-200 rounded w-96 mb-8"></div>
-          
-          {/* Stats grid skeleton */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
             {[1,2,3,4].map(i => (
               <div key={i} className="bg-white rounded-2xl p-6 h-32 border border-gray-200">
@@ -330,7 +263,7 @@ export default function Dashboard() {
       </div>
 
       {/* Time filter */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="mb-8">
         <div className="inline-flex items-center space-x-1 bg-white rounded-lg border border-gray-200 p-1">
           {['Today', 'Week', 'Month', 'Year'].map((period) => (
             <button
@@ -346,17 +279,9 @@ export default function Dashboard() {
             </button>
           ))}
         </div>
-        
-        <button 
-          onClick={handleAddActivity}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Activity</span>
-        </button>
       </div>
 
-      {/* Stats Grid - Shows null values as "—" when no data */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <MetricCard 
           title="Total CO₂ Emissions" 
@@ -401,7 +326,6 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* Show empty state if no data for selected period */}
             {!stats.total ? (
               <div className="h-80 flex flex-col items-center justify-center text-center">
                 <Leaf className="w-16 h-16 text-gray-300 mb-4" />
@@ -409,15 +333,8 @@ export default function Dashboard() {
                 <p className="text-gray-500 mb-6">
                   {hasData 
                     ? `You have data from other periods, but none for ${selectedPeriod.toLowerCase()}`
-                    : "Start by adding your first activity"
-                  }
+                    : "Start by adding your first activity using the + Add Activity button"}
                 </p>
-                <button 
-                  onClick={handleAddActivity}
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700"
-                >
-                  {hasData ? "Add More Activities" : "Add Your First Activity"}
-                </button>
               </div>
             ) : (
               <>
@@ -444,24 +361,17 @@ export default function Dashboard() {
 
         {/* Recent Activities */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Recent Activities</h2>
-            {recentActivities.length > 0 && (
-              <span className="text-sm text-green-600 font-medium cursor-pointer hover:text-green-700">
-                View All →
-              </span>
-            )}
-          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Activities</h2>
           
-          {recentActivities.length === 0 ? (
+          {activities.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Activity className="w-12 h-12 text-gray-300 mb-3" />
               <p className="text-gray-600 mb-2">No activities yet</p>
-              <p className="text-sm text-gray-500">Add your first activity to start tracking</p>
+              <p className="text-sm text-gray-500">Click the + Add Activity button to start tracking</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {recentActivities.map((activity) => (
+              {activities.map((activity) => (
                 <ActivityCard 
                   key={activity.id}
                   title={activity.title}
@@ -471,19 +381,6 @@ export default function Dashboard() {
                   icon={activity.icon}
                 />
               ))}
-            </div>
-          )}
-
-          {/* Insights Card - Only show if data exists */}
-          {stats.total && (
-            <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
-              <h3 className="font-semibold text-blue-900 mb-2">🌱 Insight</h3>
-              <p className="text-sm text-blue-800">
-                {stats.total < 500 
-                  ? `Great job! Your carbon footprint is ${stats.total} kg this ${selectedPeriod.toLowerCase()}. Keep it up!` 
-                  : `You've emitted ${stats.total} kg CO₂ this ${selectedPeriod.toLowerCase()}. Try to reduce by using public transport or saving energy.`
-                }
-              </p>
             </div>
           )}
         </div>
