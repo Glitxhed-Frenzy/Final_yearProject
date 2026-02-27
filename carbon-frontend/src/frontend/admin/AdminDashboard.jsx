@@ -4,38 +4,198 @@ import {
   Users, 
   Activity, 
   TrendingUp, 
-  TrendingDown,
-  Calendar,
-  Download,
-  MoreVertical,
-  ArrowUpRight,
-  ArrowDownRight,
   Leaf,
   Zap,
   Car,
   Utensils,
-  ShoppingBag
+  ShoppingBag,
+  AlertCircle
 } from "lucide-react";
 import DonutPlaceholder from "../components/DonutPlaceholder";
 
 export default function AdminDashboard() {
-  const [timeframe, setTimeframe] = useState('week');
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    totalUsers: 1250,
-    activeUsers: 890,
-    totalActivities: 8450,
-    totalEmissions: 45200,
-    avgEmission: 5.35,
-    reduction: 12.5
+    totalUsers: 0,
+    activeUsers: 0,
+    totalActivities: 0,
+    totalEmissions: 0,
+    avgEmission: 0,
+    categoryTotals: {
+      electricity: 0,
+      transport: 0,
+      food: 0,
+      purchases: 0,
+      water: 0,
+      electronics: 0
+    }
   });
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [users, setUsers] = useState([]);
 
-  const recentActivities = [
-    { user: "John Doe", action: "Added transport activity", emission: 12.5, time: "5 min ago" },
-    { user: "Sarah Smith", action: "Updated electricity usage", emission: 8.2, time: "15 min ago" },
-    { user: "Mike Johnson", action: "Added food purchases", emission: 3.7, time: "25 min ago" },
-    { user: "Emily Brown", action: "Logged car travel", emission: 15.3, time: "45 min ago" },
-    { user: "David Lee", action: "Added home energy", emission: 22.1, time: "1 hour ago" }
-  ];
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = () => {
+    // Get all users
+    const allUsers = [];
+    // Check if there's a logged-in user (in real app, you'd have a users collection)
+    const currentUser = localStorage.getItem("user");
+    if (currentUser) {
+      allUsers.push(JSON.parse(currentUser));
+    }
+    
+    // Get all activities
+    const activities = JSON.parse(localStorage.getItem('carbon_activities') || '[]');
+    
+    // Calculate stats
+    const totalActivities = activities.length;
+    const totalEmissions = activities.reduce((sum, act) => sum + (act.totalEmissions || 0), 0);
+    
+    // Calculate category totals
+    const categoryTotals = {
+      electricity: 0,
+      transport: 0,
+      food: 0,
+      purchases: 0,
+      water: 0,
+      electronics: 0
+    };
+
+    activities.forEach(activity => {
+      if (activity.categoryTotals) {
+        Object.entries(activity.categoryTotals).forEach(([category, value]) => {
+          if (category === 'home') {
+            categoryTotals.electricity += value;
+          } else if (categoryTotals.hasOwnProperty(category)) {
+            categoryTotals[category] += value;
+          }
+        });
+      } else if (activity.answers) {
+        Object.values(activity.answers).forEach(answer => {
+          const cat = answer.category;
+          if (cat === 'home') {
+            categoryTotals.electricity += answer.emission || 0;
+          } else if (categoryTotals.hasOwnProperty(cat)) {
+            categoryTotals[cat] += answer.emission || 0;
+          }
+        });
+      }
+    });
+
+    // Get recent activities
+    const recent = activities
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 5)
+      .map(activity => ({
+        id: activity.id,
+        user: currentUser ? JSON.parse(currentUser).name : "Unknown User",
+        action: getActivityDescription(activity),
+        emission: activity.totalEmissions || 0,
+        time: formatTimeAgo(activity.date),
+        category: getMainCategory(activity)
+      }));
+
+    setStats({
+      totalUsers: allUsers.length,
+      activeUsers: activities.length > 0 ? 1 : 0, // Simplified for demo
+      totalActivities,
+      totalEmissions: Math.round(totalEmissions * 100) / 100,
+      avgEmission: totalActivities > 0 ? Math.round((totalEmissions / totalActivities) * 100) / 100 : 0,
+      categoryTotals
+    });
+
+    setRecentActivities(recent);
+    setUsers(allUsers);
+    setLoading(false);
+  };
+
+  const getActivityDescription = (activity) => {
+    if (activity.category) {
+      return `Added ${activity.category} activity`;
+    }
+    const categories = activity.categoryTotals ? Object.keys(activity.categoryTotals) : [];
+    if (categories.length === 1) {
+      return `Added ${categories[0]} activity`;
+    } else if (categories.length > 1) {
+      return `Added activity (${categories.length} categories)`;
+    }
+    return "Added new activity";
+  };
+
+  const getMainCategory = (activity) => {
+    if (activity.category) return activity.category;
+    const categories = activity.categoryTotals ? Object.keys(activity.categoryTotals) : [];
+    return categories.length > 0 ? categories[0] : 'general';
+  };
+
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMinutes = Math.floor((now - date) / (1000 * 60));
+    
+    if (diffMinutes < 1) return 'Just now';
+    if (diffMinutes < 60) return `${diffMinutes} min ago`;
+    if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} hours ago`;
+    return `${Math.floor(diffMinutes / 1440)} days ago`;
+  };
+
+  const getCategoryIcon = (category) => {
+    const icons = {
+      electricity: <Zap className="w-4 h-4" />,
+      transport: <Car className="w-4 h-4" />,
+      food: <Utensils className="w-4 h-4" />,
+      purchases: <ShoppingBag className="w-4 h-4" />
+    };
+    return icons[category] || <Activity className="w-4 h-4" />;
+  };
+
+  const getCategoryColor = (category) => {
+    const colors = {
+      electricity: 'bg-blue-100 text-blue-700',
+      transport: 'bg-purple-100 text-purple-700',
+      food: 'bg-amber-100 text-amber-700',
+      purchases: 'bg-rose-100 text-rose-700'
+    };
+    return colors[category] || 'bg-gray-100 text-gray-700';
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-96"></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="bg-white rounded-2xl p-6 border border-gray-200 h-32 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-24 mb-4"></div>
+              <div className="h-6 bg-gray-200 rounded w-32"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const hasData = stats.totalActivities > 0;
+
+  // Prepare chart data
+  const chartData = [];
+  if (stats.categoryTotals.electricity > 0) {
+    chartData.push({ name: "Electricity", value: stats.categoryTotals.electricity });
+  }
+  if (stats.categoryTotals.transport > 0) {
+    chartData.push({ name: "Transport", value: stats.categoryTotals.transport });
+  }
+  if (stats.categoryTotals.food > 0) {
+    chartData.push({ name: "Food", value: stats.categoryTotals.food });
+  }
+  if (stats.categoryTotals.purchases > 0) {
+    chartData.push({ name: "Purchases", value: stats.categoryTotals.purchases });
+  }
 
   return (
     <div className="space-y-6">
@@ -43,268 +203,165 @@ export default function AdminDashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
-          <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your platform.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={timeframe}
-            onChange={(e) => setTimeframe(e.target.value)}
-            className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          >
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="year">This Year</option>
-          </select>
-          <button className="p-2.5 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
-            <Download className="w-5 h-5 text-gray-600" />
-          </button>
+          <p className="text-gray-600 mt-1">
+            {hasData 
+              ? "Here's what's happening with your platform."
+              : "No data yet. Users haven't added any activities."}
+          </p>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Users */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
-              +12.5%
-            </span>
+      {!hasData ? (
+        /* Empty State - No Data */
+        <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-10 h-10 text-gray-400" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900">1,250</h3>
-          <p className="text-gray-600 text-sm mt-1">Total Users</p>
-          <div className="flex items-center gap-2 mt-3">
-            <span className="text-xs text-green-600 font-medium">↑ 48 new</span>
-            <span className="text-xs text-gray-400">this week</span>
-          </div>
-        </div>
-
-        {/* Active Users */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-purple-100 rounded-xl">
-              <Activity className="w-6 h-6 text-purple-600" />
-            </div>
-            <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
-              +5.2%
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900">890</h3>
-          <p className="text-gray-600 text-sm mt-1">Active Users</p>
-          <div className="flex items-center gap-2 mt-3">
-            <span className="text-xs text-green-600 font-medium">↑ 32 active</span>
-            <span className="text-xs text-gray-400">right now</span>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Data Available</h2>
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            The dashboard will display analytics once users start adding activities and tracking their carbon footprint.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <button 
+              onClick={() => window.location.href = '/admin/emission-factors'}
+              className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+            >
+              Add Emission Factors
+            </button>
+            <button 
+              onClick={() => window.location.href = '/admin/users'}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            >
+              View Users
+            </button>
           </div>
         </div>
-
-        {/* Total Activities */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-amber-100 rounded-xl">
-              <TrendingUp className="w-6 h-6 text-amber-600" />
-            </div>
-            <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
-              +18.3%
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900">8,450</h3>
-          <p className="text-gray-600 text-sm mt-1">Total Activities</p>
-          <div className="flex items-center gap-2 mt-3">
-            <span className="text-xs text-green-600 font-medium">↑ 234</span>
-            <span className="text-xs text-gray-400">today</span>
-          </div>
-        </div>
-
-        {/* Total Emissions */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-green-100 rounded-xl">
-              <Leaf className="w-6 h-6 text-green-600" />
-            </div>
-            <span className="px-3 py-1 bg-red-100 text-red-700 text-sm font-medium rounded-full">
-              -8.2%
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900">45.2t</h3>
-          <p className="text-gray-600 text-sm mt-1">CO₂ Emissions</p>
-          <div className="flex items-center gap-2 mt-3">
-            <span className="text-xs text-green-600 font-medium">↓ 3.2t</span>
-            <span className="text-xs text-gray-400">from last month</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Emissions by Category */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Emissions by Category</h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg">Month</button>
-              <button className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">Week</button>
-              <button className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">Year</button>
-            </div>
-          </div>
-          <div className="h-80">
-            <DonutPlaceholder
-              centerLabel="45.2t"
-              data={[
-                { name: "Electricity", value: 18000 },
-                { name: "Transport", value: 12000 },
-                { name: "Food", value: 8500 },
-                { name: "Purchases", value: 6700 }
-              ]}
-            />
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Category Breakdown</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-200 rounded-lg">
-                  <Zap className="w-4 h-4 text-blue-700" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Electricity</p>
-                  <p className="text-sm text-gray-600">18.0t CO₂</p>
-                </div>
+      ) : (
+        /* Data View */
+        <>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <div className="p-3 bg-blue-100 rounded-xl w-fit mb-4">
+                <Users className="w-6 h-6 text-blue-600" />
               </div>
-              <span className="text-sm font-medium text-blue-700">39.8%</span>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.totalUsers}</h3>
+              <p className="text-gray-600 text-sm mt-1">Total Users</p>
             </div>
+
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <div className="p-3 bg-purple-100 rounded-xl w-fit mb-4">
+                <Activity className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.totalActivities}</h3>
+              <p className="text-gray-600 text-sm mt-1">Total Activities</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <div className="p-3 bg-amber-100 rounded-xl w-fit mb-4">
+                <TrendingUp className="w-6 h-6 text-amber-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.totalEmissions} kg</h3>
+              <p className="text-gray-600 text-sm mt-1">Total CO₂ Emissions</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <div className="p-3 bg-green-100 rounded-xl w-fit mb-4">
+                <Leaf className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.avgEmission} kg</h3>
+              <p className="text-gray-600 text-sm mt-1">Avg per Activity</p>
+            </div>
+          </div>
+
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Emissions by Category */}
+            <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">Emissions by Category</h2>
+              <div className="h-80">
+                <DonutPlaceholder
+                  centerLabel={`${stats.totalEmissions} kg`}
+                  data={chartData.length ? chartData : [
+                    { name: "No Data", value: 1 }
+                  ]}
+                />
+              </div>
+            </div>
+
+            {/* Category Breakdown */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">Category Breakdown</h2>
+              <div className="space-y-4">
+                {Object.entries(stats.categoryTotals).map(([category, value]) => {
+                  if (value > 0) {
+                    const percentage = stats.totalEmissions > 0 
+                      ? Math.round((value / stats.totalEmissions) * 100) 
+                      : 0;
+                    
+                    return (
+                      <div key={category} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <span className={`p-1.5 rounded-lg ${getCategoryColor(category)}`}>
+                              {getCategoryIcon(category)}
+                            </span>
+                            <span className="font-medium text-gray-900 capitalize">{category}</span>
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">{value} kg</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-600 h-2 rounded-full" 
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-xs text-gray-500 text-right">{percentage}% of total</p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
+                {Object.values(stats.categoryTotals).every(v => v === 0) && (
+                  <p className="text-gray-500 text-center py-4">No category data yet</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h2>
             
-            <div className="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-200 rounded-lg">
-                  <Car className="w-4 h-4 text-purple-700" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Transport</p>
-                  <p className="text-sm text-gray-600">12.0t CO₂</p>
-                </div>
+            {recentActivities.length === 0 ? (
+              <div className="text-center py-8">
+                <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No recent activities</p>
               </div>
-              <span className="text-sm font-medium text-purple-700">26.5%</span>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-200 rounded-lg">
-                  <Utensils className="w-4 h-4 text-amber-700" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Food</p>
-                  <p className="text-sm text-gray-600">8.5t CO₂</p>
-                </div>
-              </div>
-              <span className="text-sm font-medium text-amber-700">18.8%</span>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-rose-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-rose-200 rounded-lg">
-                  <ShoppingBag className="w-4 h-4 text-rose-700" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Purchases</p>
-                  <p className="text-sm text-gray-600">6.7t CO₂</p>
-                </div>
-              </div>
-              <span className="text-sm font-medium text-rose-700">14.9%</span>
-            </div>
-          </div>
-
-          {/* Avg Emission Card */}
-          <div className="mt-6 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
-            <p className="text-sm text-green-700 mb-1">Average per user</p>
-            <p className="text-2xl font-bold text-green-900">5.35 kg</p>
-            <p className="text-xs text-green-600 mt-1">↓ 12.5% from last month</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity & Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-            <button className="text-sm text-green-600 hover:text-green-700 font-medium">View All</button>
-          </div>
-          <div className="space-y-3">
-            {recentActivities.map((activity, index) => (
-              <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    {activity.user.charAt(0)}
+            ) : (
+              <div className="space-y-4">
+                {recentActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold">
+                        {activity.user?.charAt(0) || 'U'}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{activity.user}</p>
+                        <p className="text-sm text-gray-600">{activity.action}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-gray-900">{activity.emission} kg</p>
+                      <p className="text-xs text-gray-500">{activity.time}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{activity.user}</p>
-                    <p className="text-sm text-gray-600">{activity.action}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-gray-900">{activity.emission} kg</p>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Quick Actions</h2>
-          <div className="space-y-3">
-            <button className="w-full p-4 text-left bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg">
-              <p className="font-semibold">Add Emission Factor</p>
-              <p className="text-sm text-white/80 mt-1">Update carbon conversion rates</p>
-            </button>
-            
-            <button className="w-full p-4 text-left bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors border border-blue-200">
-              <p className="font-semibold">Generate Report</p>
-              <p className="text-sm text-blue-600 mt-1">Export analytics data</p>
-            </button>
-            
-            <button className="w-full p-4 text-left bg-purple-50 text-purple-700 rounded-xl hover:bg-purple-100 transition-colors border border-purple-200">
-              <p className="font-semibold">Send Notification</p>
-              <p className="text-sm text-purple-600 mt-1">Message all users</p>
-            </button>
-            
-            <button className="w-full p-4 text-left bg-amber-50 text-amber-700 rounded-xl hover:bg-amber-100 transition-colors border border-amber-200">
-              <p className="font-semibold">Backup Data</p>
-              <p className="text-sm text-amber-600 mt-1">Create system backup</p>
-            </button>
-          </div>
-
-          {/* System Status */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">System Status</span>
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Operational</span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">API</span>
-                <span className="text-green-600">99.9%</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Database</span>
-                <span className="text-green-600">98.5%</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Storage</span>
-                <span className="text-amber-600">76% used</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
