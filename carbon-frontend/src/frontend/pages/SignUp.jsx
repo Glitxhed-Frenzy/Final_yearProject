@@ -13,6 +13,7 @@ import {
   Phone,
   ChevronRight
 } from "lucide-react";
+import { authAPI } from '../../services/api'
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -131,46 +132,45 @@ export default function SignUp() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateStep2()) {
-      return;
-    }
-    
-    setIsLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validateStep2()) {
+    return;
+  }
+  
+  setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // Create new user
-      const newUser = {
-        id: Date.now(),
-        name: formData.fullName,
-        email: formData.email,
-        phone: formData.phone || "",
-        role: "user",
-        createdAt: new Date().toISOString(),
-        preferences: {
-          location: "",
-          notificationEnabled: true
-        }
-      };
-      
-      // Save to localStorage
-      localStorage.setItem("user", JSON.stringify(newUser));
-      localStorage.setItem("token", "mock-jwt-token");
-      
-      // Initialize empty activities array for new user
-      if (!localStorage.getItem("carbon_activities")) {
-        localStorage.setItem("carbon_activities", JSON.stringify([]));
-      }
-      
-      setIsLoading(false);
-      
-      // Redirect to dashboard
-      navigate("/dashboard");
-    }, 1500);
-  };
+  try {
+    // Call real backend API
+    const response = await authAPI.register({
+      name: formData.fullName,
+      email: formData.email,
+      password: formData.password,
+      phone: formData.phone || ""
+    });
+    
+    const { token, user } = response.data;
+    
+    // Store in localStorage
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+    
+    setIsLoading(false);
+    
+    // Redirect to dashboard
+    navigate("/login");
+  } catch (error) {
+    setIsLoading(false);
+    
+    // Show error message
+    const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
+    setErrors({ form: errorMessage });
+    
+    // You might want to show this error in your UI
+    alert(errorMessage);
+  }
+};
 
   const handleGoogleSignUp = () => {
     setIsLoading(true);

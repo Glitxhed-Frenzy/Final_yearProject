@@ -10,6 +10,7 @@ import {
   AlertCircle,
   CheckCircle
 } from "lucide-react";
+import { authAPI } from '../../services/api';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -84,61 +85,48 @@ export default function Login() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Mark all fields as touched
-    setTouched({
-      email: true,
-      password: true
-    });
+  e.preventDefault();
+  
+  // Mark all fields as touched
+  setTouched({
+    email: true,
+    password: true
+  });
 
-    // Validate all fields
-    if (!validateForm()) {
-      return;
+  // Validate all fields
+  if (!validateForm()) {
+    return;
+  }
+  
+  setIsLoading(true);
+  setLoginError("");
+
+  try {
+    // Call real backend API
+    const response = await authAPI.login(formData.email, formData.password);
+    
+    const { token, user } = response.data;
+    
+    // Store in localStorage
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+    
+    if (rememberMe) {
+      localStorage.setItem("rememberedEmail", formData.email);
+    } else {
+      localStorage.removeItem("rememberedEmail");
     }
     
-    setIsLoading(true);
-    setLoginError("");
-
-    // Simulate API call with validation
-    setTimeout(() => {
-      // Mock authentication with validation
-      const validCredentials = [
-        { email: "demo@example.com", password: "Demo123" },
-        { email: "test@example.com", password: "Test123" },
-        { email: "admin@example.com", password: "Admin123" }
-      ];
-
-      const isValid = validCredentials.some(
-        cred => cred.email === formData.email && cred.password === formData.password
-      );
-
-      if (isValid) {
-        const mockUser = {
-          id: Date.now(),
-          name: formData.email.split('@')[0],
-          email: formData.email,
-          role: "user",
-          lastLogin: new Date().toISOString()
-        };
-        
-        localStorage.setItem("user", JSON.stringify(mockUser));
-        localStorage.setItem("token", "mock-jwt-token");
-        
-        if (rememberMe) {
-          localStorage.setItem("rememberedEmail", formData.email);
-        } else {
-          localStorage.removeItem("rememberedEmail");
-        }
-        
-        setIsLoading(false);
-        navigate("/dashboard");
-      } else {
-        setLoginError("Invalid email or password. Please try again.");
-        setIsLoading(false);
-      }
-    }, 1500);
-  };
+    setIsLoading(false);
+    navigate("/dashboard");
+  } catch (error) {
+    setIsLoading(false);
+    setLoginError(
+      error.response?.data?.message || 
+      "Login failed. Please check your credentials."
+    );
+  }
+};
 
   const handleDemoLogin = () => {
     setFormData({
