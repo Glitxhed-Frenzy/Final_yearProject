@@ -1,10 +1,11 @@
 // src/frontend/components/Navbar.jsx
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom"; // Added useLocation
 import { useState, useEffect } from "react";
 import { User, LogOut, ChevronDown, PlusCircle } from "lucide-react";
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation(); // Get current route
   const [user, setUser] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -14,6 +15,11 @@ export default function Navbar() {
       setUser(JSON.parse(userData));
     }
   }, []);
+
+  // Don't render navbar on login page
+  if (location.pathname === '/login' || location.pathname === '/') {
+    return null; // Returns nothing - navbar won't show
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -112,14 +118,7 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-          ) : (
-            <NavLink
-              to="/login"
-              className="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition font-medium"
-            >
-              Sign In
-            </NavLink>
-          )}
+          ) : null /* Removed the Sign In button completely */}
         </div>
       </div>
 
