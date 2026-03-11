@@ -7,6 +7,7 @@ import {
   ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Save,
   Trash2, RefreshCw, ArrowLeft
 } from "lucide-react";
+import { activityAPI } from '../../services/api'; // ADD THIS IMPORT
 
 const categories = [
   { id: 'transport', label: 'Transportation', icon: <Car className="w-5 h-5" />, color: 'purple' },
@@ -217,14 +218,22 @@ export default function AddActivity() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showDeleteOptions, setShowDeleteOptions] = useState(false);
   const [activities, setActivities] = useState([]);
+  const [isLoading, setIsLoading] = useState(false); // ADD THIS
 
-  // Load existing activities
+  // Load existing activities from BACKEND
   useEffect(() => {
-    const savedActivities = localStorage.getItem('carbon_activities');
-    if (savedActivities) {
-      setActivities(JSON.parse(savedActivities));
-    }
+    fetchActivities();
   }, []);
+
+  // ADD THIS NEW FUNCTION
+  const fetchActivities = async () => {
+    try {
+      const response = await activityAPI.getAll();
+      setActivities(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+    }
+  };
 
   const handleAnswerChange = (questionId, value, factor) => {
     const numValue = parseFloat(value) || 0;
@@ -264,12 +273,14 @@ export default function AddActivity() {
     return Object.keys(answers).length > 0;
   };
 
-  // Save all data to localStorage
-  const saveActivity = () => {
+  // UPDATED: Save activity to BACKEND
+  const saveActivity = async () => {
     if (!hasAnyData()) {
       alert("Please add some data first");
       return;
     }
+
+    setIsLoading(true);
 
     // Calculate totals per category
     const categoryTotals = {};
@@ -280,9 +291,8 @@ export default function AddActivity() {
       }
     });
 
-    // Create new activity
-    const newActivity = {
-      id: Date.now(),
+    // Create activity object for backend
+    const activityData = {
       date: new Date().toISOString(),
       answers: { ...answers },
       categoryTotals,
@@ -290,20 +300,28 @@ export default function AddActivity() {
       categories: Object.keys(categoryTotals)
     };
 
-    // Save to localStorage
-    const updatedActivities = [...activities, newActivity];
-    localStorage.setItem('carbon_activities', JSON.stringify(updatedActivities));
-    setActivities(updatedActivities);
+    try {
+      // Save to backend
+      const response = await activityAPI.create(activityData);
+      
+      // Update local activities list
+      setActivities(prev => [response.data.data, ...prev]);
 
-    // Show success message
-    setSuccessMessage(`Activity saved! Total: ${calculateGrandTotal()} kg CO₂`);
-    setShowSuccess(true);
-    
-    // Clear form after 2 seconds
-    setTimeout(() => {
-      setAnswers({});
-      setShowSuccess(false);
-    }, 2000);
+      // Show success message
+      setSuccessMessage(`Activity saved! Total: ${calculateGrandTotal()} kg CO₂`);
+      setShowSuccess(true);
+      
+      // Clear form after 2 seconds
+      setTimeout(() => {
+        setAnswers({});
+        setShowSuccess(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Error saving activity:", error);
+      alert(error.response?.data?.message || "Failed to save activity");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Reset current form only
@@ -315,28 +333,45 @@ export default function AddActivity() {
     }
   };
 
-  // Delete a specific activity
-  const deleteActivity = (activityId) => {
+  // UPDATED: Delete a specific activity from BACKEND
+  const deleteActivity = async (activityId) => {
     if (window.confirm("Are you sure you want to delete this activity?")) {
-      const updatedActivities = activities.filter(a => a.id !== activityId);
-      localStorage.setItem('carbon_activities', JSON.stringify(updatedActivities));
-      setActivities(updatedActivities);
-      setShowDeleteOptions(false);
-      setSuccessMessage("Activity deleted successfully");
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
+      try {
+        await activityAPI.delete(activityId);
+        
+        // Update local state
+        const updatedActivities = activities.filter(a => a._id !== activityId);
+        setActivities(updatedActivities);
+        
+        setShowDeleteOptions(false);
+        setSuccessMessage("Activity deleted successfully");
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+      } catch (error) {
+        console.error("Error deleting activity:", error);
+        alert("Failed to delete activity");
+      }
     }
   };
 
-  // Delete all activities
-  const deleteAllActivities = () => {
+  // UPDATED: Delete all activities from BACKEND
+  const deleteAllActivities = async () => {
     if (window.confirm("Are you sure you want to delete ALL activities? This cannot be undone!")) {
-      localStorage.removeItem('carbon_activities');
-      setActivities([]);
-      setShowDeleteOptions(false);
-      setSuccessMessage("All activities deleted");
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
+      try {
+        // Delete one by one
+        for (const activity of activities) {
+          await activityAPI.delete(activity._id);
+        }
+        
+        setActivities([]);
+        setShowDeleteOptions(false);
+        setSuccessMessage("All activities deleted");
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+      } catch (error) {
+        console.error("Error deleting activities:", error);
+        alert("Failed to delete activities");
+      }
     }
   };
 
@@ -379,19 +414,28 @@ export default function AddActivity() {
           {/* Save Button - Primary Action */}
           <button
             onClick={saveActivity}
-            disabled={!hasAnyData()}
+            disabled={!hasAnyData() || isLoading}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium shadow-sm transition-all ${
-              hasAnyData()
+              hasAnyData() && !isLoading
                 ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg'
                 : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
           >
-            <Save className="w-5 h-5" />
-            Save Activity ({calculateGrandTotal()} kg)
+            {isLoading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5" />
+                Save Activity ({calculateGrandTotal()} kg)
+              </>
+            )}
           </button>
 
           {/* Reset Current Form */}
-          {hasAnyData() && (
+          {hasAnyData() && !isLoading && (
             <button
               onClick={resetCurrentForm}
               className="flex items-center gap-2 px-4 py-3 bg-orange-100 text-orange-700 rounded-xl hover:bg-orange-200 transition-colors"
@@ -402,7 +446,7 @@ export default function AddActivity() {
           )}
 
           {/* Delete Options Dropdown */}
-          {activities.length > 0 && (
+          {activities.length > 0 && !isLoading && (
             <div className="relative">
               <button
                 onClick={() => setShowDeleteOptions(!showDeleteOptions)}
@@ -424,8 +468,8 @@ export default function AddActivity() {
                   
                   {activities.map(activity => (
                     <button
-                      key={activity.id}
-                      onClick={() => deleteActivity(activity.id)}
+                      key={activity._id}
+                      onClick={() => deleteActivity(activity._id)}
                       className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex items-center justify-between"
                     >
                       <span>
@@ -525,6 +569,7 @@ export default function AddActivity() {
                               onChange={(e) => handleAnswerChange(q.id, e.target.value, q.factor)}
                               className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                               placeholder={`Enter ${q.unit}`}
+                              disabled={isLoading}
                             />
                             <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
                               {q.unit}
@@ -558,7 +603,7 @@ export default function AddActivity() {
                       setCurrentCategory(categories[index - 1].id);
                     }
                   }}
-                  disabled={currentCategory === categories[0].id}
+                  disabled={currentCategory === categories[0].id || isLoading}
                   className="flex items-center gap-2 px-4 py-2 text-gray-600 disabled:opacity-50"
                 >
                   <ChevronLeft className="w-5 h-5" />
@@ -572,6 +617,7 @@ export default function AddActivity() {
                       setCurrentCategory(categories[index + 1].id);
                     }
                   }}
+                  disabled={isLoading}
                   className="flex items-center gap-2 px-4 py-2 text-green-600 hover:text-green-700"
                 >
                   Next Category
@@ -629,10 +675,20 @@ export default function AddActivity() {
                   {/* Quick Save Button */}
                   <button
                     onClick={saveActivity}
-                    className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium flex items-center justify-center gap-2"
+                    disabled={isLoading}
+                    className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium flex items-center justify-center gap-2 disabled:opacity-70"
                   >
-                    <Save className="w-4 h-4" />
-                    Save This Activity
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Save This Activity
+                      </>
+                    )}
                   </button>
                 </>
               )}
@@ -644,7 +700,7 @@ export default function AddActivity() {
                 <h3 className="font-semibold text-gray-900 mb-4">Recent Activities</h3>
                 <div className="space-y-3">
                   {activities.slice(-3).reverse().map(activity => (
-                    <div key={activity.id} className="flex justify-between items-center text-sm">
+                    <div key={activity._id} className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">
                         {new Date(activity.date).toLocaleDateString()}
                       </span>

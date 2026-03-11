@@ -1,13 +1,17 @@
 // src/frontend/pages/Dashboard.jsx
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MetricCard from "../components/MetricCard";
 import ActivityCard from "../components/ActivityCard";
 import DonutPlaceholder from "../components/DonutPlaceholder";
-import { Calendar, Leaf, Activity } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Calendar, Leaf, Activity, AlertCircle } from "lucide-react";
+import { activityAPI } from '../../services/api'; // ADD THIS IMPORT
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState("Month");
   
   const [stats, setStats] = useState({
@@ -15,7 +19,9 @@ export default function Dashboard() {
     electricity: null,
     transport: null,
     food: null,
-    purchases: null
+    purchases: null,
+    water: null,
+    electronics: null
   });
   
   const [activities, setActivities] = useState([]);
@@ -41,169 +47,74 @@ export default function Dashboard() {
       } catch {
         setUserName("User");
       }
+    } else {
+      navigate("/login");
     }
   };
 
-  const loadDashboardData = () => {
-    const savedActivities = localStorage.getItem('carbon_activities');
+  // UPDATED: Load data from backend
+  const loadDashboardData = async () => {
+    setLoading(true);
+    setError(null);
     
-    if (!savedActivities) {
-      setHasData(false);
-      setStats({
-        total: null,
-        electricity: null,
-        transport: null,
-        food: null,
-        purchases: null
-      });
-      setActivities([]);
-      setCategoryBreakdown([]);
-      setLoading(false);
-      return;
-    }
-
     try {
-      const allActivities = JSON.parse(savedActivities);
+      // Fetch activities and stats in parallel
+      const [activitiesRes, statsRes] = await Promise.all([
+        activityAPI.getAll(),
+        activityAPI.getStats()
+      ]);
       
-      if (!allActivities || allActivities.length === 0) {
-        setHasData(false);
-        setActivities([]);
-        setLoading(false);
-        return;
-      }
-
-      const filteredActivities = filterActivitiesByPeriod(allActivities, selectedPeriod);
+      const activitiesData = activitiesRes.data.data || [];
+      const statsData = statsRes.data.data || {};
       
-      if (filteredActivities.length === 0) {
-        setHasData(true);
-        setStats({
-          total: null,
-          electricity: null,
-          transport: null,
-          food: null,
-          purchases: null
-        });
-        setActivities(getRecentActivities(allActivities, 5));
-        setCategoryBreakdown([]);
-        setLoading(false);
-        return;
-      }
-
-      const calculatedStats = calculateStats(filteredActivities);
-      setStats(calculatedStats);
+      setActivities(activitiesData);
       
+      // Process stats for display
+      const categoryTotals = statsData.categoryTotals || {};
+      
+      const newStats = {
+        total: statsData.totalEmissions || null,
+        electricity: categoryTotals.electricity || categoryTotals.home || null,
+        transport: categoryTotals.transport || null,
+        food: categoryTotals.food || null,
+        purchases: categoryTotals.purchases || null,
+        water: categoryTotals.water || null,
+        electronics: categoryTotals.electronics || null
+      };
+      
+      setStats(newStats);
+      
+      // Prepare chart data
       const chartData = [];
-      if (calculatedStats.electricity) chartData.push({ name: "Electricity", value: calculatedStats.electricity });
-      if (calculatedStats.transport) chartData.push({ name: "Transport", value: calculatedStats.transport });
-      if (calculatedStats.food) chartData.push({ name: "Food", value: calculatedStats.food });
-      if (calculatedStats.purchases) chartData.push({ name: "Purchases", value: calculatedStats.purchases });
+      if (newStats.electricity) chartData.push({ name: "Electricity", value: newStats.electricity });
+      if (newStats.transport) chartData.push({ name: "Transport", value: newStats.transport });
+      if (newStats.food) chartData.push({ name: "Food", value: newStats.food });
+      if (newStats.purchases) chartData.push({ name: "Purchases", value: newStats.purchases });
+      if (newStats.water) chartData.push({ name: "Water", value: newStats.water });
+      if (newStats.electronics) chartData.push({ name: "Electronics", value: newStats.electronics });
       
       setCategoryBreakdown(chartData);
-      setActivities(getRecentActivities(allActivities, 5));
-      setHasData(true);
+      setHasData(activitiesData.length > 0);
       
     } catch (error) {
       console.error("Error loading dashboard data:", error);
+      setError("Failed to load dashboard data. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const filterActivitiesByPeriod = (activities, period) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    return activities.filter(activity => {
-      const activityDate = new Date(activity.date);
-      
-      switch(period) {
-        case "Today":
-          return activityDate.toDateString() === today.toDateString();
-        case "Week":
-          const weekAgo = new Date(today);
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          return activityDate >= weekAgo;
-        case "Month":
-          const monthAgo = new Date(today);
-          monthAgo.setMonth(monthAgo.getMonth() - 1);
-          return activityDate >= monthAgo;
-        case "Year":
-          const yearAgo = new Date(today);
-          yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-          return activityDate >= yearAgo;
-        default:
-          return true;
-      }
-    });
-  };
-
-  const calculateStats = (activities) => {
-    const totals = {
-      total: 0,
-      electricity: 0,
-      transport: 0,
-      food: 0,
-      purchases: 0
-    };
-
-    activities.forEach(activity => {
-      if (activity.categoryTotals) {
-        Object.entries(activity.categoryTotals).forEach(([category, value]) => {
-          if (category === 'home') {
-            totals.electricity += value;
-          } else if (totals.hasOwnProperty(category)) {
-            totals[category] += value;
-          }
-        });
-      }
-      
-      if (activity.totalEmissions) {
-        totals.total += parseFloat(activity.totalEmissions);
-      }
-    });
-
-    if (totals.total === 0) {
-      totals.total = totals.electricity + totals.transport + totals.food + totals.purchases;
-    }
-
-    Object.keys(totals).forEach(key => {
-      totals[key] = totals[key] > 0 ? Math.round(totals[key] * 100) / 100 : null;
-    });
-
-    return totals;
-  };
-
-  const getRecentActivities = (activities, limit) => {
-    return activities
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, limit)
-      .map(activity => ({
-        id: activity.id,
-        title: getActivityTitle(activity),
-        category: getMainCategory(activity),
-        date: formatDate(activity.date),
-        emission: activity.totalEmissions || 0,
-        icon: getCategoryIcon(getMainCategory(activity))
-      }));
-  };
-
   const getActivityTitle = (activity) => {
-    if (activity.category) {
-      return `${activity.category.charAt(0).toUpperCase() + activity.category.slice(1)} Activity`;
-    }
-    const categories = activity.categoryTotals ? Object.keys(activity.categoryTotals) : [];
-    if (categories.length === 1) {
-      return `${categories[0].charAt(0).toUpperCase() + categories[0].slice(1)} Activity`;
-    } else if (categories.length > 1) {
+    if (activity.categories && activity.categories.length === 1) {
+      return `${activity.categories[0].charAt(0).toUpperCase() + activity.categories[0].slice(1)} Activity`;
+    } else if (activity.categories && activity.categories.length > 1) {
       return `Multi-category Activity`;
     }
     return "Carbon Activity";
   };
 
   const getMainCategory = (activity) => {
-    if (activity.category) return activity.category;
-    const categories = activity.categoryTotals ? Object.keys(activity.categoryTotals) : [];
-    return categories.length > 0 ? categories[0] : "general";
+    return activity.categories?.[0] || "general";
   };
 
   const getCategoryIcon = (category) => {
@@ -250,12 +161,30 @@ export default function Dashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-red-700 mb-2">Oops! Something went wrong</h2>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={loadDashboardData}
+            className="px-6 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Header with greeting */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          Welcome back, {userName}! 👋
+          Welcome back, {userName || "User"}! 👋
         </h1>
         <p className="text-gray-600 mt-2">
           Track and reduce your carbon footprint
@@ -285,28 +214,28 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <MetricCard 
           title="Total CO₂ Emissions" 
-          value={stats.total ? `${stats.total.toLocaleString()} kg` : "—"}
+          value={stats.total ? `${stats.total.toFixed(1)} kg` : "—"}
           subtitle={stats.total ? `This ${selectedPeriod.toLowerCase()}` : "No data yet"}
           highlight={!stats.total}
           icon="🌍"
         />
         <MetricCard 
           title="Electricity" 
-          value={stats.electricity ? `${stats.electricity} kg` : "—"}
+          value={stats.electricity ? `${stats.electricity.toFixed(1)} kg` : "—"}
           subtitle={stats.electricity ? `${Math.round(stats.electricity/0.82)} kWh` : "No data yet"}
           icon="⚡"
           color="blue"
         />
         <MetricCard 
           title="Transport" 
-          value={stats.transport ? `${stats.transport} kg` : "—"}
+          value={stats.transport ? `${stats.transport.toFixed(1)} kg` : "—"}
           subtitle={stats.transport ? `${Math.round(stats.transport/0.20)} km` : "No data yet"}
           icon="🚗"
           color="purple"
         />
         <MetricCard 
           title="Food & Purchases" 
-          value={stats.food || stats.purchases ? `${(stats.food || 0) + (stats.purchases || 0)} kg` : "—"}
+          value={stats.food || stats.purchases ? `${((stats.food || 0) + (stats.purchases || 0)).toFixed(1)} kg` : "—"}
           subtitle={stats.food || stats.purchases ? "Includes food & purchases" : "No data yet"}
           icon="🍎"
           color="orange"
@@ -326,29 +255,33 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {!stats.total ? (
+            {!hasData ? (
               <div className="h-80 flex flex-col items-center justify-center text-center">
                 <Leaf className="w-16 h-16 text-gray-300 mb-4" />
                 <h3 className="text-lg font-medium text-gray-700 mb-2">No emissions data for {selectedPeriod}</h3>
-                <p className="text-gray-500 mb-6">
-                  {hasData 
-                    ? `You have data from other periods, but none for ${selectedPeriod.toLowerCase()}`
-                    : "Start by adding your first activity using the + Add Activity button"}
+                <p className="text-gray-500 mb-6 max-w-md">
+                  Start by adding your first activity using the "+ Add Activity" button in the navbar
                 </p>
+                <button
+                  onClick={() => navigate('/add')}
+                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium"
+                >
+                  Add Your First Activity
+                </button>
               </div>
             ) : (
               <>
                 <div className="h-80">
                   <DonutPlaceholder
-                    centerLabel={`${stats.total} kg`}
-                    data={categoryBreakdown}
+                    centerLabel={`${stats.total?.toFixed(1) || 0} kg`}
+                    data={categoryBreakdown.length ? categoryBreakdown : [{ name: "No Data", value: 1 }]}
                   />
                 </div>
                 <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
                   {categoryBreakdown.map((item, index) => (
                     <div key={index} className="text-center">
                       <div className="text-2xl font-bold text-gray-900">
-                        {Math.round(item.value)} kg
+                        {item.value.toFixed(1)} kg
                       </div>
                       <div className="text-sm text-gray-600">{item.name}</div>
                     </div>
@@ -371,16 +304,24 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {activities.map((activity) => (
+              {activities.slice(0, 5).map((activity) => (
                 <ActivityCard 
-                  key={activity.id}
-                  title={activity.title}
-                  category={activity.category}
-                  date={activity.date}
-                  emission={activity.emission}
-                  icon={activity.icon}
+                  key={activity._id}
+                  title={getActivityTitle(activity)}
+                  category={getMainCategory(activity)}
+                  date={formatDate(activity.date)}
+                  emission={activity.totalEmissions?.toFixed(1) || 0}
+                  icon={getCategoryIcon(getMainCategory(activity))}
                 />
               ))}
+              {activities.length > 5 && (
+                <button
+                  onClick={() => navigate('/reports')}
+                  className="w-full mt-4 px-4 py-2 text-green-600 hover:text-green-700 font-medium border border-green-200 rounded-xl hover:bg-green-50 transition-colors"
+                >
+                  View All Activities
+                </button>
+              )}
             </div>
           )}
         </div>
