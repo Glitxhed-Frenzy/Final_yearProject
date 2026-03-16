@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Home, Car, Plane, Train, Bus, Zap, Droplets, Thermometer,
-  Tv, Laptop, Smartphone, Shirt, Beef, Apple, Coffee,
+  Tv, Laptop, Smartphone, Shirt, Apple, Coffee,
   ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Save,
   Trash2, RefreshCw, ArrowLeft
 } from "lucide-react";
@@ -174,17 +174,6 @@ const questions = {
     icon: <Apple className="w-6 h-6" />,
     color: "from-amber-500 to-orange-600",
     questions: [
-      {
-        id: "beef_servings",
-        text: "Beef Servings",
-        type: "number",
-        unit: "per week",
-        min: 0,
-        max: 21,
-        step: 1,
-        factor: 3.5, // For display only
-        icon: <Beef className="w-5 h-5" />
-      },
       {
         id: "chicken_servings",
         text: "Chicken Servings",

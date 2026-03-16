@@ -113,15 +113,6 @@ const factors = [
 
   // FOOD
   {
-    activityId: 'beef_servings',
-    category: 'food',
-    name: 'Beef',
-    factor: 3.5,
-    unit: 'kg CO₂ per serving',
-    source: 'FAO',
-    description: 'Beef consumption'
-  },
-  {
     activityId: 'chicken_servings',
     category: 'food',
     name: 'Chicken',
