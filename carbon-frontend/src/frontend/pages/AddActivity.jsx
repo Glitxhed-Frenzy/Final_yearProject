@@ -7,7 +7,7 @@ import {
   ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Save,
   Trash2, RefreshCw, ArrowLeft
 } from "lucide-react";
-import { activityAPI } from '../../services/api'; // ADD THIS IMPORT
+import { activityAPI } from '../../services/api';
 
 const categories = [
   { id: 'transport', label: 'Transportation', icon: <Car className="w-5 h-5" />, color: 'purple' },
@@ -17,6 +17,8 @@ const categories = [
   { id: 'food', label: 'Food & Diet', icon: <Apple className="w-5 h-5" />, color: 'amber' }
 ];
 
+// Questions now only have UI info - factors are kept for display only
+// The actual calculations will happen on backend
 const questions = {
   transport: {
     title: "Transportation",
@@ -31,7 +33,7 @@ const questions = {
         min: 0,
         max: 5000,
         step: 10,
-        factor: 0.20,
+        factor: 0.20, // For display only
         icon: <Car className="w-5 h-5" />
       },
       {
@@ -42,7 +44,7 @@ const questions = {
         min: 0,
         max: 1000,
         step: 5,
-        factor: 0.08,
+        factor: 0.08, // For display only
         icon: <Bus className="w-5 h-5" />
       },
       {
@@ -53,7 +55,7 @@ const questions = {
         min: 0,
         max: 1000,
         step: 5,
-        factor: 0.05,
+        factor: 0.05, // For display only
         icon: <Train className="w-5 h-5" />
       },
       {
@@ -64,7 +66,7 @@ const questions = {
         min: 0,
         max: 10000,
         step: 100,
-        factor: 0.25,
+        factor: 0.25, // For display only
         icon: <Plane className="w-5 h-5" />
       }
     ]
@@ -82,7 +84,7 @@ const questions = {
         min: 0,
         max: 2000,
         step: 10,
-        factor: 0.82,
+        factor: 0.82, // For display only
         icon: <Zap className="w-5 h-5" />
       },
       {
@@ -93,7 +95,7 @@ const questions = {
         min: 0,
         max: 31,
         step: 1,
-        factor: 2.5,
+        factor: 2.5, // For display only
         icon: <Thermometer className="w-5 h-5" />
       },
       {
@@ -104,7 +106,7 @@ const questions = {
         min: 0,
         max: 31,
         step: 1,
-        factor: 2.0,
+        factor: 2.0, // For display only
         icon: <Thermometer className="w-5 h-5" />
       }
     ]
@@ -122,7 +124,7 @@ const questions = {
         min: 0,
         max: 12,
         step: 1,
-        factor: 0.05,
+        factor: 0.05, // For display only
         icon: <Laptop className="w-5 h-5" />
       },
       {
@@ -133,7 +135,7 @@ const questions = {
         min: 0,
         max: 16,
         step: 1,
-        factor: 0.04,
+        factor: 0.04, // For display only
         icon: <Tv className="w-5 h-5" />
       }
     ]
@@ -151,7 +153,7 @@ const questions = {
         min: 0,
         max: 21,
         step: 1,
-        factor: 0.5,
+        factor: 0.5, // For display only
         icon: <Droplets className="w-5 h-5" />
       },
       {
@@ -162,7 +164,7 @@ const questions = {
         min: 0,
         max: 50,
         step: 1,
-        factor: 0.3,
+        factor: 0.3, // For display only
         icon: <Shirt className="w-5 h-5" />
       }
     ]
@@ -180,7 +182,7 @@ const questions = {
         min: 0,
         max: 21,
         step: 1,
-        factor: 3.5,
+        factor: 3.5, // For display only
         icon: <Beef className="w-5 h-5" />
       },
       {
@@ -191,7 +193,7 @@ const questions = {
         min: 0,
         max: 21,
         step: 1,
-        factor: 1.2,
+        factor: 1.2, // For display only
         icon: <Beef className="w-5 h-5" />
       },
       {
@@ -202,7 +204,7 @@ const questions = {
         min: 0,
         max: 21,
         step: 1,
-        factor: 0.3,
+        factor: 0.3, // For display only
         icon: <Apple className="w-5 h-5" />
       }
     ]
@@ -212,20 +214,25 @@ const questions = {
 export default function AddActivity() {
   const navigate = useNavigate();
   const [currentCategory, setCurrentCategory] = useState("transport");
-  const [answers, setAnswers] = useState({});
+  
+  // 🔴 CHANGED: Store raw values only (no emissions)
+  const [rawValues, setRawValues] = useState({});
+  
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showDeleteOptions, setShowDeleteOptions] = useState(false);
   const [activities, setActivities] = useState([]);
-  const [isLoading, setIsLoading] = useState(false); // ADD THIS
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Store factors from backend for display
+  const [factors, setFactors] = useState({});
 
-  // Load existing activities from BACKEND
+  // Load existing activities and factors
   useEffect(() => {
     fetchActivities();
+    fetchFactors();
   }, []);
 
-  // ADD THIS NEW FUNCTION
   const fetchActivities = async () => {
     try {
       const response = await activityAPI.getAll();
@@ -235,45 +242,44 @@ export default function AddActivity() {
     }
   };
 
-  const handleAnswerChange = (questionId, value, factor) => {
+  // NEW: Fetch factors from backend
+  const fetchFactors = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/emission-factors');
+      const data = await response.json();
+      
+      // Convert array to object for easy lookup
+      const factorMap = {};
+      data.data.forEach(f => {
+        factorMap[f.activityId] = f.factor;
+      });
+      setFactors(factorMap);
+    } catch (error) {
+      console.error("Error fetching factors:", error);
+    }
+  };
+
+  // 🔴 CHANGED: Store only raw values
+  const handleValueChange = (questionId, value) => {
     const numValue = parseFloat(value) || 0;
-    const emission = numValue * factor;
     
-    setAnswers({
-      ...answers,
-      [questionId]: {
-        value: numValue,
-        emission,
-        category: currentCategory,
-        questionText: questions[currentCategory].questions.find(q => q.id === questionId)?.text,
-        factor: factor
-      }
+    setRawValues({
+      ...rawValues,
+      [questionId]: numValue
     });
   };
 
-  const calculateCategoryTotal = (categoryId) => {
-    let total = 0;
-    Object.keys(answers).forEach(key => {
-      if (answers[key].category === categoryId) {
-        total += answers[key].emission;
-      }
-    });
-    return Math.round(total * 100) / 100;
-  };
-
-  const calculateGrandTotal = () => {
-    let total = 0;
-    Object.keys(answers).forEach(key => {
-      total += answers[key].emission;
-    });
-    return Math.round(total * 100) / 100;
+  // Calculate estimated emission for display (optional)
+  const getEstimatedEmission = (questionId, value) => {
+    if (!value || !factors[questionId]) return null;
+    return (value * factors[questionId]).toFixed(2);
   };
 
   const hasAnyData = () => {
-    return Object.keys(answers).length > 0;
+    return Object.keys(rawValues).length > 0;
   };
 
-  // UPDATED: Save activity to BACKEND
+  // 🔴 CHANGED: Send raw values to backend
   const saveActivity = async () => {
     if (!hasAnyData()) {
       alert("Please add some data first");
@@ -282,38 +288,20 @@ export default function AddActivity() {
 
     setIsLoading(true);
 
-    // Calculate totals per category
-    const categoryTotals = {};
-    categories.forEach(cat => {
-      const total = calculateCategoryTotal(cat.id);
-      if (total > 0) {
-        categoryTotals[cat.id] = total;
-      }
-    });
-
-    // Create activity object for backend
-    const activityData = {
-      date: new Date().toISOString(),
-      answers: { ...answers },
-      categoryTotals,
-      totalEmissions: calculateGrandTotal(),
-      categories: Object.keys(categoryTotals)
-    };
-
     try {
-      // Save to backend
-      const response = await activityAPI.create(activityData);
+      // Send ONLY raw values to backend
+      const response = await activityAPI.create(rawValues);
       
       // Update local activities list
       setActivities(prev => [response.data.data, ...prev]);
 
-      // Show success message
-      setSuccessMessage(`Activity saved! Total: ${calculateGrandTotal()} kg CO₂`);
+      // Show success message with total from backend
+      setSuccessMessage(`Activity saved! Total: ${response.data.data.totalEmissions} kg CO₂`);
       setShowSuccess(true);
       
       // Clear form after 2 seconds
       setTimeout(() => {
-        setAnswers({});
+        setRawValues({});
         setShowSuccess(false);
       }, 2000);
     } catch (error) {
@@ -328,18 +316,17 @@ export default function AddActivity() {
   const resetCurrentForm = () => {
     if (hasAnyData()) {
       if (window.confirm("Clear all unsaved data in this form?")) {
-        setAnswers({});
+        setRawValues({});
       }
     }
   };
 
-  // UPDATED: Delete a specific activity from BACKEND
+  // Delete a specific activity
   const deleteActivity = async (activityId) => {
     if (window.confirm("Are you sure you want to delete this activity?")) {
       try {
         await activityAPI.delete(activityId);
         
-        // Update local state
         const updatedActivities = activities.filter(a => a._id !== activityId);
         setActivities(updatedActivities);
         
@@ -354,11 +341,10 @@ export default function AddActivity() {
     }
   };
 
-  // UPDATED: Delete all activities from BACKEND
+  // Delete all activities
   const deleteAllActivities = async () => {
     if (window.confirm("Are you sure you want to delete ALL activities? This cannot be undone!")) {
       try {
-        // Delete one by one
         for (const activity of activities) {
           await activityAPI.delete(activity._id);
         }
@@ -392,7 +378,7 @@ export default function AddActivity() {
           </div>
         )}
 
-        {/* Header with back button */}
+        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Add Activity</h1>
@@ -411,7 +397,7 @@ export default function AddActivity() {
 
         {/* Action Buttons */}
         <div className="mb-6 flex flex-wrap gap-3">
-          {/* Save Button - Primary Action */}
+          {/* Save Button */}
           <button
             onClick={saveActivity}
             disabled={!hasAnyData() || isLoading}
@@ -429,7 +415,7 @@ export default function AddActivity() {
             ) : (
               <>
                 <Save className="w-5 h-5" />
-                Save Activity ({calculateGrandTotal()} kg)
+                Save Activity
               </>
             )}
           </button>
@@ -498,8 +484,10 @@ export default function AddActivity() {
         <div className="mb-8 overflow-x-auto">
           <div className="bg-white rounded-xl shadow-sm p-2 inline-flex flex-wrap gap-2">
             {categories.map((cat) => {
-              const hasDataInCategory = Object.keys(answers).some(key => answers[key].category === cat.id);
-              const categoryTotal = calculateCategoryTotal(cat.id);
+              // Check if any values in this category
+              const hasDataInCategory = Object.keys(rawValues).some(key => 
+                questions[cat.id]?.questions.some(q => q.id === key) && rawValues[key] > 0
+              );
               
               return (
                 <button
@@ -515,11 +503,6 @@ export default function AddActivity() {
                 >
                   {cat.icon}
                   {cat.label}
-                  {hasDataInCategory && (
-                    <span className="ml-1 text-xs font-bold">
-                      ({categoryTotal} kg)
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -537,16 +520,15 @@ export default function AddActivity() {
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">{questions[currentCategory].title}</h2>
                   <p className="text-sm text-gray-500">
-                    {calculateCategoryTotal(currentCategory) > 0 
-                      ? `Current total: ${calculateCategoryTotal(currentCategory)} kg CO₂` 
-                      : 'Enter values below'}
+                    Enter your usage below
                   </p>
                 </div>
               </div>
 
               <div className="space-y-8">
                 {questions[currentCategory].questions.map((q) => {
-                  const currentAnswer = answers[q.id];
+                  const currentValue = rawValues[q.id];
+                  const estimatedEmission = getEstimatedEmission(q.id, currentValue);
                   
                   return (
                     <div key={q.id} className="border-b border-gray-100 pb-6 last:border-0 last:pb-0">
@@ -565,8 +547,8 @@ export default function AddActivity() {
                               min={q.min}
                               max={q.max}
                               step={q.step}
-                              value={currentAnswer?.value || ''}
-                              onChange={(e) => handleAnswerChange(q.id, e.target.value, q.factor)}
+                              value={currentValue || ''}
+                              onChange={(e) => handleValueChange(q.id, e.target.value)}
                               className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                               placeholder={`Enter ${q.unit}`}
                               disabled={isLoading}
@@ -576,14 +558,11 @@ export default function AddActivity() {
                             </span>
                           </div>
 
-                          {/* Live emission calculation */}
-                          {currentAnswer && currentAnswer.value > 0 && (
-                            <div className="mt-2 flex items-center gap-2">
+                          {/* Show estimated emission if we have factors */}
+                          {estimatedEmission && (
+                            <div className="mt-2">
                               <span className="text-sm text-green-600 font-medium">
-                                → {currentAnswer.emission.toFixed(2)} kg CO₂
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                ({currentAnswer.value} × {q.factor})
+                                ≈ {estimatedEmission} kg CO₂ (estimated)
                               </span>
                             </div>
                           )}
@@ -637,21 +616,32 @@ export default function AddActivity() {
               </h3>
               
               <div className="space-y-4 mb-6">
-                {categories.map((cat) => {
-                  const total = calculateCategoryTotal(cat.id);
-                  
-                  if (total > 0) {
-                    return (
-                      <div key={cat.id} className="flex justify-between items-center">
-                        <span className="text-gray-700">{cat.label}</span>
-                        <span className="font-medium text-gray-900">{total} kg</span>
-                      </div>
-                    );
-                  }
-                  return null;
-                })}
-                
-                {!hasAnyData() && (
+                {Object.keys(rawValues).length > 0 ? (
+                  Object.entries(rawValues).map(([id, value]) => {
+                    // Find the question details
+                    let questionDetails = null;
+                    let categoryName = '';
+                    
+                    for (const cat of categories) {
+                      const q = questions[cat.id]?.questions.find(q => q.id === id);
+                      if (q) {
+                        questionDetails = q;
+                        categoryName = cat.label;
+                        break;
+                      }
+                    }
+                    
+                    if (questionDetails && value > 0) {
+                      return (
+                        <div key={id} className="flex justify-between items-center">
+                          <span className="text-gray-700">{questionDetails.text}</span>
+                          <span className="font-medium text-gray-900">{value} {questionDetails.unit}</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })
+                ) : (
                   <p className="text-gray-500 text-center py-4">
                     No data yet. Start adding values above.
                   </p>
@@ -659,38 +649,23 @@ export default function AddActivity() {
               </div>
 
               {hasAnyData() && (
-                <>
-                  <div className="border-t border-green-200 pt-4 mb-4">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-gray-900">Total</span>
-                      <span className="text-2xl font-bold text-green-700">
-                        {calculateGrandTotal()} kg
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-2">
-                      CO₂ equivalent per month
-                    </p>
-                  </div>
-
-                  {/* Quick Save Button */}
-                  <button
-                    onClick={saveActivity}
-                    disabled={isLoading}
-                    className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium flex items-center justify-center gap-2 disabled:opacity-70"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4" />
-                        Save This Activity
-                      </>
-                    )}
-                  </button>
-                </>
+                <button
+                  onClick={saveActivity}
+                  disabled={isLoading}
+                  className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium flex items-center justify-center gap-2 disabled:opacity-70"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save This Activity
+                    </>
+                  )}
+                </button>
               )}
             </div>
 
@@ -723,7 +698,7 @@ export default function AddActivity() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600">•</span>
-                  <span>Use Reset Form to clear current data</span>
+                  <span>Backend calculates your exact carbon footprint</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600">•</span>

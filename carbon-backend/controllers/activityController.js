@@ -1,40 +1,99 @@
 // controllers/activityController.js
 const Activity = require('../models/Activity');
+const EmissionFactor = require('../models/EmissionFactor'); // ADD THIS
 
-// @desc    Create new activity
+// @desc    Create new activity (WITH BACKEND CALCULATION)
 // @route   POST /api/activities
 // @access  Private
 exports.createActivity = async (req, res) => {
   try {
-    // Add user to req.body
-    req.body.user = req.user.id;
-
-    // Calculate totals if not provided
-    if (!req.body.totalEmissions && req.body.answers) {
-      let total = 0;
-      const categoryTotals = {};
+    // Get ALL emission factors from database
+    const factors = await EmissionFactor.find();
+    
+    // Create a map for easy lookup (like a dictionary)
+    const factorMap = {};
+    factors.forEach(f => {
+      factorMap[f.activityId] = {
+        factor: f.factor,
+        category: f.category
+      };
+    });
+    
+    // Get raw values from frontend (req.body contains raw numbers)
+    const rawData = req.body;
+    
+    // Prepare answers object and calculate totals
+    const answers = {};
+    const categoryTotals = {
+      transport: 0,
+      home: 0,
+      electronics: 0,
+      water: 0,
+      food: 0
+    };
+    
+    let totalEmissions = 0;
+    
+    // Loop through each possible activity
+    Object.keys(rawData).forEach(activityId => {
+      const value = rawData[activityId];
       
-      Object.keys(req.body.answers).forEach(key => {
-        const answer = req.body.answers[key];
-        total += answer.emission || 0;
+      // Skip if no value or not a number
+      if (!value || isNaN(value)) return;
+      
+      // Check if we have a factor for this activity
+      if (factorMap[activityId]) {
+        const { factor, category } = factorMap[activityId];
         
-        const category = answer.category;
-        if (category) {
-          categoryTotals[category] = (categoryTotals[category] || 0) + (answer.emission || 0);
+        // 🔢 CALCULATION HAPPENS HERE!
+        const emission = parseFloat(value) * factor;
+        
+        // Store the answer with all details
+        answers[activityId] = {
+          value: parseFloat(value),
+          emission: Math.round(emission * 100) / 100, // Round to 2 decimals
+          category: category,
+          factor: factor
+        };
+        
+        // Add to category total
+        if (categoryTotals.hasOwnProperty(category)) {
+          categoryTotals[category] += emission;
         }
-      });
-      
-      req.body.totalEmissions = total;
-      req.body.categoryTotals = categoryTotals;
-    }
-
-    const activity = await Activity.create(req.body);
-
+        
+        // Add to grand total
+        totalEmissions += emission;
+      }
+    });
+    
+    // Round totals to 2 decimal places
+    totalEmissions = Math.round(totalEmissions * 100) / 100;
+    Object.keys(categoryTotals).forEach(cat => {
+      categoryTotals[cat] = Math.round(categoryTotals[cat] * 100) / 100;
+    });
+    
+    // Filter out zero categories
+    const nonZeroCategories = Object.keys(categoryTotals).filter(
+      cat => categoryTotals[cat] > 0
+    );
+    
+    // Create activity in database
+    const activity = await Activity.create({
+      user: req.user.id,
+      date: new Date(),
+      answers: answers,
+      categoryTotals: categoryTotals,
+      totalEmissions: totalEmissions,
+      categories: nonZeroCategories
+    });
+    
     res.status(201).json({
       success: true,
       data: activity
     });
+    
   } catch (error) {
+    console.error('Error creating activity:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -206,6 +265,14 @@ exports.getStats = async (req, res) => {
     stats.averagePerActivity = activities.length > 0 
       ? stats.totalEmissions / activities.length 
       : 0;
+
+    // Round to 2 decimals
+    stats.totalEmissions = Math.round(stats.totalEmissions * 100) / 100;
+    stats.averagePerActivity = Math.round(stats.averagePerActivity * 100) / 100;
+    
+    Object.keys(stats.categoryTotals).forEach(cat => {
+      stats.categoryTotals[cat] = Math.round(stats.categoryTotals[cat] * 100) / 100;
+    });
 
     res.status(200).json({
       success: true,

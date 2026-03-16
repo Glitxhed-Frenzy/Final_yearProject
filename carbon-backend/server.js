@@ -9,6 +9,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const activityRoutes = require('./routes/activities');
 const adminRoutes = require('./routes/admin');
+const emissionFactorRoutes = require('./routes/emissionFactors');
 
 const app = express();
 
@@ -26,6 +27,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/api/auth', authRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/emission-factors', emissionFactorRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
