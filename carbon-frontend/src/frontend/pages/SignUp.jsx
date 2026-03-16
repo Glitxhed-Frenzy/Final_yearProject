@@ -33,7 +33,7 @@ export default function SignUp() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: Basic info, 2: Account setup
+  const [step, setStep] = useState(1);
   const [passwordStrength, setPasswordStrength] = useState({
     score: 0,
     hasLength: false,
@@ -52,7 +52,6 @@ export default function SignUp() {
       hasUpper: /[A-Z]/.test(password)
     };
 
-    // Calculate score
     strength.score = [strength.hasLength, strength.hasNumber, strength.hasSpecial, strength.hasUpper]
       .filter(Boolean).length;
 
@@ -62,12 +61,25 @@ export default function SignUp() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const newValue = type === 'checkbox' ? checked : value;
     
-    setFormData(prev => ({
-      ...prev,
-      [name]: newValue
-    }));
+    // For phone field, only allow digits and limit to 10
+    if (name === 'phone') {
+      // Remove any non-digit characters
+      const digitsOnly = value.replace(/\D/g, '');
+      // Limit to 10 digits
+      const limited = digitsOnly.slice(0, 10);
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: limited
+      }));
+    } else {
+      const newValue = type === 'checkbox' ? checked : value;
+      setFormData(prev => ({
+        ...prev,
+        [name]: newValue
+      }));
+    }
 
     // Clear error for this field
     if (errors[name]) {
@@ -95,8 +107,16 @@ export default function SignUp() {
       newErrors.email = "Please enter a valid email";
     }
 
-    if (formData.phone && !/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid phone number";
+    // 🔴 UPDATED: Phone number validation - exactly 10 digits
+    if (formData.phone) {
+      // Check if exactly 10 digits
+      if (formData.phone.length !== 10) {
+        newErrors.phone = "Phone number must be exactly 10 digits";
+      }
+      // Optional: Check if starts with 6-9 (Indian format)
+      else if (!/^[6-9]/.test(formData.phone)) {
+        newErrors.phone = "Phone number must start with 6, 7, 8, or 9";
+      }
     }
 
     setErrors(newErrors);
@@ -132,49 +152,40 @@ export default function SignUp() {
     }
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (!validateStep2()) {
-    return;
-  }
-  
-  setIsLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateStep2()) {
+      return;
+    }
+    
+    setIsLoading(true);
 
-  try {
-    // Call real backend API
-    const response = await authAPI.register({
-      name: formData.fullName,
-      email: formData.email,
-      password: formData.password,
-      phone: formData.phone || ""
-    });
-    
-    const { token, user } = response.data;
-    
-    // Store in localStorage
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(user));
-    
-    setIsLoading(false);
-    
-    // Redirect to dashboard
-    navigate("/login");
-  } catch (error) {
-    setIsLoading(false);
-    
-    // Show error message
-    const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
-    setErrors({ form: errorMessage });
-    
-    // You might want to show this error in your UI
-    alert(errorMessage);
-  }
-};
+    try {
+      const response = await authAPI.register({
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone || ""
+      });
+      
+      const { token, user } = response.data;
+      
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      
+      setIsLoading(false);
+      navigate("/login");
+    } catch (error) {
+      setIsLoading(false);
+      const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
+      setErrors({ form: errorMessage });
+      alert(errorMessage);
+    }
+  };
 
   const handleGoogleSignUp = () => {
     setIsLoading(true);
-    // Simulate Google OAuth
     setTimeout(() => {
       const mockGoogleUser = {
         id: Date.now(),
@@ -194,7 +205,6 @@ const handleSubmit = async (e) => {
 
   const handleGithubSignUp = () => {
     setIsLoading(true);
-    // Simulate GitHub OAuth
     setTimeout(() => {
       const mockGithubUser = {
         id: Date.now(),
@@ -338,7 +348,7 @@ const handleSubmit = async (e) => {
                   )}
                 </div>
 
-                {/* Phone (Optional) */}
+                {/* Phone (Optional) - Now with 10 digit validation */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Phone Number <span className="text-gray-400">(optional)</span>
@@ -352,8 +362,11 @@ const handleSubmit = async (e) => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                      placeholder="+1 234 567 890"
+                      placeholder="9876543210"
+                      maxLength={10}
+                      className={`w-full pl-11 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
+                        errors.phone ? "border-red-300" : "border-gray-300"
+                      }`}
                       disabled={isLoading}
                     />
                   </div>
@@ -363,6 +376,7 @@ const handleSubmit = async (e) => {
                       {errors.phone}
                     </div>
                   )}
+                  <p className="text-xs text-gray-500 mt-1">Enter 10-digit mobile number</p>
                 </div>
 
                 {/* Next Button */}
@@ -377,7 +391,7 @@ const handleSubmit = async (e) => {
               </>
             )}
 
-            {/* Step 2: Account Setup */}
+            {/* Step 2: Account Setup - (rest remains exactly the same) */}
             {step === 2 && (
               <>
                 {/* Password */}
