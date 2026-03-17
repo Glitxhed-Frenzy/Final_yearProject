@@ -20,13 +20,6 @@ import AdminStats from "./frontend/admin/AdminStats";
 export default function App() {
   const location = useLocation();
   
-  // Clear localStorage on app start (only once)
-  useEffect(() => {
-    // Clear all data when app starts
-    localStorage.clear();
-    console.log("🧹 LocalStorage cleared on app start");
-  }, []); // Empty dependency array = runs once when app loads
-  
   // Define routes where Navbar should NOT appear
   const hideNavbarRoutes = [
     '/login',

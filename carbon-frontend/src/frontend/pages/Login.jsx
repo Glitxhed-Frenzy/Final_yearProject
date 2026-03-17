@@ -45,7 +45,7 @@ export default function Login() {
       newErrors.email = "Email must be less than 50 characters";
     }
 
-    // Password validation - Updated to 6-20 characters
+    // Password validation
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
@@ -68,11 +68,9 @@ export default function Login() {
       ...prev,
       [name]: value
     }));
-    // Clear field-specific error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
-    // Clear login error when user makes changes
     if (loginError) setLoginError("");
   };
 
@@ -85,48 +83,72 @@ export default function Login() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  // Mark all fields as touched
-  setTouched({
-    email: true,
-    password: true
-  });
+    e.preventDefault();
+    
+    setTouched({
+      email: true,
+      password: true
+    });
 
-  // Validate all fields
-  if (!validateForm()) {
-    return;
-  }
-  
-  setIsLoading(true);
-  setLoginError("");
-
-  try {
-    // Call real backend API
-    const response = await authAPI.login(formData.email, formData.password);
-    
-    const { token, user } = response.data;
-    
-    // Store in localStorage
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(user));
-    
-    if (rememberMe) {
-      localStorage.setItem("rememberedEmail", formData.email);
-    } else {
-      localStorage.removeItem("rememberedEmail");
+    if (!validateForm()) {
+      return;
     }
     
-    setIsLoading(false);
-    navigate("/dashboard");
-  } catch (error) {
-    setIsLoading(false);
-    setLoginError(
-      error.response?.data?.message || 
-      "Login failed. Please check your credentials."
-    );
-  }
-};
+    setIsLoading(true);
+    setLoginError("");
+
+    try {
+      const response = await authAPI.login(formData.email, formData.password);
+      
+      const { token, user } = response.data;
+      
+      // Store in localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", formData.email);
+      } else {
+        localStorage.removeItem("rememberedEmail");
+      }
+      
+      // 🔴 FIX: Verify data was saved before navigating
+      const verifyUser = localStorage.getItem("user");
+      const verifyToken = localStorage.getItem("token");
+      
+      console.log("Login - Verification:", { 
+        userSaved: !!verifyUser, 
+        tokenSaved: !!verifyToken 
+      });
+      
+      if (verifyUser && verifyToken) {
+        // Data is saved, now navigate
+        setIsLoading(false);
+        navigate("/dashboard");
+      } else {
+        // Data not saved yet, try one more time after a delay
+        setTimeout(() => {
+          const retryUser = localStorage.getItem("user");
+          const retryToken = localStorage.getItem("token");
+          
+          if (retryUser && retryToken) {
+            navigate("/dashboard");
+          } else {
+            // If still not saved, show error
+            setLoginError("Login successful but failed to save session. Please try again.");
+            setIsLoading(false);
+          }
+        }, 200);
+      }
+      
+    } catch (error) {
+      setIsLoading(false);
+      setLoginError(
+        error.response?.data?.message || 
+        "Login failed. Please check your credentials."
+      );
+    }
+  };
 
   const handleDemoLogin = () => {
     setFormData({
@@ -146,7 +168,16 @@ export default function Login() {
       
       localStorage.setItem("user", JSON.stringify(mockUser));
       localStorage.setItem("token", "mock-jwt-token");
-      navigate("/dashboard");
+      
+      // Verify demo data was saved
+      const verifyUser = localStorage.getItem("user");
+      if (verifyUser) {
+        navigate("/dashboard");
+      } else {
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 200);
+      }
     }, 1000);
   };
 
