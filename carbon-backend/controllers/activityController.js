@@ -1,8 +1,8 @@
 // controllers/activityController.js
 const Activity = require('../models/Activity');
-const EmissionFactor = require('../models/EmissionFactor'); // ADD THIS
+const EmissionFactor = require('../models/EmissionFactor');
 
-// @desc    Create new activity (WITH BACKEND CALCULATION)
+// @desc    Create new activity
 // @route   POST /api/activities
 // @access  Private
 exports.createActivity = async (req, res) => {
@@ -10,7 +10,7 @@ exports.createActivity = async (req, res) => {
     // Get ALL emission factors from database
     const factors = await EmissionFactor.find();
     
-    // Create a map for easy lookup (like a dictionary)
+    // Create a map for easy lookup
     const factorMap = {};
     factors.forEach(f => {
       factorMap[f.activityId] = {
@@ -19,7 +19,7 @@ exports.createActivity = async (req, res) => {
       };
     });
     
-    // Get raw values from frontend (req.body contains raw numbers)
+    // Get raw values from frontend
     const rawData = req.body;
     
     // Prepare answers object and calculate totals
@@ -34,7 +34,7 @@ exports.createActivity = async (req, res) => {
     
     let totalEmissions = 0;
     
-    // Loop through each possible activity
+    // Simple calculation: value × factor
     Object.keys(rawData).forEach(activityId => {
       const value = rawData[activityId];
       
@@ -45,13 +45,13 @@ exports.createActivity = async (req, res) => {
       if (factorMap[activityId]) {
         const { factor, category } = factorMap[activityId];
         
-        // 🔢 CALCULATION HAPPENS HERE!
+        // Simple calculation
         const emission = parseFloat(value) * factor;
         
-        // Store the answer with all details
+        // Store the answer
         answers[activityId] = {
           value: parseFloat(value),
-          emission: Math.round(emission * 100) / 100, // Round to 2 decimals
+          emission: Math.round(emission * 100) / 100,
           category: category,
           factor: factor
         };
@@ -66,25 +66,20 @@ exports.createActivity = async (req, res) => {
       }
     });
     
-    // Round totals to 2 decimal places
+    // Round totals
     totalEmissions = Math.round(totalEmissions * 100) / 100;
     Object.keys(categoryTotals).forEach(cat => {
       categoryTotals[cat] = Math.round(categoryTotals[cat] * 100) / 100;
     });
     
-    // Filter out zero categories
-    const nonZeroCategories = Object.keys(categoryTotals).filter(
-      cat => categoryTotals[cat] > 0
-    );
-    
-    // Create activity in database
+    // Create activity
     const activity = await Activity.create({
       user: req.user.id,
       date: new Date(),
       answers: answers,
       categoryTotals: categoryTotals,
       totalEmissions: totalEmissions,
-      categories: nonZeroCategories
+      categories: Object.keys(categoryTotals).filter(cat => categoryTotals[cat] > 0)
     });
     
     res.status(201).json({

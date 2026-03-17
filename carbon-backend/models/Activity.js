@@ -1,6 +1,15 @@
 // models/Activity.js
 const mongoose = require('mongoose');
 
+const answerSchema = new mongoose.Schema({
+  value: mongoose.Schema.Types.Mixed, // Can be number OR string
+  emission: Number,
+  category: String,
+  factor: Number,
+  type: String,
+  unit: String
+}, { _id: false });
+
 const activitySchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -14,22 +23,14 @@ const activitySchema = new mongoose.Schema({
   },
   answers: {
     type: Map,
-    of: {
-      value: Number,
-      emission: Number,
-      category: String,
-      questionText: String,
-      factor: Number
-    }
+    of: answerSchema
   },
   categoryTotals: {
     transport: Number,
     home: Number,
-    electricity: Number,
-    food: Number,
-    purchases: Number,
+    electronics: Number,
     water: Number,
-    electronics: Number
+    food: Number
   },
   totalEmissions: {
     type: Number,
