@@ -1,11 +1,11 @@
 // src/frontend/components/Navbar.jsx
-import { NavLink, useNavigate, useLocation } from "react-router-dom"; // Added useLocation
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { User, LogOut, ChevronDown, PlusCircle } from "lucide-react";
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const location = useLocation(); // Get current route
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -18,7 +18,7 @@ export default function Navbar() {
 
   // Don't render navbar on login page
   if (location.pathname === '/login' || location.pathname === '/') {
-    return null; // Returns nothing - navbar won't show
+    return null;
   }
 
   const handleLogout = () => {
@@ -29,11 +29,20 @@ export default function Navbar() {
     navigate("/login");
   };
 
+  const goToDashboard = () => {
+    navigate("/dashboard");
+  };
+
   return (
     <header className="bg-white/80 backdrop-blur border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        {/* Logo */}
-        <h1 className="text-xl font-bold text-green-600">Carbon Tracker</h1>
+        {/* Logo - Now Clickable */}
+        <h1 
+          onClick={goToDashboard}
+          className="text-xl font-bold text-green-600 cursor-pointer hover:text-green-700 transition-colors"
+        >
+          CarbonWise
+        </h1>
 
         {/* Navigation Links - Only show when user is logged in */}
         {user && (
@@ -118,7 +127,7 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-          ) : null /* Removed the Sign In button completely */}
+          ) : null}
         </div>
       </div>
 
