@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import Welcome from "./frontend/pages/Welcome";
+
 import Navbar from "./frontend/components/Navbar";
 
 import Dashboard from "./frontend/pages/Dashboard";
@@ -38,7 +40,7 @@ export default function App() {
       {shouldShowNavbar && <Navbar />}
 
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Welcome />} />
 
         {/* User */}
         <Route path="/dashboard" element={<Dashboard />} />
