@@ -5,7 +5,7 @@ import MetricCard from "../components/MetricCard";
 import ActivityCard from "../components/ActivityCard";
 import DonutPlaceholder from "../components/DonutPlaceholder";
 import { Calendar, Leaf, Activity, AlertCircle } from "lucide-react";
-import { activityAPI } from '../../services/api'; // ADD THIS IMPORT
+import { activityAPI } from '../../services/api';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -14,14 +14,14 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState("Month");
   
+  // Simple stats structure matching our simplified backend
   const [stats, setStats] = useState({
     total: null,
-    electricity: null,
     transport: null,
-    food: null,
-    purchases: null,
+    home: null,
+    electronics: null,
     water: null,
-    electronics: null
+    food: null
   });
   
   const [activities, setActivities] = useState([]);
@@ -52,7 +52,7 @@ export default function Dashboard() {
     }
   };
 
-  // UPDATED: Load data from backend
+  // Simplified data loading
   const loadDashboardData = async () => {
     setLoading(true);
     setError(null);
@@ -69,29 +69,27 @@ export default function Dashboard() {
       
       setActivities(activitiesData);
       
-      // Process stats for display
+      // Simple stats mapping
       const categoryTotals = statsData.categoryTotals || {};
       
       const newStats = {
         total: statsData.totalEmissions || null,
-        electricity: categoryTotals.electricity || categoryTotals.home || null,
         transport: categoryTotals.transport || null,
-        food: categoryTotals.food || null,
-        purchases: categoryTotals.purchases || null,
+        home: categoryTotals.home || null,
+        electronics: categoryTotals.electronics || null,
         water: categoryTotals.water || null,
-        electronics: categoryTotals.electronics || null
+        food: categoryTotals.food || null
       };
       
       setStats(newStats);
       
-      // Prepare chart data
+      // Prepare chart data (only categories with values)
       const chartData = [];
-      if (newStats.electricity) chartData.push({ name: "Electricity", value: newStats.electricity });
       if (newStats.transport) chartData.push({ name: "Transport", value: newStats.transport });
-      if (newStats.food) chartData.push({ name: "Food", value: newStats.food });
-      if (newStats.purchases) chartData.push({ name: "Purchases", value: newStats.purchases });
-      if (newStats.water) chartData.push({ name: "Water", value: newStats.water });
+      if (newStats.home) chartData.push({ name: "Home Energy", value: newStats.home });
       if (newStats.electronics) chartData.push({ name: "Electronics", value: newStats.electronics });
+      if (newStats.water) chartData.push({ name: "Water", value: newStats.water });
+      if (newStats.food) chartData.push({ name: "Food", value: newStats.food });
       
       setCategoryBreakdown(chartData);
       setHasData(activitiesData.length > 0);
@@ -104,11 +102,11 @@ export default function Dashboard() {
     }
   };
 
+  // Simple activity title generator
   const getActivityTitle = (activity) => {
-    if (activity.categories && activity.categories.length === 1) {
-      return `${activity.categories[0].charAt(0).toUpperCase() + activity.categories[0].slice(1)} Activity`;
-    } else if (activity.categories && activity.categories.length > 1) {
-      return `Multi-category Activity`;
+    if (activity.categories && activity.categories.length > 0) {
+      const category = activity.categories[0];
+      return `${category.charAt(0).toUpperCase() + category.slice(1)} Activity`;
     }
     return "Carbon Activity";
   };
@@ -120,12 +118,10 @@ export default function Dashboard() {
   const getCategoryIcon = (category) => {
     const icons = {
       transport: "🚗",
-      home: "⚡",
-      electricity: "⚡",
-      food: "🍎",
-      purchases: "🛒",
-      water: "💧",
+      home: "🏠",
       electronics: "💻",
+      water: "💧",
+      food: "🍎",
       general: "📊"
     };
     return icons[category] || icons.general;
@@ -210,36 +206,51 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      {/* Stats Grid - 5 cards for our 5 categories */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         <MetricCard 
-          title="Total CO₂ Emissions" 
+          title="Total CO₂" 
           value={stats.total ? `${stats.total.toFixed(1)} kg` : "—"}
-          subtitle={stats.total ? `This ${selectedPeriod.toLowerCase()}` : "No data yet"}
+          subtitle={stats.total ? `This ${selectedPeriod.toLowerCase()}` : "No data"}
           highlight={!stats.total}
           icon="🌍"
-        />
-        <MetricCard 
-          title="Electricity" 
-          value={stats.electricity ? `${stats.electricity.toFixed(1)} kg` : "—"}
-          subtitle={stats.electricity ? `${Math.round(stats.electricity/0.82)} kWh` : "No data yet"}
-          icon="⚡"
-          color="blue"
+          color="green"
         />
         <MetricCard 
           title="Transport" 
           value={stats.transport ? `${stats.transport.toFixed(1)} kg` : "—"}
-          subtitle={stats.transport ? `${Math.round(stats.transport/0.20)} km` : "No data yet"}
           icon="🚗"
           color="purple"
         />
         <MetricCard 
-          title="Food & Purchases" 
-          value={stats.food || stats.purchases ? `${((stats.food || 0) + (stats.purchases || 0)).toFixed(1)} kg` : "—"}
-          subtitle={stats.food || stats.purchases ? "Includes food & purchases" : "No data yet"}
-          icon="🍎"
-          color="orange"
+          title="Home Energy" 
+          value={stats.home ? `${stats.home.toFixed(1)} kg` : "—"}
+          icon="🏠"
+          color="blue"
         />
+        <MetricCard 
+          title="Electronics" 
+          value={stats.electronics ? `${stats.electronics.toFixed(1)} kg` : "—"}
+          icon="💻"
+          color="indigo"
+        />
+        <MetricCard 
+          title="Water" 
+          value={stats.water ? `${stats.water.toFixed(1)} kg` : "—"}
+          icon="💧"
+          color="cyan"
+        />
+      </div>
+
+      {/* Additional row for Food if needed */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
+        <MetricCard 
+          title="Food" 
+          value={stats.food ? `${stats.food.toFixed(1)} kg` : "—"}
+          icon="🍎"
+          color="amber"
+        />
+        <div className="lg:col-span-4"></div> {/* Empty div for spacing */}
       </div>
 
       {/* Charts and Activities Section */}
@@ -260,7 +271,7 @@ export default function Dashboard() {
                 <Leaf className="w-16 h-16 text-gray-300 mb-4" />
                 <h3 className="text-lg font-medium text-gray-700 mb-2">No emissions data for {selectedPeriod}</h3>
                 <p className="text-gray-500 mb-6 max-w-md">
-                  Start by adding your first activity using the "+ Add Activity" button in the navbar
+                  Start by adding your first activity using the "+ Add Activity" button
                 </p>
                 <button
                   onClick={() => navigate('/add')}
