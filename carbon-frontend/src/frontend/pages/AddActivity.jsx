@@ -3,12 +3,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Home, Car, Plane, Train, Bus, Zap, Droplets, Thermometer,
-  Tv, Laptop, Smartphone, Shirt, Apple, Coffee,
+  Tv, Laptop, Shirt, Apple, 
   ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Save,
   Trash2, RefreshCw, ArrowLeft
 } from "lucide-react";
 import { activityAPI } from '../../services/api';
 
+// Simple categories
 const categories = [
   { id: 'transport', label: 'Transportation', icon: <Car className="w-5 h-5" />, color: 'purple' },
   { id: 'home', label: 'Home Energy', icon: <Home className="w-5 h-5" />, color: 'blue' },
@@ -17,8 +18,7 @@ const categories = [
   { id: 'food', label: 'Food & Diet', icon: <Apple className="w-5 h-5" />, color: 'amber' }
 ];
 
-// Questions now only have UI info - factors are kept for display only
-// The actual calculations will happen on backend
+// Simple questions - no complex dependencies
 const questions = {
   transport: {
     title: "Transportation",
@@ -27,50 +27,55 @@ const questions = {
     questions: [
       {
         id: "car_miles",
-        text: "Car Miles Per Month",
+        text: "Car Miles",
         type: "number",
         unit: "miles",
         min: 0,
         max: 5000,
         step: 10,
-        factor: 0.20, // For display only
-        icon: <Car className="w-5 h-5" />
+        factor: 0.41,
+        icon: <Car className="w-5 h-5" />,
+        helpText: "How many miles did you drive this month?"
       },
       {
         id: "bus_miles",
-        text: "Bus Miles Per Month",
+        text: "Bus Miles",
         type: "number",
         unit: "miles",
         min: 0,
         max: 1000,
         step: 5,
-        factor: 0.08, // For display only
-        icon: <Bus className="w-5 h-5" />
+        factor: 0.18,
+        icon: <Bus className="w-5 h-5" />,
+        helpText: "How many miles did you travel by bus?"
       },
       {
         id: "train_miles",
-        text: "Train Miles Per Month",
+        text: "Train Miles",
         type: "number",
         unit: "miles",
         min: 0,
         max: 1000,
         step: 5,
-        factor: 0.05, // For display only
-        icon: <Train className="w-5 h-5" />
+        factor: 0.12,
+        icon: <Train className="w-5 h-5" />,
+        helpText: "How many miles did you travel by train?"
       },
       {
         id: "plane_miles",
-        text: "Plane Miles Per Month",
+        text: "Plane Miles",
         type: "number",
         unit: "miles",
         min: 0,
         max: 10000,
         step: 100,
-        factor: 0.25, // For display only
-        icon: <Plane className="w-5 h-5" />
+        factor: 0.53,
+        icon: <Plane className="w-5 h-5" />,
+        helpText: "How many miles did you fly?"
       }
     ]
   },
+  
   home: {
     title: "Home Energy",
     icon: <Home className="w-6 h-6" />,
@@ -80,37 +85,41 @@ const questions = {
         id: "electricity_kwh",
         text: "Electricity Usage",
         type: "number",
-        unit: "kWh/month",
+        unit: "kWh",
         min: 0,
         max: 2000,
         step: 10,
-        factor: 0.82, // For display only
-        icon: <Zap className="w-5 h-5" />
+        factor: 0.85,
+        icon: <Zap className="w-5 h-5" />,
+        helpText: "Check your electricity bill for monthly kWh"
       },
       {
         id: "ac_days",
-        text: "Days You Run Your A/C",
+        text: "AC Usage",
         type: "number",
-        unit: "days/month",
+        unit: "days",
         min: 0,
         max: 31,
         step: 1,
-        factor: 2.5, // For display only
-        icon: <Thermometer className="w-5 h-5" />
+        factor: 3.2,
+        icon: <Thermometer className="w-5 h-5" />,
+        helpText: "How many days did you use AC this month?"
       },
       {
         id: "heat_days",
-        text: "Days You Run Your Heat",
+        text: "Heating Usage",
         type: "number",
-        unit: "days/month",
+        unit: "days",
         min: 0,
         max: 31,
         step: 1,
-        factor: 2.0, // For display only
-        icon: <Thermometer className="w-5 h-5" />
+        factor: 4.5,
+        icon: <Thermometer className="w-5 h-5" />,
+        helpText: "How many days did you use heating?"
       }
     ]
   },
+  
   electronics: {
     title: "Electronics",
     icon: <Laptop className="w-6 h-6" />,
@@ -118,28 +127,31 @@ const questions = {
     questions: [
       {
         id: "laptop_hours",
-        text: "Laptop Use (Plugged In)",
+        text: "Laptop Usage",
         type: "number",
         unit: "hours/day",
         min: 0,
-        max: 12,
+        max: 24,
         step: 1,
-        factor: 0.05, // For display only
-        icon: <Laptop className="w-5 h-5" />
+        factor: 0.02,
+        icon: <Laptop className="w-5 h-5" />,
+        helpText: "Hours per day your laptop is plugged in"
       },
       {
         id: "tv_hours",
-        text: "TV Hours Per Day",
+        text: "TV Hours",
         type: "number",
-        unit: "hours",
+        unit: "hours/day",
         min: 0,
-        max: 16,
+        max: 24,
         step: 1,
-        factor: 0.04, // For display only
-        icon: <Tv className="w-5 h-5" />
+        factor: 0.04,
+        icon: <Tv className="w-5 h-5" />,
+        helpText: "Hours per day you watch TV"
       }
     ]
   },
+  
   water: {
     title: "Water Usage",
     icon: <Droplets className="w-6 h-6" />,
@@ -147,14 +159,15 @@ const questions = {
     questions: [
       {
         id: "showers_per_week",
-        text: "Number of Showers",
+        text: "Showers",
         type: "number",
         unit: "per week",
         min: 0,
         max: 21,
         step: 1,
-        factor: 0.5, // For display only
-        icon: <Droplets className="w-5 h-5" />
+        factor: 0.6,
+        icon: <Droplets className="w-5 h-5" />,
+        helpText: "How many showers do you take per week?"
       },
       {
         id: "laundry_per_month",
@@ -164,11 +177,13 @@ const questions = {
         min: 0,
         max: 50,
         step: 1,
-        factor: 0.3, // For display only
-        icon: <Shirt className="w-5 h-5" />
+        factor: 0.8,
+        icon: <Shirt className="w-5 h-5" />,
+        helpText: "How many loads of laundry per month?"
       }
     ]
   },
+  
   food: {
     title: "Food & Diet",
     icon: <Apple className="w-6 h-6" />,
@@ -182,8 +197,9 @@ const questions = {
         min: 0,
         max: 21,
         step: 1,
-        factor: 1.2, // For display only
-        icon: <Beef className="w-5 h-5" />
+        factor: 6.9,
+        icon: <Apple className="w-5 h-5" />,
+        helpText: "How many chicken meals per week?"
       },
       {
         id: "vegetarian_meals",
@@ -193,8 +209,9 @@ const questions = {
         min: 0,
         max: 21,
         step: 1,
-        factor: 0.3, // For display only
-        icon: <Apple className="w-5 h-5" />
+        factor: 2.0,
+        icon: <Apple className="w-5 h-5" />,
+        helpText: "How many vegetarian meals per week?"
       }
     ]
   }
@@ -204,8 +221,8 @@ export default function AddActivity() {
   const navigate = useNavigate();
   const [currentCategory, setCurrentCategory] = useState("transport");
   
-  // 🔴 CHANGED: Store raw values only (no emissions)
-  const [rawValues, setRawValues] = useState({});
+  // Simple state for form values
+  const [values, setValues] = useState({});
   
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -213,13 +230,9 @@ export default function AddActivity() {
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Store factors from backend for display
-  const [factors, setFactors] = useState({});
-
-  // Load existing activities and factors
+  // Load existing activities
   useEffect(() => {
     fetchActivities();
-    fetchFactors();
   }, []);
 
   const fetchActivities = async () => {
@@ -231,44 +244,26 @@ export default function AddActivity() {
     }
   };
 
-  // NEW: Fetch factors from backend
-  const fetchFactors = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/emission-factors');
-      const data = await response.json();
-      
-      // Convert array to object for easy lookup
-      const factorMap = {};
-      data.data.forEach(f => {
-        factorMap[f.activityId] = f.factor;
-      });
-      setFactors(factorMap);
-    } catch (error) {
-      console.error("Error fetching factors:", error);
-    }
-  };
-
-  // 🔴 CHANGED: Store only raw values
-  const handleValueChange = (questionId, value) => {
+  // Simple input handler
+  const handleInputChange = (questionId, value) => {
     const numValue = parseFloat(value) || 0;
-    
-    setRawValues({
-      ...rawValues,
+    setValues(prev => ({
+      ...prev,
       [questionId]: numValue
-    });
+    }));
   };
 
-  // Calculate estimated emission for display (optional)
-  const getEstimatedEmission = (questionId, value) => {
-    if (!value || !factors[questionId]) return null;
-    return (value * factors[questionId]).toFixed(2);
+  // Calculate estimated emission for a single question
+  const getEstimatedEmission = (questionId, value, factor) => {
+    if (!value || value <= 0) return null;
+    return (value * factor).toFixed(2);
   };
 
   const hasAnyData = () => {
-    return Object.keys(rawValues).length > 0;
+    return Object.keys(values).some(key => values[key] > 0);
   };
 
-  // 🔴 CHANGED: Send raw values to backend
+  // Save activity
   const saveActivity = async () => {
     if (!hasAnyData()) {
       alert("Please add some data first");
@@ -278,19 +273,33 @@ export default function AddActivity() {
     setIsLoading(true);
 
     try {
-      // Send ONLY raw values to backend
-      const response = await activityAPI.create(rawValues);
-      
-      // Update local activities list
-      setActivities(prev => [response.data.data, ...prev]);
+      // Prepare data - only include non-zero values
+      const dataToSend = {};
+      Object.keys(values).forEach(key => {
+        if (values[key] > 0) {
+          dataToSend[key] = values[key];
+        }
+      });
 
-      // Show success message with total from backend
-      setSuccessMessage(`Activity saved! Total: ${response.data.data.totalEmissions} kg CO₂`);
+      const response = await activityAPI.create(dataToSend);
+      
+      setActivities(prev => [response.data.data, ...prev]);
+      
+      // Calculate total for success message
+      let total = 0;
+      Object.keys(values).forEach(key => {
+        const question = findQuestion(key);
+        if (question && values[key] > 0) {
+          total += values[key] * question.factor;
+        }
+      });
+      
+      setSuccessMessage(`Activity saved! Total: ${total.toFixed(2)} kg CO₂`);
       setShowSuccess(true);
       
-      // Clear form after 2 seconds
+      // Clear form
       setTimeout(() => {
-        setRawValues({});
+        setValues({});
         setShowSuccess(false);
       }, 2000);
     } catch (error) {
@@ -301,51 +310,37 @@ export default function AddActivity() {
     }
   };
 
-  // Reset current form only
-  const resetCurrentForm = () => {
+  // Helper to find question by ID
+  const findQuestion = (questionId) => {
+    for (const cat of Object.values(questions)) {
+      const q = cat.questions.find(q => q.id === questionId);
+      if (q) return q;
+    }
+    return null;
+  };
+
+  // Reset form
+  const resetForm = () => {
     if (hasAnyData()) {
-      if (window.confirm("Clear all unsaved data in this form?")) {
-        setRawValues({});
+      if (window.confirm("Clear all data?")) {
+        setValues({});
       }
     }
   };
 
-  // Delete a specific activity
+  // Delete activity
   const deleteActivity = async (activityId) => {
-    if (window.confirm("Are you sure you want to delete this activity?")) {
+    if (window.confirm("Delete this activity?")) {
       try {
         await activityAPI.delete(activityId);
-        
-        const updatedActivities = activities.filter(a => a._id !== activityId);
-        setActivities(updatedActivities);
-        
+        setActivities(prev => prev.filter(a => a._id !== activityId));
         setShowDeleteOptions(false);
-        setSuccessMessage("Activity deleted successfully");
+        setSuccessMessage("Activity deleted");
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
       } catch (error) {
-        console.error("Error deleting activity:", error);
-        alert("Failed to delete activity");
-      }
-    }
-  };
-
-  // Delete all activities
-  const deleteAllActivities = async () => {
-    if (window.confirm("Are you sure you want to delete ALL activities? This cannot be undone!")) {
-      try {
-        for (const activity of activities) {
-          await activityAPI.delete(activity._id);
-        }
-        
-        setActivities([]);
-        setShowDeleteOptions(false);
-        setSuccessMessage("All activities deleted");
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 2000);
-      } catch (error) {
-        console.error("Error deleting activities:", error);
-        alert("Failed to delete activities");
+        console.error("Error:", error);
+        alert("Failed to delete");
       }
     }
   };
@@ -372,7 +367,7 @@ export default function AddActivity() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Add Activity</h1>
             <p className="text-gray-600 mt-2">
-              Fill in your data and click Save when done
+              Enter your monthly usage below
             </p>
           </div>
           <button
@@ -380,19 +375,18 @@ export default function AddActivity() {
             className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+            Dashboard
           </button>
         </div>
 
         {/* Action Buttons */}
         <div className="mb-6 flex flex-wrap gap-3">
-          {/* Save Button */}
           <button
             onClick={saveActivity}
             disabled={!hasAnyData() || isLoading}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium shadow-sm transition-all ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${
               hasAnyData() && !isLoading
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg'
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
                 : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
           >
@@ -409,120 +403,91 @@ export default function AddActivity() {
             )}
           </button>
 
-          {/* Reset Current Form */}
           {hasAnyData() && !isLoading && (
             <button
-              onClick={resetCurrentForm}
-              className="flex items-center gap-2 px-4 py-3 bg-orange-100 text-orange-700 rounded-xl hover:bg-orange-200 transition-colors"
+              onClick={resetForm}
+              className="flex items-center gap-2 px-4 py-3 bg-orange-100 text-orange-700 rounded-xl hover:bg-orange-200"
             >
               <RefreshCw className="w-4 h-4" />
-              Reset Form
+              Reset
             </button>
           )}
 
-          {/* Delete Options Dropdown */}
           {activities.length > 0 && !isLoading && (
             <div className="relative">
               <button
                 onClick={() => setShowDeleteOptions(!showDeleteOptions)}
-                className="flex items-center gap-2 px-4 py-3 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition-colors"
+                className="flex items-center gap-2 px-4 py-3 bg-red-100 text-red-700 rounded-xl hover:bg-red-200"
               >
                 <Trash2 className="w-4 h-4" />
-                Delete Options
+                Delete
               </button>
               
               {showDeleteOptions && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border py-2 z-50">
                   <button
                     onClick={() => setShowDeleteOptions(false)}
-                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-3 border-b"
+                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 border-b"
                   >
-                    <ArrowLeft className="w-4 h-4" />
-                    Cancel
+                    ← Cancel
                   </button>
                   
-                  {activities.map(activity => (
+                  {activities.slice(0, 5).map(activity => (
                     <button
                       key={activity._id}
                       onClick={() => deleteActivity(activity._id)}
-                      className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex items-center justify-between"
+                      className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex justify-between"
                     >
-                      <span>
-                        {new Date(activity.date).toLocaleDateString()} - {activity.totalEmissions} kg
-                      </span>
-                      <Trash2 className="w-4 h-4" />
+                      <span>{new Date(activity.date).toLocaleDateString()}</span>
+                      <span>{activity.totalEmissions} kg</span>
                     </button>
                   ))}
-                  
-                  {activities.length > 1 && (
-                    <button
-                      onClick={deleteAllActivities}
-                      className="w-full text-left px-4 py-3 text-red-700 hover:bg-red-100 font-semibold border-t flex items-center justify-between"
-                    >
-                      <span>Delete ALL Activities</span>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Category Navigation */}
+        {/* Category Tabs */}
         <div className="mb-8 overflow-x-auto">
-          <div className="bg-white rounded-xl shadow-sm p-2 inline-flex flex-wrap gap-2">
-            {categories.map((cat) => {
-              // Check if any values in this category
-              const hasDataInCategory = Object.keys(rawValues).some(key => 
-                questions[cat.id]?.questions.some(q => q.id === key) && rawValues[key] > 0
-              );
-              
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setCurrentCategory(cat.id)}
-                  className={`relative flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                    currentCategory === cat.id
-                      ? `bg-gradient-to-r from-${cat.color}-500 to-${cat.color}-600 text-white shadow-md`
-                      : hasDataInCategory
-                        ? 'bg-green-50 text-green-700 border border-green-200'
-                        : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {cat.icon}
-                  {cat.label}
-                </button>
-              );
-            })}
+          <div className="bg-white rounded-xl shadow-sm p-2 inline-flex gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setCurrentCategory(cat.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                  currentCategory === cat.id
+                    ? `bg-gradient-to-r from-${cat.color}-500 to-${cat.color}-600 text-white`
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {cat.icon}
+                {cat.label}
+              </button>
+            ))}
           </div>
         </div>
 
+        {/* Questions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Questions Column */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className={`p-3 rounded-xl bg-gradient-to-br ${questions[currentCategory].color} text-white`}>
                   {questions[currentCategory].icon}
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">{questions[currentCategory].title}</h2>
-                  <p className="text-sm text-gray-500">
-                    Enter your usage below
-                  </p>
-                </div>
+                <h2 className="text-xl font-bold text-gray-900">{questions[currentCategory].title}</h2>
               </div>
 
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {questions[currentCategory].questions.map((q) => {
-                  const currentValue = rawValues[q.id];
-                  const estimatedEmission = getEstimatedEmission(q.id, currentValue);
+                  const currentValue = values[q.id];
+                  const emission = getEstimatedEmission(q.id, currentValue, q.factor);
                   
                   return (
-                    <div key={q.id} className="border-b border-gray-100 pb-6 last:border-0 last:pb-0">
+                    <div key={q.id} className="border-b border-gray-100 pb-6 last:border-0">
                       <div className="flex items-start gap-3">
-                        <div className="p-2 bg-gray-100 rounded-lg text-gray-600">
+                        <div className="p-2 bg-gray-100 rounded-lg">
                           {q.icon}
                         </div>
                         <div className="flex-1">
@@ -537,8 +502,8 @@ export default function AddActivity() {
                               max={q.max}
                               step={q.step}
                               value={currentValue || ''}
-                              onChange={(e) => handleValueChange(q.id, e.target.value)}
-                              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                              onChange={(e) => handleInputChange(q.id, e.target.value)}
+                              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500"
                               placeholder={`Enter ${q.unit}`}
                               disabled={isLoading}
                             />
@@ -547,13 +512,14 @@ export default function AddActivity() {
                             </span>
                           </div>
 
-                          {/* Show estimated emission if we have factors */}
-                          {estimatedEmission && (
-                            <div className="mt-2">
-                              <span className="text-sm text-green-600 font-medium">
-                                ≈ {estimatedEmission} kg CO₂ (estimated)
-                              </span>
-                            </div>
+                          {q.helpText && (
+                            <p className="text-xs text-gray-500 mt-2">💡 {q.helpText}</p>
+                          )}
+
+                          {emission && (
+                            <p className="text-sm text-green-600 font-medium mt-2">
+                              ≈ {emission} kg CO₂
+                            </p>
                           )}
                         </div>
                       </div>
@@ -561,78 +527,34 @@ export default function AddActivity() {
                   );
                 })}
               </div>
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between mt-8">
-                <button
-                  onClick={() => {
-                    const index = categories.findIndex(c => c.id === currentCategory);
-                    if (index > 0) {
-                      setCurrentCategory(categories[index - 1].id);
-                    }
-                  }}
-                  disabled={currentCategory === categories[0].id || isLoading}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-600 disabled:opacity-50"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                  Previous
-                </button>
-                
-                <button
-                  onClick={() => {
-                    const index = categories.findIndex(c => c.id === currentCategory);
-                    if (index < categories.length - 1) {
-                      setCurrentCategory(categories[index + 1].id);
-                    }
-                  }}
-                  disabled={isLoading}
-                  className="flex items-center gap-2 px-4 py-2 text-green-600 hover:text-green-700"
-                >
-                  Next Category
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
             </div>
           </div>
 
-          {/* Summary Column */}
+          {/* Summary */}
           <div className="space-y-6">
-            {/* Live Calculator */}
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-6 sticky top-24">
               <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
                 <AlertCircle className="w-5 h-5" />
-                Current Session
+                Summary
               </h3>
               
-              <div className="space-y-4 mb-6">
-                {Object.keys(rawValues).length > 0 ? (
-                  Object.entries(rawValues).map(([id, value]) => {
-                    // Find the question details
-                    let questionDetails = null;
-                    let categoryName = '';
+              <div className="space-y-3 mb-6">
+                {Object.keys(values).length > 0 ? (
+                  Object.entries(values).map(([id, val]) => {
+                    if (val <= 0) return null;
+                    const q = findQuestion(id);
+                    if (!q) return null;
                     
-                    for (const cat of categories) {
-                      const q = questions[cat.id]?.questions.find(q => q.id === id);
-                      if (q) {
-                        questionDetails = q;
-                        categoryName = cat.label;
-                        break;
-                      }
-                    }
-                    
-                    if (questionDetails && value > 0) {
-                      return (
-                        <div key={id} className="flex justify-between items-center">
-                          <span className="text-gray-700">{questionDetails.text}</span>
-                          <span className="font-medium text-gray-900">{value} {questionDetails.unit}</span>
-                        </div>
-                      );
-                    }
-                    return null;
+                    return (
+                      <div key={id} className="flex justify-between text-sm">
+                        <span className="text-gray-600">{q.text}</span>
+                        <span className="font-medium">{val} {q.unit}</span>
+                      </div>
+                    );
                   })
                 ) : (
                   <p className="text-gray-500 text-center py-4">
-                    No data yet. Start adding values above.
+                    No data yet
                   </p>
                 )}
               </div>
@@ -641,60 +563,29 @@ export default function AddActivity() {
                 <button
                   onClick={saveActivity}
                   disabled={isLoading}
-                  className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium flex items-center justify-center gap-2 disabled:opacity-70"
+                  className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium"
                 >
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Save This Activity
-                    </>
-                  )}
+                  {isLoading ? 'Saving...' : 'Save Activity'}
                 </button>
               )}
             </div>
 
-            {/* Recent Activities Preview */}
+            {/* Recent Activities */}
             {activities.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Recent Activities</h3>
-                <div className="space-y-3">
-                  {activities.slice(-3).reverse().map(activity => (
-                    <div key={activity._id} className="flex justify-between items-center text-sm">
+                <h3 className="font-semibold text-gray-900 mb-4">Recent</h3>
+                <div className="space-y-2">
+                  {activities.slice(0, 3).map(activity => (
+                    <div key={activity._id} className="flex justify-between text-sm">
                       <span className="text-gray-600">
                         {new Date(activity.date).toLocaleDateString()}
                       </span>
-                      <span className="font-medium text-gray-900">
-                        {activity.totalEmissions} kg
-                      </span>
+                      <span className="font-medium">{activity.totalEmissions} kg</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-
-            {/* Tips Card */}
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 p-6">
-              <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 Tips</h3>
-              <ul className="space-y-2 text-sm text-blue-800">
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>Fill multiple categories before saving</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>Backend calculates your exact carbon footprint</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>Delete individual activities from Delete Options</span>
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
       </div>
