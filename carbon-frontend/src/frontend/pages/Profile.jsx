@@ -23,6 +23,7 @@ import {
   TrendingDown,
   Clock
 } from "lucide-react";
+import { activityAPI } from '../../services/api'; // ADD THIS IMPORT
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -67,8 +68,14 @@ export default function Profile() {
   // Load user data
   useEffect(() => {
     loadUserData();
-    loadUserStats();
   }, []);
+
+  // 🔴 FIX 1: Load stats whenever user data is available
+  useEffect(() => {
+    if (user) {
+      loadUserStats();
+    }
+  }, [user]);
 
   const loadUserData = () => {
     const userData = localStorage.getItem("user");
@@ -88,16 +95,22 @@ export default function Profile() {
     setLoading(false);
   };
 
-  const loadUserStats = () => {
-    const activities = JSON.parse(localStorage.getItem('carbon_activities') || '[]');
-    
-    if (activities.length > 0) {
-      const totalEmissions = activities.reduce((sum, act) => sum + (act.totalEmissions || 0), 0);
-      const categoryCounts = {};
+  // 🔴 FIX 2: Load stats from BACKEND instead of localStorage
+  const loadUserStats = async () => {
+    try {
+      // Fetch activities from backend
+      const response = await activityAPI.getAll();
+      const activities = response.data.data || [];
       
+      // Fetch stats from backend
+      const statsRes = await activityAPI.getStats();
+      const statsData = statsRes.data.data || {};
+      
+      // Calculate category counts from activities
+      const categoryCounts = {};
       activities.forEach(act => {
-        if (act.categoryTotals) {
-          Object.keys(act.categoryTotals).forEach(cat => {
+        if (act.categories) {
+          act.categories.forEach(cat => {
             categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
           });
         }
@@ -105,12 +118,21 @@ export default function Profile() {
 
       setStats({
         totalActivities: activities.length,
-        totalEmissions: Math.round(totalEmissions * 100) / 100,
-        averagePerActivity: activities.length > 0 
-          ? Math.round((totalEmissions / activities.length) * 100) / 100 
-          : 0,
+        totalEmissions: statsData.totalEmissions || 0,
+        averagePerActivity: statsData.averagePerActivity || 0,
+        // 🔴 FIX 3: Use user's createdAt from localStorage or current date
         joinDate: user?.createdAt || new Date().toISOString(),
         categories: categoryCounts
+      });
+    } catch (error) {
+      console.error("Error loading stats:", error);
+      // Fallback to empty stats
+      setStats({
+        totalActivities: 0,
+        totalEmissions: 0,
+        averagePerActivity: 0,
+        joinDate: user?.createdAt || new Date().toISOString(),
+        categories: {}
       });
     }
   };
@@ -166,24 +188,32 @@ export default function Profile() {
     navigate("/login");
   };
 
-  const handleExportData = () => {
-    const activities = JSON.parse(localStorage.getItem('carbon_activities') || '[]');
-    const userData = {
-      user: user,
-      activities: activities,
-      stats: stats,
-      exportDate: new Date().toISOString()
-    };
+  const handleExportData = async () => {
+    try {
+      // Get data from backend instead of localStorage
+      const activitiesRes = await activityAPI.getAll();
+      const activities = activitiesRes.data.data || [];
+      
+      const userData = {
+        user: user,
+        activities: activities,
+        stats: stats,
+        exportDate: new Date().toISOString()
+      };
 
-    const dataStr = JSON.stringify(userData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = `carbon-footprint-export-${new Date().toISOString().split('T')[0]}.json`;
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-    
-    showSuccessMessage("Data exported successfully!");
+      const dataStr = JSON.stringify(userData, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      const exportFileDefaultName = `carbon-footprint-export-${new Date().toISOString().split('T')[0]}.json`;
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      showSuccessMessage("Data exported successfully!");
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      alert("Failed to export data");
+    }
   };
 
   const showSuccessMessage = (message) => {
@@ -195,7 +225,7 @@ export default function Profile() {
   const getCategoryIcon = (category) => {
     const icons = {
       transport: "🚗",
-      home: "⚡",
+      home: "🏠",
       electricity: "⚡",
       food: "🍎",
       purchases: "🛒",
@@ -203,6 +233,24 @@ export default function Profile() {
       electronics: "💻"
     };
     return icons[category] || "📊";
+  };
+
+  // 🔴 FIX 4: Format date safely with fallback
+  const formatJoinDate = (dateString) => {
+    if (!dateString) return "Just now";
+    
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid
+      if (isNaN(date.getTime())) return "Just now";
+      
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        year: 'numeric' 
+      });
+    } catch (error) {
+      return "Just now";
+    }
   };
 
   if (loading) {
@@ -276,15 +324,17 @@ export default function Profile() {
 
               {/* Stats in card - More breathing room */}
               <div className="space-y-5 pt-6 border-t border-gray-200">
+                {/* 🔴 FIX 5: Member since with proper date formatting */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-600">
                     <Calendar className="w-4 h-4" />
                     <span>Member since</span>
                   </div>
                   <span className="font-semibold text-gray-900">
-                    {new Date(stats.joinDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    {formatJoinDate(stats.joinDate)}
                   </span>
                 </div>
+                
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-600">
                     <Activity className="w-4 h-4" />
@@ -558,7 +608,7 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Password Change Modal - Kept same but with better spacing */}
+      {/* Password Change Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-8">
