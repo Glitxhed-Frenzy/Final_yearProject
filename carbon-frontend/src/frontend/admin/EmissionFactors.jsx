@@ -1,35 +1,211 @@
 // src/frontend/admin/EmissionFactors.jsx
 import { useState, useEffect } from "react";
-import { Search, Plus, AlertCircle } from "lucide-react";
+import { 
+  Search, 
+  Plus, 
+  AlertCircle,
+  Edit2,
+  Trash2,
+  Save,
+  X,
+  CheckCircle
+} from "lucide-react";
+import { adminAPI } from '../../services/api';
 
 export default function EmissionFactors() {
   const [factors, setFactors] = useState([]);
+  const [filteredFactors, setFilteredFactors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editingFactor, setEditingFactor] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Form state
+  const [formData, setFormData] = useState({
+    activityId: "",
+    category: "transport",
+    name: "",
+    factor: "",
+    unit: "",
+    description: "",
+    source: ""
+  });
+
+  const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setLoading(false);
-      // In real app, fetch from API
-      // If no data, factors remains empty array
-    }, 1000);
+    fetchFactors();
   }, []);
+
+  useEffect(() => {
+    // Filter factors based on search
+    const filtered = factors.filter(factor => 
+      factor.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      factor.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      factor.activityId?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredFactors(filtered);
+  }, [searchTerm, factors]);
+
+  const fetchFactors = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await adminAPI.getEmissionFactors();
+      console.log('Emission factors:', response.data);
+      setFactors(response.data.data || []);
+      setFilteredFactors(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching factors:", error);
+      setError("Failed to load emission factors. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showSuccessMessage = (message) => {
+    setSuccessMessage(message);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.activityId.trim()) {
+      errors.activityId = "Activity ID is required";
+    }
+    
+    if (!formData.name.trim()) {
+      errors.name = "Name is required";
+    }
+    
+    if (!formData.factor) {
+      errors.factor = "Factor is required";
+    } else if (isNaN(formData.factor) || formData.factor <= 0) {
+      errors.factor = "Factor must be a positive number";
+    }
+    
+    if (!formData.unit.trim()) {
+      errors.unit = "Unit is required";
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      if (editingFactor) {
+        // Update
+        await adminAPI.updateEmissionFactor(editingFactor._id, formData);
+        showSuccessMessage("Emission factor updated successfully!");
+      } else {
+        // Create
+        await adminAPI.createEmissionFactor(formData);
+        showSuccessMessage("Emission factor created successfully!");
+      }
+      
+      // Refresh list and close modal
+      await fetchFactors();
+      setShowModal(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error saving factor:", error);
+      alert(error.response?.data?.message || "Failed to save emission factor");
+    }
+  };
+
+  const handleEdit = (factor) => {
+    setEditingFactor(factor);
+    setFormData({
+      activityId: factor.activityId,
+      category: factor.category,
+      name: factor.name,
+      factor: factor.factor,
+      unit: factor.unit,
+      description: factor.description || "",
+      source: factor.source || ""
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this emission factor?")) {
+      try {
+        await adminAPI.deleteEmissionFactor(id);
+        await fetchFactors();
+        showSuccessMessage("Emission factor deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting factor:", error);
+        alert("Failed to delete emission factor");
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setEditingFactor(null);
+    setFormData({
+      activityId: "",
+      category: "transport",
+      name: "",
+      factor: "",
+      unit: "",
+      description: "",
+      source: ""
+    });
+    setFormErrors({});
+  };
+
+  const categories = [
+    { value: "transport", label: "Transport", color: "purple" },
+    { value: "home", label: "Home Energy", color: "blue" },
+    { value: "electronics", label: "Electronics", color: "indigo" },
+    { value: "water", label: "Water", color: "cyan" },
+    { value: "food", label: "Food", color: "amber" }
+  ];
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-96"></div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading emission factors...</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-8">
-          <div className="space-y-4">
-            {[1,2,3].map(i => (
-              <div key={i} className="h-16 bg-gray-100 rounded-lg"></div>
-            ))}
-          </div>
-        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
+        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-red-700 mb-2">Error</h2>
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={fetchFactors}
+          className="px-6 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -38,31 +214,43 @@ export default function EmissionFactors() {
 
   return (
     <div className="space-y-6">
+      {/* Success Notification */}
+      {showSuccess && (
+        <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl shadow-lg z-50 flex items-center gap-2">
+          <CheckCircle className="w-5 h-5" />
+          {successMessage}
+        </div>
+      )}
+
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Emission Factors</h1>
           <p className="text-gray-600 mt-1">
             {hasFactors 
-              ? "Manage carbon conversion factors used in calculations"
+              ? `Managing ${factors.length} carbon conversion factors`
               : "Add emission factors to enable carbon calculations"}
           </p>
         </div>
         <button
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all"
+          onClick={() => {
+            resetForm();
+            setShowModal(true);
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all"
         >
           <Plus className="w-4 h-4" />
           Add New Factor
         </button>
       </div>
 
-      {/* Search - Only show if there are factors */}
+      {/* Search */}
       {hasFactors && (
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Search emission factors..."
+            placeholder="Search by name, category, or activity ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -80,27 +268,258 @@ export default function EmissionFactors() {
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
             Emission factors are used to convert user activities into carbon emissions. Add your first factor to get started.
           </p>
-          <button className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors">
+          <button
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }}
+            className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+          >
             Add Your First Factor
           </button>
         </div>
       ) : (
-        /* Table View - When data exists */
+        /* Table View */
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Category</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Activity ID</th>
                 <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Name</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Category</th>
                 <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Factor</th>
                 <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Unit</th>
                 <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {/* Map factors here */}
+              {filteredFactors.map((factor) => {
+                const category = categories.find(c => c.value === factor.category);
+                return (
+                  <tr key={factor._id} className="hover:bg-gray-50">
+                    <td className="py-3 px-4 text-sm font-mono text-gray-600">
+                      {factor.activityId}
+                    </td>
+                    <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                      {factor.name}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full bg-${category?.color}-100 text-${category?.color}-700`}>
+                        {factor.category}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                      {factor.factor}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600">
+                      {factor.unit}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEdit(factor)}
+                          className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(factor._id)}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+          
+          {/* Table Footer */}
+          <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 text-sm text-gray-600">
+            Showing {filteredFactors.length} of {factors.length} factors
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+              <h2 className="text-xl font-bold text-gray-900">
+                {editingFactor ? "Edit Emission Factor" : "Add New Emission Factor"}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* Activity ID */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Activity ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="activityId"
+                  value={formData.activityId}
+                  onChange={handleInputChange}
+                  disabled={editingFactor}
+                  className={`w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                    formErrors.activityId ? 'border-red-300' : 'border-gray-300'
+                  } ${editingFactor ? 'bg-gray-100' : ''}`}
+                  placeholder="e.g., car_miles"
+                />
+                {formErrors.activityId && (
+                  <p className="mt-1 text-sm text-red-600">{formErrors.activityId}</p>
+                )}
+              </div>
+
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className={`w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                    formErrors.name ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., Car Travel"
+                />
+                {formErrors.name && (
+                  <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
+                )}
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  {categories.map(cat => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Factor and Unit */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Factor <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="factor"
+                    value={formData.factor}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    min="0"
+                    className={`w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                      formErrors.factor ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="0.41"
+                  />
+                  {formErrors.factor && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.factor}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Unit <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="unit"
+                    value={formData.unit}
+                    onChange={handleInputChange}
+                    className={`w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                      formErrors.unit ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="kg CO₂ per mile"
+                  />
+                  {formErrors.unit && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.unit}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Source (Optional) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Source
+                </label>
+                <input
+                  type="text"
+                  name="source"
+                  value={formData.source}
+                  onChange={handleInputChange}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="e.g., EPA"
+                />
+              </div>
+
+              {/* Description (Optional) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows="3"
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Additional details about this factor..."
+                />
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium"
+                >
+                  <Save className="w-4 h-4 inline mr-2" />
+                  {editingFactor ? "Update Factor" : "Create Factor"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    resetForm();
+                  }}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
