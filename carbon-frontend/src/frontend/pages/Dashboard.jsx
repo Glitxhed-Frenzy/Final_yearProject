@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import MetricCard from "../components/MetricCard";
 import ActivityCard from "../components/ActivityCard";
 import DonutPlaceholder from "../components/DonutPlaceholder";
+import CarbonTips from "../components/CarbonTips"; // ADD THIS IMPORT
 import { Calendar, Leaf, Activity, AlertCircle } from "lucide-react";
 import { activityAPI } from '../../services/api';
 
@@ -242,7 +243,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Additional row for Food if needed */}
+      {/* Additional row for Food */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         <MetricCard 
           title="Food" 
@@ -253,88 +254,100 @@ export default function Dashboard() {
         <div className="lg:col-span-4"></div> {/* Empty div for spacing */}
       </div>
 
-      {/* Charts and Activities Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Chart Section */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Emissions Breakdown</h2>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Calendar className="w-4 h-4" />
-                <span>{selectedPeriod} • {new Date().toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
-              </div>
-            </div>
-            
-            {!hasData ? (
-              <div className="h-80 flex flex-col items-center justify-center text-center">
-                <Leaf className="w-16 h-16 text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-700 mb-2">No emissions data for {selectedPeriod}</h3>
-                <p className="text-gray-500 mb-6 max-w-md">
-                  Start by adding your first activity using the "+ Add Activity" button
-                </p>
-                <button
-                  onClick={() => navigate('/add')}
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium"
-                >
-                  Add Your First Activity
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="h-80">
-                  <DonutPlaceholder
-                    centerLabel={`${stats.total?.toFixed(1) || 0} kg`}
-                    data={categoryBreakdown.length ? categoryBreakdown : [{ name: "No Data", value: 1 }]}
-                  />
+      {/* ===== UPDATED SECTION: Charts and Activities in 2-column layout, Tips moved to bottom ===== */}
+      <div className="space-y-8">
+        {/* TOP ROW - Chart and Recent Activities (2 columns) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Chart Section - Takes 2 columns */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Emissions Breakdown</h2>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <Calendar className="w-4 h-4" />
+                  <span>{selectedPeriod} • {new Date().toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
                 </div>
-                <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {categoryBreakdown.map((item, index) => (
-                    <div key={index} className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">
-                        {item.value.toFixed(1)} kg
+              </div>
+              
+              {!hasData ? (
+                <div className="h-80 flex flex-col items-center justify-center text-center">
+                  <Leaf className="w-16 h-16 text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">No emissions data for {selectedPeriod}</h3>
+                  <p className="text-gray-500 mb-6 max-w-md">
+                    Start by adding your first activity using the "+ Add Activity" button
+                  </p>
+                  <button
+                    onClick={() => navigate('/add')}
+                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium"
+                  >
+                    Add Your First Activity
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="h-80">
+                    <DonutPlaceholder
+                      centerLabel={`${stats.total?.toFixed(1) || 0} kg`}
+                      data={categoryBreakdown.length ? categoryBreakdown : [{ name: "No Data", value: 1 }]}
+                    />
+                  </div>
+                  <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {categoryBreakdown.map((item, index) => (
+                      <div key={index} className="text-center">
+                        <div className="text-2xl font-bold text-gray-900">
+                          {item.value.toFixed(1)} kg
+                        </div>
+                        <div className="text-sm text-gray-600">{item.name}</div>
                       </div>
-                      <div className="text-sm text-gray-600">{item.name}</div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Activities - Takes 1 column */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 h-full">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Activities</h2>
+              
+              {activities.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Activity className="w-12 h-12 text-gray-300 mb-3" />
+                  <p className="text-gray-600 mb-2">No activities yet</p>
+                  <p className="text-sm text-gray-500">Click the + Add Activity button to start tracking</p>
                 </div>
-              </>
-            )}
+              ) : (
+                <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                  {activities.slice(0, 5).map((activity) => (
+                    <ActivityCard 
+                      key={activity._id}
+                      title={getActivityTitle(activity)}
+                      category={getMainCategory(activity)}
+                      date={formatDate(activity.date)}
+                      emission={activity.totalEmissions?.toFixed(1) || 0}
+                      icon={getCategoryIcon(getMainCategory(activity))}
+                    />
+                  ))}
+                  {activities.length > 5 && (
+                    <button
+                      onClick={() => navigate('/reports')}
+                      className="w-full mt-4 px-4 py-2 text-green-600 hover:text-green-700 font-medium border border-green-200 rounded-xl hover:bg-green-50 transition-colors"
+                    >
+                      View All Activities
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Recent Activities */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Activities</h2>
-          
-          {activities.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Activity className="w-12 h-12 text-gray-300 mb-3" />
-              <p className="text-gray-600 mb-2">No activities yet</p>
-              <p className="text-sm text-gray-500">Click the + Add Activity button to start tracking</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {activities.slice(0, 5).map((activity) => (
-                <ActivityCard 
-                  key={activity._id}
-                  title={getActivityTitle(activity)}
-                  category={getMainCategory(activity)}
-                  date={formatDate(activity.date)}
-                  emission={activity.totalEmissions?.toFixed(1) || 0}
-                  icon={getCategoryIcon(getMainCategory(activity))}
-                />
-              ))}
-              {activities.length > 5 && (
-                <button
-                  onClick={() => navigate('/reports')}
-                  className="w-full mt-4 px-4 py-2 text-green-600 hover:text-green-700 font-medium border border-green-200 rounded-xl hover:bg-green-50 transition-colors"
-                >
-                  View All Activities
-                </button>
-              )}
-            </div>
-          )}
+        {/* BOTTOM ROW - Full width Carbon Tips */}
+        <div className="grid grid-cols-1">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <CarbonTips stats={stats} activities={activities} />
+          </div>
         </div>
       </div>
     </main>
