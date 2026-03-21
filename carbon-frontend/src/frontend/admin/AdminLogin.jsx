@@ -1,5 +1,5 @@
 // src/frontend/admin/AdminLogin.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, User, Shield, Eye, EyeOff, Leaf, Mail } from "lucide-react";
 import { authAPI } from '../../services/api';
@@ -56,7 +56,7 @@ export default function AdminLogin() {
   };
 
   // Load remembered email
-  useState(() => {
+  useEffect(() => {
     const rememberedEmail = localStorage.getItem("rememberedAdmin");
     if (rememberedEmail) {
       setCredentials(prev => ({ ...prev, email: rememberedEmail }));
@@ -88,7 +88,7 @@ export default function AdminLogin() {
               </div>
             )}
 
-            {/* Email Field - Changed from Username */}
+            {/* Email Field */}
             <div>
               <label className="block text-sm font-medium text-green-200 mb-2">
                 Email Address
@@ -103,7 +103,7 @@ export default function AdminLogin() {
                   value={credentials.email}
                   onChange={(e) => setCredentials({...credentials, email: e.target.value})}
                   className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-green-300/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                  placeholder="admin@example.com"
+                  placeholder="Enter your email address"
                   disabled={isLoading}
                 />
               </div>
@@ -124,7 +124,7 @@ export default function AdminLogin() {
                   value={credentials.password}
                   onChange={(e) => setCredentials({...credentials, password: e.target.value})}
                   className="w-full pl-11 pr-12 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-green-300/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   disabled={isLoading}
                 />
                 <button
