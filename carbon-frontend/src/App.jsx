@@ -1,5 +1,5 @@
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+// src/frontend/App.jsx
+import { Routes, Route, useLocation } from "react-router-dom";
 import Welcome from "./frontend/pages/Welcome";
 
 import Navbar from "./frontend/components/Navbar";
@@ -21,21 +21,25 @@ import Users from "./frontend/admin/Users";
 export default function App() {
   const location = useLocation();
   
-  // Define routes where Navbar should NOT appear
+  // Hide navbar on:
+  // - Login/signup pages
+  // - All admin routes (any path starting with /admin)
   const hideNavbarRoutes = [
     '/login',
-    '/admin/login',
+    '/signup',
     '/register',
-    '/forgot-password',
-    '/signup'
+    '/forgot-password'
   ];
   
-  // Check if current route should hide Navbar
-  const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname);
+  // Check if current path is an admin route
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  
+  // Show navbar only if not on hideNavbarRoutes AND not an admin route
+  const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname) && !isAdminRoute;
 
   return (
     <div className="min-h-screen bg-slate-100 text-gray-900">
-      {/* Conditionally render Navbar */}
+      {/* Conditionally render Navbar - hidden on admin routes */}
       {shouldShowNavbar && <Navbar />}
 
       <Routes>
@@ -49,7 +53,7 @@ export default function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/profile" element={<Profile />} />
 
-        {/* Admin */}
+        {/* Admin - Navbar is hidden for all admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
