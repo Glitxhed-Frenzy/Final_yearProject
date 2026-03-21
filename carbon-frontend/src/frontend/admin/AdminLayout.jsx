@@ -21,7 +21,6 @@ export default function AdminLayout() {
     { to: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
     { to: "/admin/emission-factors", label: "Emission Factors", icon: <Factory className="w-5 h-5" /> },
     { to: "/admin/users", label: "Users", icon: <Users className="w-5 h-5" /> },
-    { to: "/admin/stats", label: "Analytics", icon: <BarChart3 className="w-5 h-5" /> },
     { to: "/admin/settings", label: "Settings", icon: <Settings className="w-5 h-5" /> }
   ];
 

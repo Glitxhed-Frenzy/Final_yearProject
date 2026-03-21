@@ -17,7 +17,6 @@ import AdminLogin from "./frontend/admin/AdminLogin";
 import AdminDashboard from "./frontend/admin/AdminDashboard";
 import EmissionFactors from "./frontend/admin/EmissionFactors";
 import Users from "./frontend/admin/Users";
-import AdminStats from "./frontend/admin/AdminStats";
 
 export default function App() {
   const location = useLocation();
@@ -56,7 +55,6 @@ export default function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="emission-factors" element={<EmissionFactors />} />
           <Route path="users" element={<Users />} />
-          <Route path="stats" element={<AdminStats />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
