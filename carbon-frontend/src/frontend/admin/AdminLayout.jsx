@@ -1,28 +1,39 @@
 // src/frontend/admin/AdminLayout.jsx
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { 
   LayoutDashboard, 
   Factory, 
   Users, 
-  BarChart3, 
-  Settings,
   LogOut,
   Menu,
   X,
   Leaf,
-  ChevronRight
+  ChevronRight,
+  User,
+  Settings,
+  Shield
 } from "lucide-react";
 
 export default function AdminLayout() {
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  
+  // Get admin user info
+  const adminUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   const navItems = [
     { to: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
     { to: "/admin/emission-factors", label: "Emission Factors", icon: <Factory className="w-5 h-5" /> },
-    { to: "/admin/users", label: "Users", icon: <Users className="w-5 h-5" /> },
-    { to: "/admin/settings", label: "Settings", icon: <Settings className="w-5 h-5" /> }
+    { to: "/admin/users", label: "Users", icon: <Users className="w-5 h-5" /> }
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("adminAuth");
+    navigate("/admin/login");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -83,19 +94,42 @@ export default function AdminLayout() {
           ))}
         </nav>
 
-        {/* Admin Profile */}
-        <div className="p-4 border-t border-green-700">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-semibold">A</span>
+        {/* Admin Profile Section - Improved */}
+        <div className="p-4 border-t border-green-700 mt-auto">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            {/* Admin Avatar and Name */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-semibold text-sm">{adminUser.name || 'Admin User'}</p>
+                <p className="text-green-300 text-xs truncate">{adminUser.email || 'admin@example.com'}</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">Admin User</p>
-              <p className="text-xs text-green-300">admin@carbontracker.com</p>
+
+            {/* Divider */}
+            <div className="h-px bg-white/20 my-3"></div>
+
+            {/* Admin Actions */}
+            <div className="space-y-2">
+              <button 
+                onClick={() => {
+                  navigate('/profile');
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-200 hover:bg-white/10 rounded-lg transition-colors group"
+              >
+                <User className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <span>Profile Settings</span>
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-300 hover:bg-red-500/20 rounded-lg transition-colors group"
+              >
+                <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <span>Sign Out</span>
+              </button>
             </div>
-            <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-              <LogOut className="w-4 h-4 text-green-300" />
-            </button>
           </div>
         </div>
       </aside>
