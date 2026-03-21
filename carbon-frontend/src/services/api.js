@@ -1,4 +1,3 @@
-// src/services/api.js
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
@@ -39,6 +38,25 @@ export const activityAPI = {
   update: (id, activityData) => api.put(`/activities/${id}`, activityData),
   delete: (id) => api.delete(`/activities/${id}`),
   getStats: () => api.get('/activities/stats')
+};
+
+// Admin APIs - ADD THIS SECTION
+export const adminAPI = {
+  // Dashboard stats - KEEP THIS
+  getStats: () => api.get('/admin/stats'),
+  
+  // Users management
+  getUsers: () => api.get('/admin/users'),
+  getUser: (id) => api.get(`/admin/users/${id}`),
+  updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  impersonateUser: (id) => api.post(`/admin/users/${id}/impersonate`),
+  
+  // Emission factors
+  getEmissionFactors: () => api.get('/admin/emission-factors'),
+  createEmissionFactor: (data) => api.post('/admin/emission-factors', data),
+  updateEmissionFactor: (id, data) => api.put(`/admin/emission-factors/${id}`, data),
+  deleteEmissionFactor: (id) => api.delete(`/admin/emission-factors/${id}`)
 };
 
 // Export the api instance as default
