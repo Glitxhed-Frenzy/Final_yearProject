@@ -1,35 +1,71 @@
 // src/frontend/admin/AdminLogin.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, User, Shield, Eye, EyeOff, Leaf } from "lucide-react";
+import { Lock, User, Shield, Eye, EyeOff, Leaf, Mail } from "lucide-react";
+import { authAPI } from '../../services/api';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const [credentials, setCredentials] = useState({ username: "", password: "" });
+  const [credentials, setCredentials] = useState({ 
+    email: "", 
+    password: "" 
+  });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Simulate API call
-    setTimeout(() => {
-      if (credentials.username === "admin" && credentials.password === "admin123") {
-        localStorage.setItem("adminAuth", "true");
-        navigate("/admin/dashboard");
-      } else {
-        setError("Invalid username or password");
+    try {
+      // Use the real auth API
+      const response = await authAPI.login(credentials.email, credentials.password);
+      
+      const { token, user } = response.data;
+      
+      // Check if user has admin role
+      if (user.role !== 'admin') {
+        throw new Error('Access denied. Admin privileges required.');
       }
+      
+      // Store tokens
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("adminAuth", "true");
+      
+      if (rememberMe) {
+        localStorage.setItem("rememberedAdmin", credentials.email);
+      } else {
+        localStorage.removeItem("rememberedAdmin");
+      }
+      
+      navigate("/admin/dashboard");
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(
+        error.response?.data?.message || 
+        error.message || 
+        "Invalid email or password"
+      );
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
+
+  // Load remembered email
+  useState(() => {
+    const rememberedEmail = localStorage.getItem("rememberedAdmin");
+    if (rememberedEmail) {
+      setCredentials(prev => ({ ...prev, email: rememberedEmail }));
+      setRememberMe(true);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-900 via-green-800 to-emerald-900">
-      {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:50px_50px]"></div>
       
       <div className="relative z-10 w-full max-w-md">
@@ -52,21 +88,22 @@ export default function AdminLogin() {
               </div>
             )}
 
-            {/* Username Field */}
+            {/* Email Field - Changed from Username */}
             <div>
               <label className="block text-sm font-medium text-green-200 mb-2">
-                Username
+                Email Address
               </label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                  <User className="w-5 h-5 text-green-300" />
+                  <Mail className="w-5 h-5 text-green-300" />
                 </div>
                 <input
-                  type="text"
-                  value={credentials.username}
-                  onChange={(e) => setCredentials({...credentials, username: e.target.value})}
+                  type="email"
+                  name="email"
+                  value={credentials.email}
+                  onChange={(e) => setCredentials({...credentials, email: e.target.value})}
                   className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-green-300/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                  placeholder="Enter admin username"
+                  placeholder="admin@example.com"
                   disabled={isLoading}
                 />
               </div>
@@ -83,10 +120,11 @@ export default function AdminLogin() {
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
+                  name="password"
                   value={credentials.password}
                   onChange={(e) => setCredentials({...credentials, password: e.target.value})}
                   className="w-full pl-11 pr-12 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-green-300/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                  placeholder="Enter admin password"
+                  placeholder="••••••••"
                   disabled={isLoading}
                 />
                 <button
@@ -99,10 +137,15 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            {/* Remember & Forgot */}
+            {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input type="checkbox" className="w-4 h-4 rounded border-white/10 bg-white/5 text-green-600 focus:ring-green-500" />
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 text-green-600 border-white/20 rounded focus:ring-green-500 bg-white/5"
+                />
                 <span className="ml-2 text-sm text-green-200">Remember me</span>
               </label>
               <button type="button" className="text-sm text-green-300 hover:text-white transition-colors">
