@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import MetricCard from "../components/MetricCard";
 import ActivityCard from "../components/ActivityCard";
 import DonutPlaceholder from "../components/DonutPlaceholder";
-import CarbonTips from "../components/CarbonTips"; // ADD THIS IMPORT
 import { Calendar, Leaf, Activity, AlertCircle } from "lucide-react";
 import { activityAPI } from '../../services/api';
 
@@ -340,13 +339,6 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* BOTTOM ROW - Full width Carbon Tips */}
-        <div className="grid grid-cols-1">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <CarbonTips stats={stats} activities={activities} />
           </div>
         </div>
       </div>
