@@ -255,7 +255,7 @@ export default function Login() {
                       ? 'border-green-300 bg-green-50'
                       : 'border-gray-300'
                   }`}
-                  placeholder="you@example.com"
+                  placeholder="Enter your email address"
                   disabled={isLoading}
                 />
                 {getFieldStatus('email') === 'success' && (
@@ -297,7 +297,7 @@ export default function Login() {
                       ? 'border-green-300 bg-green-50'
                       : 'border-gray-300'
                   }`}
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   disabled={isLoading}
                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">

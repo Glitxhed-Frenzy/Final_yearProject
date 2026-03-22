@@ -314,7 +314,7 @@ export default function SignUp() {
                       className={`w-full pl-11 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
                         errors.fullName ? "border-red-300" : "border-gray-300"
                       }`}
-                      placeholder="John Doe"
+                      placeholder="Enter your name"
                       disabled={isLoading}
                     />
                   </div>
@@ -343,7 +343,7 @@ export default function SignUp() {
                       className={`w-full pl-11 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
                         errors.email ? "border-red-300" : "border-gray-300"
                       }`}
-                      placeholder="you@example.com"
+                      placeholder="Enter your email address"
                       disabled={isLoading}
                     />
                   </div>
@@ -373,7 +373,7 @@ export default function SignUp() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      placeholder="9876543210"
+                      placeholder="Enter your phone number"
                       maxLength={10}
                       className={`w-full pl-11 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
                         errors.phone ? "border-red-300" : "border-gray-300"
