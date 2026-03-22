@@ -8,6 +8,7 @@ import {
   Trash2, RefreshCw, ArrowLeft
 } from "lucide-react";
 import { activityAPI } from '../../services/api';
+import CarbonTips from "../components/CarbonTips";  // 👈 ADD THIS IMPORT
 
 // Simple categories
 const categories = [
@@ -230,9 +231,20 @@ export default function AddActivity() {
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Load existing activities
+  // 👈 ADD STATS STATE FOR TIPS
+  const [stats, setStats] = useState({
+    total: null,
+    transport: null,
+    home: null,
+    electronics: null,
+    water: null,
+    food: null
+  });
+  
+  // Load existing activities and stats
   useEffect(() => {
     fetchActivities();
+    fetchStats();  // 👈 ADD THIS
   }, []);
 
   const fetchActivities = async () => {
@@ -241,6 +253,26 @@ export default function AddActivity() {
       setActivities(response.data.data || []);
     } catch (error) {
       console.error("Error fetching activities:", error);
+    }
+  };
+
+  // 👈 ADD FETCH STATS FUNCTION
+  const fetchStats = async () => {
+    try {
+      const response = await activityAPI.getStats();
+      const statsData = response.data.data || {};
+      const categoryTotals = statsData.categoryTotals || {};
+      
+      setStats({
+        total: statsData.totalEmissions || null,
+        transport: categoryTotals.transport || null,
+        home: categoryTotals.home || null,
+        electronics: categoryTotals.electronics || null,
+        water: categoryTotals.water || null,
+        food: categoryTotals.food || null
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
     }
   };
 
@@ -284,6 +316,9 @@ export default function AddActivity() {
       const response = await activityAPI.create(dataToSend);
       
       setActivities(prev => [response.data.data, ...prev]);
+      
+      // Refresh stats after saving
+      fetchStats();  // 👈 ADD THIS TO REFRESH TIPS DATA
       
       // Calculate total for success message
       let total = 0;
@@ -334,6 +369,7 @@ export default function AddActivity() {
       try {
         await activityAPI.delete(activityId);
         setActivities(prev => prev.filter(a => a._id !== activityId));
+        fetchStats();  // 👈 ADD THIS TO REFRESH TIPS AFTER DELETE
         setShowDeleteOptions(false);
         setSuccessMessage("Activity deleted");
         setShowSuccess(true);
@@ -530,9 +566,10 @@ export default function AddActivity() {
             </div>
           </div>
 
-          {/* Summary */}
+          {/* Summary & Tips Section */}
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-6 sticky top-24">
+            {/* Summary Card */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-6">
               <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
                 <AlertCircle className="w-5 h-5" />
                 Summary
@@ -563,12 +600,19 @@ export default function AddActivity() {
                 <button
                   onClick={saveActivity}
                   disabled={isLoading}
-                  className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium"
+                  className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Saving...' : 'Save Activity'}
                 </button>
               )}
             </div>
+
+            {/* 👈 SMART TIPS SECTION - ADDED */}
+            {stats && stats.total !== null && (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <CarbonTips stats={stats} activities={activities} />
+              </div>
+            )}
 
             {/* Recent Activities */}
             {activities.length > 0 && (
