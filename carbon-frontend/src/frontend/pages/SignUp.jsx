@@ -95,26 +95,33 @@ export default function SignUp() {
   const validateStep1 = () => {
     const newErrors = {};
 
+    // Full name validation
     if (!formData.fullName.trim()) {
       newErrors.fullName = "Full name is required";
     } else if (formData.fullName.trim().length < 3) {
       newErrors.fullName = "Name must be at least 3 characters";
     }
 
+    // Email validation with domain restrictions
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
+      newErrors.email = "Please enter a valid email address";
+    } else {
+      // Check allowed domains
+      const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com'];
+      const domain = formData.email.split('@')[1]?.toLowerCase();
+      
+      if (!allowedDomains.includes(domain)) {
+        newErrors.email = "Only Gmail, Yahoo, and Outlook email addresses are allowed";
+      }
     }
 
-    // 🔴 UPDATED: Phone number validation - exactly 10 digits
+    // Phone number validation - exactly 10 digits
     if (formData.phone) {
-      // Check if exactly 10 digits
       if (formData.phone.length !== 10) {
         newErrors.phone = "Phone number must be exactly 10 digits";
-      }
-      // Optional: Check if starts with 6-9 (Indian format)
-      else if (!/^[6-9]/.test(formData.phone)) {
+      } else if (!/^[6-9]/.test(formData.phone)) {
         newErrors.phone = "Phone number must start with 6, 7, 8, or 9";
       }
     }
@@ -340,6 +347,10 @@ export default function SignUp() {
                       disabled={isLoading}
                     />
                   </div>
+                  {/* Helper text for allowed domains */}
+                  <p className="text-xs text-gray-500 mt-1">
+                    Only Gmail, Yahoo, and Outlook email addresses are allowed
+                  </p>
                   {errors.email && (
                     <div className="flex items-center mt-2 text-sm text-red-600">
                       <AlertCircle className="w-4 h-4 mr-1" />
@@ -391,7 +402,7 @@ export default function SignUp() {
               </>
             )}
 
-            {/* Step 2: Account Setup - (rest remains exactly the same) */}
+            {/* Step 2: Account Setup */}
             {step === 2 && (
               <>
                 {/* Password */}

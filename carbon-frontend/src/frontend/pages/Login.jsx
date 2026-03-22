@@ -36,13 +36,21 @@ export default function Login() {
   const validateForm = () => {
     const newErrors = {};
 
-    // Email validation
+    // Email validation with domain restrictions
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
     } else if (formData.email.length > 50) {
       newErrors.email = "Email must be less than 50 characters";
+    } else {
+      // Check allowed domains
+      const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com'];
+      const domain = formData.email.split('@')[1]?.toLowerCase();
+      
+      if (!allowedDomains.includes(domain)) {
+        newErrors.email = "Only Gmail, Yahoo, and Outlook email addresses are allowed";
+      }
     }
 
     // Password validation
@@ -112,7 +120,7 @@ export default function Login() {
         localStorage.removeItem("rememberedEmail");
       }
       
-      // 🔴 FIX: Verify data was saved before navigating
+      // Verify data was saved before navigating
       const verifyUser = localStorage.getItem("user");
       const verifyToken = localStorage.getItem("token");
       
@@ -122,11 +130,9 @@ export default function Login() {
       });
       
       if (verifyUser && verifyToken) {
-        // Data is saved, now navigate
         setIsLoading(false);
         navigate("/dashboard");
       } else {
-        // Data not saved yet, try one more time after a delay
         setTimeout(() => {
           const retryUser = localStorage.getItem("user");
           const retryToken = localStorage.getItem("token");
@@ -134,7 +140,6 @@ export default function Login() {
           if (retryUser && retryToken) {
             navigate("/dashboard");
           } else {
-            // If still not saved, show error
             setLoginError("Login successful but failed to save session. Please try again.");
             setIsLoading(false);
           }
@@ -169,7 +174,6 @@ export default function Login() {
       localStorage.setItem("user", JSON.stringify(mockUser));
       localStorage.setItem("token", "mock-jwt-token");
       
-      // Verify demo data was saved
       const verifyUser = localStorage.getItem("user");
       if (verifyUser) {
         navigate("/dashboard");
@@ -258,6 +262,10 @@ export default function Login() {
                   <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-500" />
                 )}
               </div>
+              {/* Helper text for allowed domains */}
+              <p className="text-xs text-gray-500 mt-1">
+                Only Gmail, Yahoo, and Outlook email addresses are allowed
+              </p>
               {errors.email && touched.email && (
                 <div className="flex items-center mt-2 text-sm text-red-600">
                   <AlertCircle className="w-4 h-4 mr-1 flex-shrink-0" />
