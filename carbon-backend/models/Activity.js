@@ -27,9 +27,8 @@ const activitySchema = new mongoose.Schema({
   },
   categoryTotals: {
     transport: Number,
-    home: Number,
-    electronics: Number,
-    water: Number,
+    electricity: Number,
+    waste: Number,
     food: Number
   },
   totalEmissions: {
