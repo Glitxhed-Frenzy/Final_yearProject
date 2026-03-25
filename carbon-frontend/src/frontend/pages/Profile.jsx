@@ -21,9 +21,13 @@ import {
   Activity,
   Award,
   TrendingDown,
-  Clock
+  Clock,
+  Zap,
+  Trash2 as TrashIcon,
+  Car,
+  Apple
 } from "lucide-react";
-import { activityAPI } from '../../services/api'; // ADD THIS IMPORT
+import { activityAPI } from '../../services/api';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -70,7 +74,6 @@ export default function Profile() {
     loadUserData();
   }, []);
 
-  // 🔴 FIX 1: Load stats whenever user data is available
   useEffect(() => {
     if (user) {
       loadUserStats();
@@ -95,14 +98,11 @@ export default function Profile() {
     setLoading(false);
   };
 
-  // 🔴 FIX 2: Load stats from BACKEND instead of localStorage
   const loadUserStats = async () => {
     try {
-      // Fetch activities from backend
       const response = await activityAPI.getAll();
       const activities = response.data.data || [];
       
-      // Fetch stats from backend
       const statsRes = await activityAPI.getStats();
       const statsData = statsRes.data.data || {};
       
@@ -120,13 +120,11 @@ export default function Profile() {
         totalActivities: activities.length,
         totalEmissions: statsData.totalEmissions || 0,
         averagePerActivity: statsData.averagePerActivity || 0,
-        // 🔴 FIX 3: Use user's createdAt from localStorage or current date
         joinDate: user?.createdAt || new Date().toISOString(),
         categories: categoryCounts
       });
     } catch (error) {
       console.error("Error loading stats:", error);
-      // Fallback to empty stats
       setStats({
         totalActivities: 0,
         totalEmissions: 0,
@@ -190,7 +188,6 @@ export default function Profile() {
 
   const handleExportData = async () => {
     try {
-      // Get data from backend instead of localStorage
       const activitiesRes = await activityAPI.getAll();
       const activities = activitiesRes.data.data || [];
       
@@ -224,24 +221,29 @@ export default function Profile() {
 
   const getCategoryIcon = (category) => {
     const icons = {
-      transport: "🚗",
-      home: "🏠",
-      electricity: "⚡",
-      food: "🍎",
-      purchases: "🛒",
-      water: "💧",
-      electronics: "💻"
+      transport: <Car className="w-5 h-5" />,
+      electricity: <Zap className="w-5 h-5" />,
+      waste: <TrashIcon className="w-5 h-5" />,
+      food: <Apple className="w-5 h-5" />
     };
-    return icons[category] || "📊";
+    return icons[category] || <Activity className="w-5 h-5" />;
   };
 
-  // 🔴 FIX 4: Format date safely with fallback
+  const getCategoryDisplayName = (category) => {
+    const names = {
+      transport: "Transport",
+      electricity: "Electricity",
+      waste: "Waste",
+      food: "Food"
+    };
+    return names[category] || category;
+  };
+
   const formatJoinDate = (dateString) => {
     if (!dateString) return "Just now";
     
     try {
       const date = new Date(dateString);
-      // Check if date is valid
       if (isNaN(date.getTime())) return "Just now";
       
       return date.toLocaleDateString('en-US', { 
@@ -286,7 +288,7 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Header with spacing */}
+        {/* Header */}
         <div className="mb-12">
           <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
           <p className="text-gray-600 mt-2 text-lg">
@@ -294,13 +296,13 @@ export default function Profile() {
           </p>
         </div>
 
-        {/* Main Grid with proper gaps */}
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Left Column - Profile Card */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 sticky top-24">
-              {/* Profile Picture - More prominent */}
+              {/* Profile Picture */}
               <div className="text-center mb-8">
                 <div className="w-28 h-28 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mx-auto mb-5 flex items-center justify-center shadow-lg">
                   <span className="text-4xl font-bold text-white">
@@ -310,7 +312,6 @@ export default function Profile() {
                 <h2 className="text-2xl font-bold text-gray-900">{user?.name}</h2>
                 <p className="text-gray-500 mt-2">{user?.email}</p>
                 
-                {/* Edit Profile Button - Moved here */}
                 {!editing && (
                   <button
                     onClick={() => setEditing(true)}
@@ -322,9 +323,8 @@ export default function Profile() {
                 )}
               </div>
 
-              {/* Stats in card - More breathing room */}
+              {/* Stats */}
               <div className="space-y-5 pt-6 border-t border-gray-200">
-                {/* 🔴 FIX 5: Member since with proper date formatting */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-600">
                     <Calendar className="w-4 h-4" />
@@ -358,7 +358,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Action Buttons - More spaced */}
+              {/* Action Buttons */}
               <div className="space-y-3 mt-8">
                 <button
                   onClick={handleExportData}
@@ -383,7 +383,7 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Right Column - Content with more spacing */}
+          {/* Right Column - Content */}
           <div className="lg:col-span-2 space-y-8">
             
             {/* Profile Information Card */}
@@ -402,7 +402,7 @@ export default function Profile() {
               </div>
 
               {!editing ? (
-                // View Mode - Clean grid layout
+                // View Mode
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                   <div>
                     <label className="text-sm text-gray-500 flex items-center gap-2 mb-1">
@@ -441,7 +441,7 @@ export default function Profile() {
                   </div>
                 </div>
               ) : (
-                // Edit Mode - Spacious form
+                // Edit Mode
                 <form onSubmit={handleProfileUpdate} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -506,7 +506,7 @@ export default function Profile() {
                         value={profileForm.location}
                         onChange={(e) => setProfileForm({...profileForm, location: e.target.value})}
                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
-                        placeholder="New York, USA"
+                        placeholder="Mumbai, India"
                       />
                     </div>
                   </div>
@@ -552,15 +552,15 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Activity Summary - Only if there are activities */}
+            {/* Activity Summary - Updated Categories */}
             {Object.keys(stats.categories).length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Activity Summary</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {Object.entries(stats.categories).map(([category, count]) => (
                     <div key={category} className="p-5 bg-gray-50 rounded-xl">
                       <div className="text-3xl mb-3">{getCategoryIcon(category)}</div>
-                      <p className="font-semibold text-gray-900 capitalize text-lg">{category}</p>
+                      <p className="font-semibold text-gray-900 capitalize text-lg">{getCategoryDisplayName(category)}</p>
                       <p className="text-gray-600">{count} {count === 1 ? 'activity' : 'activities'}</p>
                     </div>
                   ))}
@@ -568,7 +568,7 @@ export default function Profile() {
               </div>
             )}
 
-            {/* Danger Zone - Spaced out */}
+            {/* Danger Zone */}
             <div className="bg-white rounded-2xl border border-red-200 shadow-sm p-8">
               <h2 className="text-xl font-semibold text-red-600 mb-3">Danger Zone</h2>
               <p className="text-gray-600 mb-6">Permanently delete your account and all associated data</p>
@@ -627,7 +627,6 @@ export default function Profile() {
             </div>
 
             <form onSubmit={handlePasswordChange} className="space-y-5">
-              {/* Current Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Current Password
@@ -654,7 +653,6 @@ export default function Profile() {
                 )}
               </div>
 
-              {/* New Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   New Password
@@ -681,7 +679,6 @@ export default function Profile() {
                 )}
               </div>
 
-              {/* Confirm Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Confirm New Password

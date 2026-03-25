@@ -34,7 +34,7 @@ const COLORS = ['#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
 export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [timeframe, setTimeframe] = useState('month'); // week, month, year
+  const [timeframe, setTimeframe] = useState('month');
   const [stats, setStats] = useState({
     totalEmissions: 0,
     totalActivities: 0,
@@ -74,12 +74,22 @@ export default function Reports() {
       }));
       setChartData(monthlyTrend);
       
-      // Process category breakdown for pie chart
+      // Process category breakdown for pie chart (updated categories)
       const categories = [];
-      Object.entries(statsData.categoryTotals || {}).forEach(([key, value]) => {
+      const categoryTotals = statsData.categoryTotals || {};
+      
+      // Map category names to display names
+      const categoryDisplayNames = {
+        transport: "Transport",
+        electricity: "Electricity",
+        waste: "Waste",
+        food: "Food"
+      };
+      
+      Object.entries(categoryTotals).forEach(([key, value]) => {
         if (value > 0) {
           categories.push({
-            name: key.charAt(0).toUpperCase() + key.slice(1),
+            name: categoryDisplayNames[key] || key.charAt(0).toUpperCase() + key.slice(1),
             value: value
           });
         }
@@ -331,7 +341,10 @@ export default function Reports() {
                           {new Date(activity.date).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
-                          {activity.categories?.join(', ') || 'General'}
+                          {activity.categories?.map(cat => 
+                            cat === 'electricity' ? 'Electricity' : 
+                            cat.charAt(0).toUpperCase() + cat.slice(1)
+                          ).join(', ') || 'General'}
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
                           {activity.totalEmissions?.toFixed(1)} kg

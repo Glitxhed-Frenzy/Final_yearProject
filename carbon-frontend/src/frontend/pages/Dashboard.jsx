@@ -14,13 +14,12 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState("Month");
   
-  // Simple stats structure matching our simplified backend
+  // Updated stats structure for new categories
   const [stats, setStats] = useState({
     total: null,
     transport: null,
-    home: null,
-    electronics: null,
-    water: null,
+    electricity: null,
+    waste: null,
     food: null
   });
   
@@ -69,15 +68,14 @@ export default function Dashboard() {
       
       setActivities(activitiesData);
       
-      // Simple stats mapping
+      // Updated stats mapping for new categories
       const categoryTotals = statsData.categoryTotals || {};
       
       const newStats = {
         total: statsData.totalEmissions || null,
         transport: categoryTotals.transport || null,
-        home: categoryTotals.home || null,
-        electronics: categoryTotals.electronics || null,
-        water: categoryTotals.water || null,
+        electricity: categoryTotals.electricity || null,
+        waste: categoryTotals.waste || null,
         food: categoryTotals.food || null
       };
       
@@ -86,9 +84,8 @@ export default function Dashboard() {
       // Prepare chart data (only categories with values)
       const chartData = [];
       if (newStats.transport) chartData.push({ name: "Transport", value: newStats.transport });
-      if (newStats.home) chartData.push({ name: "Home Energy", value: newStats.home });
-      if (newStats.electronics) chartData.push({ name: "Electronics", value: newStats.electronics });
-      if (newStats.water) chartData.push({ name: "Water", value: newStats.water });
+      if (newStats.electricity) chartData.push({ name: "Electricity", value: newStats.electricity });
+      if (newStats.waste) chartData.push({ name: "Waste", value: newStats.waste });
       if (newStats.food) chartData.push({ name: "Food", value: newStats.food });
       
       setCategoryBreakdown(chartData);
@@ -118,9 +115,8 @@ export default function Dashboard() {
   const getCategoryIcon = (category) => {
     const icons = {
       transport: "🚗",
-      home: "🏠",
-      electronics: "💻",
-      water: "💧",
+      electricity: "⚡",
+      waste: "🗑️",
       food: "🍎",
       general: "📊"
     };
@@ -206,7 +202,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats Grid - 5 cards for our 5 categories */}
+      {/* Stats Grid - 4 cards for our 4 categories */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         <MetricCard 
           title="Total CO₂" 
@@ -223,37 +219,26 @@ export default function Dashboard() {
           color="purple"
         />
         <MetricCard 
-          title="Home Energy" 
-          value={stats.home ? `${stats.home.toFixed(1)} kg` : "—"}
-          icon="🏠"
+          title="Electricity" 
+          value={stats.electricity ? `${stats.electricity.toFixed(1)} kg` : "—"}
+          icon="⚡"
           color="blue"
         />
         <MetricCard 
-          title="Electronics" 
-          value={stats.electronics ? `${stats.electronics.toFixed(1)} kg` : "—"}
-          icon="💻"
-          color="indigo"
+          title="Waste" 
+          value={stats.waste ? `${stats.waste.toFixed(1)} kg` : "—"}
+          icon="🗑️"
+          color="emerald"
         />
-        <MetricCard 
-          title="Water" 
-          value={stats.water ? `${stats.water.toFixed(1)} kg` : "—"}
-          icon="💧"
-          color="cyan"
-        />
-      </div>
-
-      {/* Additional row for Food */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         <MetricCard 
           title="Food" 
           value={stats.food ? `${stats.food.toFixed(1)} kg` : "—"}
           icon="🍎"
           color="amber"
         />
-        <div className="lg:col-span-4"></div> {/* Empty div for spacing */}
       </div>
 
-      {/* ===== UPDATED SECTION: Charts and Activities in 2-column layout, Tips moved to bottom ===== */}
+      {/* ===== Updated Section: Charts and Activities ===== */}
       <div className="space-y-8">
         {/* TOP ROW - Chart and Recent Activities (2 columns) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -290,7 +275,7 @@ export default function Dashboard() {
                       data={categoryBreakdown.length ? categoryBreakdown : [{ name: "No Data", value: 1 }]}
                     />
                   </div>
-                  <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
                     {categoryBreakdown.map((item, index) => (
                       <div key={index} className="text-center">
                         <div className="text-2xl font-bold text-gray-900">

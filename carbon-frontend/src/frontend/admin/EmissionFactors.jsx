@@ -175,13 +175,27 @@ export default function EmissionFactors() {
     setFormErrors({});
   };
 
+  // Updated categories for the new structure
   const categories = [
     { value: "transport", label: "Transport", color: "purple" },
-    { value: "home", label: "Home Energy", color: "blue" },
-    { value: "electronics", label: "Electronics", color: "indigo" },
-    { value: "water", label: "Water", color: "cyan" },
+    { value: "electricity", label: "Electricity", color: "blue" },
+    { value: "waste", label: "Waste", color: "emerald" },
     { value: "food", label: "Food", color: "amber" }
   ];
+
+  // Helper to get category color class
+  const getCategoryColorClass = (categoryValue) => {
+    const category = categories.find(c => c.value === categoryValue);
+    if (!category) return "bg-gray-100 text-gray-700";
+    
+    const colorMap = {
+      purple: "bg-purple-100 text-purple-700",
+      blue: "bg-blue-100 text-blue-700",
+      emerald: "bg-emerald-100 text-emerald-700",
+      amber: "bg-amber-100 text-amber-700"
+    };
+    return colorMap[category.color] || "bg-gray-100 text-gray-700";
+  };
 
   if (loading) {
     return (
@@ -294,7 +308,6 @@ export default function EmissionFactors() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredFactors.map((factor) => {
-                const category = categories.find(c => c.value === factor.category);
                 return (
                   <tr key={factor._id} className="hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm font-mono text-gray-600">
@@ -304,8 +317,8 @@ export default function EmissionFactors() {
                       {factor.name}
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full bg-${category?.color}-100 text-${category?.color}-700`}>
-                        {factor.category}
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColorClass(factor.category)}`}>
+                        {factor.category.charAt(0).toUpperCase() + factor.category.slice(1)}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-sm font-medium text-gray-900">
@@ -379,7 +392,7 @@ export default function EmissionFactors() {
                   className={`w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${
                     formErrors.activityId ? 'border-red-300' : 'border-gray-300'
                   } ${editingFactor ? 'bg-gray-100' : ''}`}
-                  placeholder="e.g., car_miles"
+                  placeholder="e.g., car_sedan_petrol"
                 />
                 {formErrors.activityId && (
                   <p className="mt-1 text-sm text-red-600">{formErrors.activityId}</p>
@@ -399,7 +412,7 @@ export default function EmissionFactors() {
                   className={`w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${
                     formErrors.name ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="e.g., Car Travel"
+                  placeholder="e.g., Sedan - Petrol"
                 />
                 {formErrors.name && (
                   <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
@@ -436,12 +449,12 @@ export default function EmissionFactors() {
                     name="factor"
                     value={formData.factor}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="0.001"
                     min="0"
                     className={`w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${
                       formErrors.factor ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="0.41"
+                    placeholder="0.124"
                   />
                   {formErrors.factor && (
                     <p className="mt-1 text-sm text-red-600">{formErrors.factor}</p>
@@ -460,7 +473,7 @@ export default function EmissionFactors() {
                     className={`w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${
                       formErrors.unit ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="kg CO₂ per mile"
+                    placeholder="kg CO₂ per km"
                   />
                   {formErrors.unit && (
                     <p className="mt-1 text-sm text-red-600">{formErrors.unit}</p>
@@ -479,7 +492,7 @@ export default function EmissionFactors() {
                   value={formData.source}
                   onChange={handleInputChange}
                   className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="e.g., EPA"
+                  placeholder="e.g., EPA 2026"
                 />
               </div>
 

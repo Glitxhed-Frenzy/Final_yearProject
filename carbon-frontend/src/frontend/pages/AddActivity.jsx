@@ -8,135 +8,184 @@ import {
   Trash2, RefreshCw, ArrowLeft
 } from "lucide-react";
 import { activityAPI } from '../../services/api';
-import CarbonTips from "../components/CarbonTips";  // 👈 ADD THIS IMPORT
+import CarbonTips from "../components/CarbonTips";
 
-// Simple categories
+// Categories
 const categories = [
   { id: 'transport', label: 'Transportation', icon: <Car className="w-5 h-5" />, color: 'purple' },
-  { id: 'home', label: 'Home Energy', icon: <Home className="w-5 h-5" />, color: 'blue' },
-  { id: 'electronics', label: 'Electronics', icon: <Laptop className="w-5 h-5" />, color: 'indigo' },
-  { id: 'water', label: 'Water Usage', icon: <Droplets className="w-5 h-5" />, color: 'cyan' },
-  { id: 'food', label: 'Food & Diet', icon: <Apple className="w-5 h-5" />, color: 'amber' }
+  { id: 'electricity', label: 'Electricity', icon: <Zap className="w-5 h-5" />, color: 'blue' },
+  { id: 'waste', label: 'Waste', icon: <Trash2 className="w-5 h-5" />, color: 'emerald' },
+  { id: 'food', label: 'Food', icon: <Apple className="w-5 h-5" />, color: 'amber' }
 ];
 
-// Simple questions - no complex dependencies
+// Questions
 const questions = {
   transport: {
     title: "Transportation",
     icon: <Car className="w-6 h-6" />,
     color: "from-purple-500 to-violet-600",
     questions: [
+      // CAR - Collapsible Section
       {
-        id: "car_miles",
-        text: "Car Miles",
-        type: "number",
-        unit: "miles",
-        min: 0,
-        max: 5000,
-        step: 10,
-        factor: 0.41,
+        id: "car_section",
+        text: "Car",
+        type: "section",
         icon: <Car className="w-5 h-5" />,
-        helpText: "How many miles did you drive this month?"
+        collapsible: true,
+        children: [
+          {
+            id: "car_type",
+            text: "Car Type",
+            type: "select",
+            options: [
+              { value: "hatchback", label: "Hatchback (e.g., Maruti Swift, Hyundai i10)" },
+              { value: "sedan", label: "Sedan (e.g., Honda City, Toyota Camry)" },
+              { value: "suv", label: "SUV (e.g., Hyundai Creta, Toyota Fortuner)" },
+              { value: "muv", label: "MUV/MPV (e.g., Toyota Innova, Maruti Ertiga)" }
+            ],
+            icon: <Car className="w-5 h-5" />,
+            helpText: "Select your car body type"
+          },
+          {
+            id: "car_fuel",
+            text: "Fuel Type",
+            type: "select",
+            options: [
+              { value: "petrol", label: "Petrol" },
+              { value: "diesel", label: "Diesel" },
+              { value: "hybrid", label: "Hybrid" },
+              { value: "electric", label: "Electric" }
+            ],
+            icon: <Car className="w-5 h-5" />,
+            helpText: "Select your fuel type"
+          },
+          {
+            id: "car_km",
+            text: "Kilometers Driven",
+            type: "number",
+            unit: "km",
+            min: 0,
+            max: 8000,
+            step: 10,
+            icon: <Car className="w-5 h-5" />,
+            helpText: "How many kilometers did you drive this month?"
+          }
+        ]
       },
+      // BUS - Simple
       {
-        id: "bus_miles",
-        text: "Bus Miles",
+        id: "bus_km",
+        text: "Bus Kilometers",
         type: "number",
-        unit: "miles",
+        unit: "km",
         min: 0,
-        max: 1000,
+        max: 1600,
         step: 5,
-        factor: 0.18,
+        factor: 0.11,
         icon: <Bus className="w-5 h-5" />,
-        helpText: "How many miles did you travel by bus?"
+        helpText: "How many kilometers did you travel by bus?"
       },
+      // TRAIN - Collapsible Section
       {
-        id: "train_miles",
-        text: "Train Miles",
-        type: "number",
-        unit: "miles",
-        min: 0,
-        max: 1000,
-        step: 5,
-        factor: 0.12,
+        id: "train_section",
+        text: "Train",
+        type: "section",
         icon: <Train className="w-5 h-5" />,
-        helpText: "How many miles did you travel by train?"
+        collapsible: true,
+        children: [
+          {
+            id: "train_type",
+            text: "Train Type",
+            type: "select",
+            options: [
+              { value: "local", label: "Local Train (Mumbai Suburban - e.g., Ghatkopar to Dadar)", factor: 0.025 },
+              { value: "express", label: "Express/Mail Train (Long Distance - e.g., Mumbai to Delhi)", factor: 0.062 }
+            ],
+            icon: <Train className="w-5 h-5" />,
+            helpText: "Select the type of train you used"
+          },
+          {
+            id: "train_km",
+            text: "Kilometers Traveled",
+            type: "number",
+            unit: "km",
+            min: 0,
+            max: 1600,
+            step: 5,
+            icon: <Train className="w-5 h-5" />,
+            helpText: "How many kilometers did you travel by train?"
+          }
+        ]
       },
+      // PLANE - Simple
       {
-        id: "plane_miles",
-        text: "Plane Miles",
+        id: "plane_km",
+        text: "Plane Kilometers",
         type: "number",
-        unit: "miles",
+        unit: "km",
         min: 0,
-        max: 10000,
+        max: 16000,
         step: 100,
-        factor: 0.53,
+        factor: 0.33,
         icon: <Plane className="w-5 h-5" />,
-        helpText: "How many miles did you fly?"
+        helpText: "How many kilometers did you fly?"
       }
     ]
   },
   
-  home: {
-    title: "Home Energy",
-    icon: <Home className="w-6 h-6" />,
+  // Electricity Category
+  electricity: {
+    title: "Electricity Usage",
+    icon: <Zap className="w-6 h-6" />,
     color: "from-blue-500 to-cyan-600",
     questions: [
       {
         id: "electricity_kwh",
-        text: "Electricity Usage",
+        text: "Monthly Electricity Consumption",
         type: "number",
         unit: "kWh",
         min: 0,
-        max: 2000,
-        step: 10,
+        max: 5000,
+        step: 50,
         factor: 0.85,
         icon: <Zap className="w-5 h-5" />,
-        helpText: "Check your electricity bill for monthly kWh"
+        helpText: "Check your electricity bill for monthly kWh usage"
       },
       {
-        id: "ac_days",
+        id: "ac_hours",
         text: "AC Usage",
-        type: "number",
-        unit: "days",
-        min: 0,
-        max: 31,
-        step: 1,
-        factor: 3.2,
-        icon: <Thermometer className="w-5 h-5" />,
-        helpText: "How many days did you use AC this month?"
-      },
-      {
-        id: "heat_days",
-        text: "Heating Usage",
-        type: "number",
-        unit: "days",
-        min: 0,
-        max: 31,
-        step: 1,
-        factor: 4.5,
-        icon: <Thermometer className="w-5 h-5" />,
-        helpText: "How many days did you use heating?"
-      }
-    ]
-  },
-  
-  electronics: {
-    title: "Electronics",
-    icon: <Laptop className="w-6 h-6" />,
-    color: "from-indigo-500 to-blue-600",
-    questions: [
-      {
-        id: "laptop_hours",
-        text: "Laptop Usage",
         type: "number",
         unit: "hours/day",
         min: 0,
         max: 24,
         step: 1,
-        factor: 0.02,
+        factor: 2.0,
+        icon: <Thermometer className="w-5 h-5" />,
+        helpText: "How many hours per day do you use AC?"
+      },
+      {
+        id: "heater_hours",
+        text: "Heater Usage",
+        type: "number",
+        unit: "hours/day",
+        min: 0,
+        max: 24,
+        step: 1,
+        factor: 2.8,
+        icon: <Thermometer className="w-5 h-5" />,
+        helpText: "How many hours per day do you use heating?"
+      },
+      {
+        id: "laptop_hours",
+        text: "Laptop/Desktop Usage",
+        type: "number",
+        unit: "hours/day",
+        min: 0,
+        max: 24,
+        step: 1,
+        factor: 0.012,
         icon: <Laptop className="w-5 h-5" />,
-        helpText: "Hours per day your laptop is plugged in"
+        helpText: "Hours per day your computer is plugged in"
       },
       {
         id: "tv_hours",
@@ -146,45 +195,96 @@ const questions = {
         min: 0,
         max: 24,
         step: 1,
-        factor: 0.04,
+        factor: 0.025,
         icon: <Tv className="w-5 h-5" />,
         helpText: "Hours per day you watch TV"
       }
     ]
   },
   
-  water: {
-    title: "Water Usage",
-    icon: <Droplets className="w-6 h-6" />,
-    color: "from-cyan-500 to-teal-600",
+  // Waste Category
+  waste: {
+    title: "Waste Management",
+    icon: <Trash2 className="w-6 h-6" />,
+    color: "from-emerald-500 to-green-600",
     questions: [
       {
-        id: "showers_per_week",
-        text: "Showers",
+        id: "food_waste_kg",
+        text: "Food Waste",
         type: "number",
-        unit: "per week",
-        min: 0,
-        max: 21,
-        step: 1,
-        factor: 0.6,
-        icon: <Droplets className="w-5 h-5" />,
-        helpText: "How many showers do you take per week?"
-      },
-      {
-        id: "laundry_per_month",
-        text: "Laundry Loads",
-        type: "number",
-        unit: "per month",
+        unit: "kg/week",
         min: 0,
         max: 50,
         step: 1,
+        factor: 0.5,
+        icon: <Apple className="w-5 h-5" />,
+        helpText: "How much food do you throw away per week? (in kg)"
+      },
+      {
+        id: "plastic_waste_kg",
+        text: "Plastic Waste",
+        type: "number",
+        unit: "kg/week",
+        min: 0,
+        max: 20,
+        step: 1,
+        factor: 3.0,
+        icon: <Trash2 className="w-5 h-5" />,
+        helpText: "How much plastic waste do you generate per week? (bottles, packaging, etc.)"
+      },
+      {
+        id: "paper_waste_kg",
+        text: "Paper/Cardboard Waste",
+        type: "number",
+        unit: "kg/week",
+        min: 0,
+        max: 20,
+        step: 1,
         factor: 0.8,
-        icon: <Shirt className="w-5 h-5" />,
-        helpText: "How many loads of laundry per month?"
+        icon: <Trash2 className="w-5 h-5" />,
+        helpText: "How much paper or cardboard do you dispose per week?"
+      },
+      {
+        id: "metal_waste_kg",
+        text: "Metal Waste",
+        type: "number",
+        unit: "kg/month",
+        min: 0,
+        max: 50,
+        step: 1,
+        factor: 2.5,
+        icon: <Trash2 className="w-5 h-5" />,
+        helpText: "How much metal waste do you dispose per month? (cans, foil, etc.)"
+      },
+      {
+        id: "ewaste_kg",
+        text: "Electronic Waste",
+        type: "number",
+        unit: "kg/year",
+        min: 0,
+        max: 100,
+        step: 1,
+        factor: 15.0,
+        icon: <Laptop className="w-5 h-5" />,
+        helpText: "How much electronic waste do you dispose per year? (old phones, laptops, etc.)"
+      },
+      {
+        id: "recycling_rate",
+        text: "Recycling Rate",
+        type: "select",
+        options: [
+          { value: "low", label: "Low (0-20% recycled)", factor: 1.0 },
+          { value: "medium", label: "Medium (20-50% recycled)", factor: 0.7 },
+          { value: "high", label: "High (50-80% recycled)", factor: 0.4 },
+          { value: "very_high", label: "Very High (80-100% recycled)", factor: 0.2 }
+        ],
+        icon: <RefreshCw className="w-5 h-5" />,
+        helpText: "What percentage of your waste do you recycle?"
       }
     ]
   },
   
+  // Food Category
   food: {
     title: "Food & Diet",
     icon: <Apple className="w-6 h-6" />,
@@ -196,11 +296,35 @@ const questions = {
         type: "number",
         unit: "per week",
         min: 0,
-        max: 21,
+        max: 14,
         step: 1,
         factor: 6.9,
         icon: <Apple className="w-5 h-5" />,
         helpText: "How many chicken meals per week?"
+      },
+      {
+        id: "fish_servings",
+        text: "Fish Servings",
+        type: "number",
+        unit: "per week",
+        min: 0,
+        max: 14,
+        step: 1,
+        factor: 3.5,
+        icon: <Apple className="w-5 h-5" />,
+        helpText: "How many fish meals per week?"
+      },
+      {
+        id: "dairy_servings",
+        text: "Dairy Servings (Milk, Cheese, Yogurt)",
+        type: "number",
+        unit: "per week",
+        min: 0,
+        max: 21,
+        step: 1,
+        factor: 2.5,
+        icon: <Apple className="w-5 h-5" />,
+        helpText: "How many dairy servings per week?"
       },
       {
         id: "vegetarian_meals",
@@ -213,6 +337,18 @@ const questions = {
         factor: 2.0,
         icon: <Apple className="w-5 h-5" />,
         helpText: "How many vegetarian meals per week?"
+      },
+      {
+        id: "food_waste",
+        text: "Food Waste",
+        type: "select",
+        options: [
+          { value: "low", label: "Low (0-10% waste)", factor: 1.0 },
+          { value: "medium", label: "Medium (10-25% waste)", factor: 1.15 },
+          { value: "high", label: "High (25-50% waste)", factor: 1.30 }
+        ],
+        icon: <Apple className="w-5 h-5" />,
+        helpText: "How much food do you typically waste?"
       }
     ]
   }
@@ -222,7 +358,7 @@ export default function AddActivity() {
   const navigate = useNavigate();
   const [currentCategory, setCurrentCategory] = useState("transport");
   
-  // Simple state for form values
+  // State for form values
   const [values, setValues] = useState({});
   
   const [showSuccess, setShowSuccess] = useState(false);
@@ -231,20 +367,104 @@ export default function AddActivity() {
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // 👈 ADD STATS STATE FOR TIPS
+  // State for collapsible sections
+  const [expandedSections, setExpandedSections] = useState({
+    car_section: false,
+    train_section: false
+  });
+  
+  // State for selected options
+  const [selectedCarType, setSelectedCarType] = useState(null);
+  const [selectedCarFuel, setSelectedCarFuel] = useState(null);
+  const [selectedTrainType, setSelectedTrainType] = useState(null);
+  const [selectedFoodWaste, setSelectedFoodWaste] = useState(null);
+  const [selectedRecyclingRate, setSelectedRecyclingRate] = useState(null);
+  
+  // Stats state for tips
   const [stats, setStats] = useState({
     total: null,
     transport: null,
-    home: null,
-    electronics: null,
-    water: null,
+    electricity: null,
+    waste: null,
     food: null
   });
+  
+  // Car factor map (type + fuel combination) - in kg CO₂ per km
+  const getCarFactor = () => {
+    if (!selectedCarType || !selectedCarFuel) return null;
+    
+    const factorMap = {
+      hatchback_petrol: 0.124,
+      hatchback_diesel: 0.106,
+      sedan_petrol: 0.162,
+      sedan_diesel: 0.143,
+      sedan_hybrid: 0.099,
+      sedan_electric: 0.062,
+      suv_petrol: 0.217,
+      suv_diesel: 0.193,
+      suv_hybrid: 0.137,
+      suv_electric: 0.087,
+      muv_petrol: 0.199,
+      muv_diesel: 0.174,
+      muv_hybrid: 0.124,
+      muv_electric: 0.081
+    };
+    
+    const key = `${selectedCarType}_${selectedCarFuel}`;
+    return factorMap[key] || null;
+  };
+  
+  // Train factor map - in kg CO₂ per km
+  const getTrainFactor = () => {
+    if (!selectedTrainType) return null;
+    
+    const factorMap = {
+      local: 0.025,
+      express: 0.062
+    };
+    
+    return factorMap[selectedTrainType] || null;
+  };
+  
+  // Food waste multiplier
+  const getFoodWasteMultiplier = () => {
+    if (!selectedFoodWaste) return 1.0;
+    
+    const wasteMap = {
+      low: 1.0,
+      medium: 1.15,
+      high: 1.30
+    };
+    
+    return wasteMap[selectedFoodWaste] || 1.0;
+  };
+  
+  // Recycling rate multiplier
+  const getRecyclingMultiplier = () => {
+    if (!selectedRecyclingRate) return 1.0;
+    
+    const rateMap = {
+      low: 1.0,
+      medium: 0.7,
+      high: 0.4,
+      very_high: 0.2
+    };
+    
+    return rateMap[selectedRecyclingRate] || 1.0;
+  };
+  
+  // Toggle collapsible section
+  const toggleSection = (sectionId) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+  };
   
   // Load existing activities and stats
   useEffect(() => {
     fetchActivities();
-    fetchStats();  // 👈 ADD THIS
+    fetchStats();
   }, []);
 
   const fetchActivities = async () => {
@@ -256,7 +476,6 @@ export default function AddActivity() {
     }
   };
 
-  // 👈 ADD FETCH STATS FUNCTION
   const fetchStats = async () => {
     try {
       const response = await activityAPI.getStats();
@@ -266,9 +485,8 @@ export default function AddActivity() {
       setStats({
         total: statsData.totalEmissions || null,
         transport: categoryTotals.transport || null,
-        home: categoryTotals.home || null,
-        electronics: categoryTotals.electronics || null,
-        water: categoryTotals.water || null,
+        electricity: categoryTotals.electricity || null,
+        waste: categoryTotals.waste || null,
         food: categoryTotals.food || null
       });
     } catch (error) {
@@ -276,19 +494,78 @@ export default function AddActivity() {
     }
   };
 
-  // Simple input handler
-  const handleInputChange = (questionId, value) => {
-    const numValue = parseFloat(value) || 0;
+  // Handle input changes
+  const handleInputChange = (questionId, value, question) => {
     setValues(prev => ({
       ...prev,
-      [questionId]: numValue
+      [questionId]: value
     }));
+    
+    if (questionId === "car_type") {
+      setSelectedCarType(value);
+    }
+    
+    if (questionId === "car_fuel") {
+      setSelectedCarFuel(value);
+    }
+    
+    if (questionId === "train_type") {
+      setSelectedTrainType(value);
+    }
+    
+    if (questionId === "food_waste") {
+      setSelectedFoodWaste(value);
+    }
+    
+    if (questionId === "recycling_rate") {
+      setSelectedRecyclingRate(value);
+    }
   };
 
   // Calculate estimated emission for a single question
-  const getEstimatedEmission = (questionId, value, factor) => {
+  const getEstimatedEmission = (questionId, value, question) => {
     if (!value || value <= 0) return null;
-    return (value * factor).toFixed(2);
+    
+    // For car km
+    if (questionId === "car_km") {
+      const carFactor = getCarFactor();
+      if (carFactor) {
+        return (value * carFactor).toFixed(2);
+      }
+      return null;
+    }
+    
+    // For train km
+    if (questionId === "train_km") {
+      const trainFactor = getTrainFactor();
+      if (trainFactor) {
+        return (value * trainFactor).toFixed(2);
+      }
+      return null;
+    }
+    
+    // For waste items - apply recycling multiplier
+    if (["food_waste_kg", "plastic_waste_kg", "paper_waste_kg", "metal_waste_kg", "ewaste_kg"].includes(questionId)) {
+      const recyclingMultiplier = getRecyclingMultiplier();
+      if (question?.factor) {
+        return (value * question.factor * recyclingMultiplier).toFixed(2);
+      }
+    }
+    
+    // For food items - apply food waste multiplier
+    if (["chicken_servings", "fish_servings", "dairy_servings", "vegetarian_meals"].includes(questionId)) {
+      const wasteMultiplier = getFoodWasteMultiplier();
+      if (question?.factor) {
+        return (value * question.factor * wasteMultiplier).toFixed(2);
+      }
+    }
+    
+    // For other questions
+    if (question?.factor) {
+      return (value * question.factor).toFixed(2);
+    }
+    
+    return null;
   };
 
   const hasAnyData = () => {
@@ -305,36 +582,80 @@ export default function AddActivity() {
     setIsLoading(true);
 
     try {
-      // Prepare data - only include non-zero values
+      // Prepare data
       const dataToSend = {};
       Object.keys(values).forEach(key => {
         if (values[key] > 0) {
           dataToSend[key] = values[key];
         }
       });
+      
+      if (selectedCarType && selectedCarFuel) {
+        dataToSend.car_type = selectedCarType;
+        dataToSend.car_fuel = selectedCarFuel;
+      }
+      
+      if (selectedTrainType) {
+        dataToSend.train_type = selectedTrainType;
+      }
+      
+      if (selectedFoodWaste) {
+        dataToSend.food_waste = selectedFoodWaste;
+      }
+      
+      if (selectedRecyclingRate) {
+        dataToSend.recycling_rate = selectedRecyclingRate;
+      }
 
       const response = await activityAPI.create(dataToSend);
       
       setActivities(prev => [response.data.data, ...prev]);
-      
-      // Refresh stats after saving
-      fetchStats();  // 👈 ADD THIS TO REFRESH TIPS DATA
+      fetchStats();
       
       // Calculate total for success message
       let total = 0;
+      const wasteMultiplier = getFoodWasteMultiplier();
+      const recyclingMultiplier = getRecyclingMultiplier();
+      
       Object.keys(values).forEach(key => {
-        const question = findQuestion(key);
-        if (question && values[key] > 0) {
-          total += values[key] * question.factor;
+        if (key === "car_km") {
+          const carFactor = getCarFactor();
+          if (carFactor && values[key] > 0) {
+            total += values[key] * carFactor;
+          }
+        } else if (key === "train_km") {
+          const trainFactor = getTrainFactor();
+          if (trainFactor && values[key] > 0) {
+            total += values[key] * trainFactor;
+          }
+        } else if (["food_waste_kg", "plastic_waste_kg", "paper_waste_kg", "metal_waste_kg", "ewaste_kg"].includes(key)) {
+          const question = findQuestion(key);
+          if (question && values[key] > 0 && question.factor) {
+            total += values[key] * question.factor * recyclingMultiplier;
+          }
+        } else if (["chicken_servings", "fish_servings", "dairy_servings", "vegetarian_meals"].includes(key)) {
+          const question = findQuestion(key);
+          if (question && values[key] > 0 && question.factor) {
+            total += values[key] * question.factor * wasteMultiplier;
+          }
+        } else {
+          const question = findQuestion(key);
+          if (question && values[key] > 0 && question.factor) {
+            total += values[key] * question.factor;
+          }
         }
       });
       
       setSuccessMessage(`Activity saved! Total: ${total.toFixed(2)} kg CO₂`);
       setShowSuccess(true);
       
-      // Clear form
       setTimeout(() => {
         setValues({});
+        setSelectedCarType(null);
+        setSelectedCarFuel(null);
+        setSelectedTrainType(null);
+        setSelectedFoodWaste(null);
+        setSelectedRecyclingRate(null);
         setShowSuccess(false);
       }, 2000);
     } catch (error) {
@@ -350,6 +671,13 @@ export default function AddActivity() {
     for (const cat of Object.values(questions)) {
       const q = cat.questions.find(q => q.id === questionId);
       if (q) return q;
+      
+      for (const section of cat.questions) {
+        if (section.type === "section" && section.children) {
+          const childQ = section.children.find(c => c.id === questionId);
+          if (childQ) return childQ;
+        }
+      }
     }
     return null;
   };
@@ -359,6 +687,11 @@ export default function AddActivity() {
     if (hasAnyData()) {
       if (window.confirm("Clear all data?")) {
         setValues({});
+        setSelectedCarType(null);
+        setSelectedCarFuel(null);
+        setSelectedTrainType(null);
+        setSelectedFoodWaste(null);
+        setSelectedRecyclingRate(null);
       }
     }
   };
@@ -369,7 +702,7 @@ export default function AddActivity() {
       try {
         await activityAPI.delete(activityId);
         setActivities(prev => prev.filter(a => a._id !== activityId));
-        fetchStats();  // 👈 ADD THIS TO REFRESH TIPS AFTER DELETE
+        fetchStats();
         setShowDeleteOptions(false);
         setSuccessMessage("Activity deleted");
         setShowSuccess(true);
@@ -384,6 +717,45 @@ export default function AddActivity() {
   const getCategoryColor = (categoryId) => {
     const cat = categories.find(c => c.id === categoryId);
     return cat?.color || 'gray';
+  };
+
+  // Helper functions for summary labels
+  const getCarTypeLabel = (value) => {
+    const carType = questions.transport.questions
+      .find(q => q.id === "car_section")?.children
+      ?.find(c => c.id === "car_type")?.options
+      ?.find(opt => opt.value === value);
+    return carType?.label || value;
+  };
+  
+  const getCarFuelLabel = (value) => {
+    const carFuel = questions.transport.questions
+      .find(q => q.id === "car_section")?.children
+      ?.find(c => c.id === "car_fuel")?.options
+      ?.find(opt => opt.value === value);
+    return carFuel?.label || value;
+  };
+  
+  const getTrainTypeLabel = (value) => {
+    const trainType = questions.transport.questions
+      .find(q => q.id === "train_section")?.children
+      ?.find(c => c.id === "train_type")?.options
+      ?.find(opt => opt.value === value);
+    return trainType?.label || value;
+  };
+  
+  const getFoodWasteLabel = (value) => {
+    const wasteOption = questions.food.questions
+      .find(q => q.id === "food_waste")?.options
+      ?.find(opt => opt.value === value);
+    return wasteOption?.label || value;
+  };
+  
+  const getRecyclingRateLabel = (value) => {
+    const rateOption = questions.waste.questions
+      .find(q => q.id === "recycling_rate")?.options
+      ?.find(opt => opt.value === value);
+    return rateOption?.label || value;
   };
 
   return (
@@ -517,8 +889,96 @@ export default function AddActivity() {
 
               <div className="space-y-6">
                 {questions[currentCategory].questions.map((q) => {
+                  if (q.type === "section") {
+                    const isExpanded = expandedSections[q.id];
+                    
+                    return (
+                      <div key={q.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                        <button
+                          onClick={() => toggleSection(q.id)}
+                          className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-gray-200 rounded-lg">
+                              {q.icon}
+                            </div>
+                            <span className="font-semibold text-gray-900">{q.text}</span>
+                          </div>
+                          <ChevronRight className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                        </button>
+                        
+                        {isExpanded && (
+                          <div className="p-4 space-y-4 border-t border-gray-100">
+                            {q.children.map((childQ) => {
+                              const currentValue = values[childQ.id];
+                              const emission = getEstimatedEmission(childQ.id, currentValue, childQ);
+                              
+                              return (
+                                <div key={childQ.id} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                                  <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-gray-100 rounded-lg">
+                                      {childQ.icon}
+                                    </div>
+                                    <div className="flex-1">
+                                      <label className="block font-medium text-gray-900 mb-2">
+                                        {childQ.text}
+                                      </label>
+                                      
+                                      {childQ.type === "select" ? (
+                                        <select
+                                          value={values[childQ.id] || ''}
+                                          onChange={(e) => handleInputChange(childQ.id, e.target.value, childQ)}
+                                          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 bg-white"
+                                          disabled={isLoading}
+                                        >
+                                          <option value="">Select {childQ.text}</option>
+                                          {childQ.options.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                              {option.label}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <div className="relative">
+                                          <input
+                                            type="number"
+                                            min={childQ.min}
+                                            max={childQ.max}
+                                            step={childQ.step}
+                                            value={currentValue || ''}
+                                            onChange={(e) => handleInputChange(childQ.id, e.target.value, childQ)}
+                                            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500"
+                                            placeholder={`Enter ${childQ.unit}`}
+                                            disabled={isLoading}
+                                          />
+                                          <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                                            {childQ.unit}
+                                          </span>
+                                        </div>
+                                      )}
+
+                                      {childQ.helpText && (
+                                        <p className="text-xs text-gray-500 mt-2">💡 {childQ.helpText}</p>
+                                      )}
+
+                                      {emission && (
+                                        <p className="text-sm text-green-600 font-medium mt-2">
+                                          ≈ {emission} kg CO₂
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  
                   const currentValue = values[q.id];
-                  const emission = getEstimatedEmission(q.id, currentValue, q.factor);
+                  const emission = getEstimatedEmission(q.id, currentValue, q);
                   
                   return (
                     <div key={q.id} className="border-b border-gray-100 pb-6 last:border-0">
@@ -531,22 +991,38 @@ export default function AddActivity() {
                             {q.text}
                           </label>
                           
-                          <div className="relative">
-                            <input
-                              type="number"
-                              min={q.min}
-                              max={q.max}
-                              step={q.step}
-                              value={currentValue || ''}
-                              onChange={(e) => handleInputChange(q.id, e.target.value)}
-                              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500"
-                              placeholder={`Enter ${q.unit}`}
+                          {q.type === "select" ? (
+                            <select
+                              value={values[q.id] || ''}
+                              onChange={(e) => handleInputChange(q.id, e.target.value, q)}
+                              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 bg-white"
                               disabled={isLoading}
-                            />
-                            <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
-                              {q.unit}
-                            </span>
-                          </div>
+                            >
+                              <option value="">Select {q.text}</option>
+                              {q.options.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min={q.min}
+                                max={q.max}
+                                step={q.step}
+                                value={currentValue || ''}
+                                onChange={(e) => handleInputChange(q.id, e.target.value, q)}
+                                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500"
+                                placeholder={`Enter ${q.unit}`}
+                                disabled={isLoading}
+                              />
+                              <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                                {q.unit}
+                              </span>
+                            </div>
+                          )}
 
                           {q.helpText && (
                             <p className="text-xs text-gray-500 mt-2">💡 {q.helpText}</p>
@@ -579,13 +1055,59 @@ export default function AddActivity() {
                 {Object.keys(values).length > 0 ? (
                   Object.entries(values).map(([id, val]) => {
                     if (val <= 0) return null;
+                    
+                    if (id === "car_type") {
+                      return (
+                        <div key={id} className="flex justify-between text-sm">
+                          <span className="text-gray-600">Car Type</span>
+                          <span className="font-medium">{getCarTypeLabel(val)}</span>
+                        </div>
+                      );
+                    }
+                    
+                    if (id === "car_fuel") {
+                      return (
+                        <div key={id} className="flex justify-between text-sm">
+                          <span className="text-gray-600">Fuel Type</span>
+                          <span className="font-medium">{getCarFuelLabel(val)}</span>
+                        </div>
+                      );
+                    }
+                    
+                    if (id === "train_type") {
+                      return (
+                        <div key={id} className="flex justify-between text-sm">
+                          <span className="text-gray-600">Train Type</span>
+                          <span className="font-medium">{getTrainTypeLabel(val)}</span>
+                        </div>
+                      );
+                    }
+                    
+                    if (id === "food_waste") {
+                      return (
+                        <div key={id} className="flex justify-between text-sm">
+                          <span className="text-gray-600">Food Waste</span>
+                          <span className="font-medium">{getFoodWasteLabel(val)}</span>
+                        </div>
+                      );
+                    }
+                    
+                    if (id === "recycling_rate") {
+                      return (
+                        <div key={id} className="flex justify-between text-sm">
+                          <span className="text-gray-600">Recycling Rate</span>
+                          <span className="font-medium">{getRecyclingRateLabel(val)}</span>
+                        </div>
+                      );
+                    }
+                    
                     const q = findQuestion(id);
                     if (!q) return null;
                     
                     return (
                       <div key={id} className="flex justify-between text-sm">
                         <span className="text-gray-600">{q.text}</span>
-                        <span className="font-medium">{val} {q.unit}</span>
+                        <span className="font-medium">{val} {q.unit || ''}</span>
                       </div>
                     );
                   })
@@ -607,7 +1129,7 @@ export default function AddActivity() {
               )}
             </div>
 
-            {/* 👈 SMART TIPS SECTION - ADDED */}
+            {/* Smart Tips Section */}
             {stats && stats.total !== null && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <CarbonTips stats={stats} activities={activities} />

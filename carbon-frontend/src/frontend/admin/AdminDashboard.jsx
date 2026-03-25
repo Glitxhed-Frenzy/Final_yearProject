@@ -8,7 +8,7 @@ import {
   Zap,
   Car,
   Utensils,
-  ShoppingBag,
+  Trash2,
   AlertCircle,
   Calendar
 } from "lucide-react";
@@ -23,7 +23,12 @@ export default function AdminDashboard() {
     totalActivities: 0,
     totalEmissions: 0,
     averagePerActivity: 0,
-    categoryTotals: {},
+    categoryTotals: {
+      transport: 0,
+      electricity: 0,
+      waste: 0,
+      food: 0
+    },
     recentActivities: []
   });
 
@@ -37,6 +42,7 @@ export default function AdminDashboard() {
     
     try {
       const response = await adminAPI.getStats();
+      console.log('Dashboard stats:', response.data);
       setStats(response.data.data);
     } catch (error) {
       console.error("Error loading admin dashboard:", error);
@@ -49,11 +55,9 @@ export default function AdminDashboard() {
   const getCategoryIcon = (category) => {
     const icons = {
       transport: <Car className="w-4 h-4" />,
-      home: <Zap className="w-4 h-4" />,
-      food: <Utensils className="w-4 h-4" />,
-      purchases: <ShoppingBag className="w-4 h-4" />,
-      water: <Leaf className="w-4 h-4" />,
-      electronics: <Activity className="w-4 h-4" />
+      electricity: <Zap className="w-4 h-4" />,
+      waste: <Trash2 className="w-4 h-4" />,
+      food: <Utensils className="w-4 h-4" />
     };
     return icons[category] || <Activity className="w-4 h-4" />;
   };
@@ -61,13 +65,21 @@ export default function AdminDashboard() {
   const getCategoryColor = (category) => {
     const colors = {
       transport: 'bg-purple-100 text-purple-700',
-      home: 'bg-blue-100 text-blue-700',
-      food: 'bg-amber-100 text-amber-700',
-      purchases: 'bg-rose-100 text-rose-700',
-      water: 'bg-cyan-100 text-cyan-700',
-      electronics: 'bg-indigo-100 text-indigo-700'
+      electricity: 'bg-blue-100 text-blue-700',
+      waste: 'bg-emerald-100 text-emerald-700',
+      food: 'bg-amber-100 text-amber-700'
     };
     return colors[category] || 'bg-gray-100 text-gray-700';
+  };
+
+  const getCategoryDisplayName = (category) => {
+    const names = {
+      transport: "Transport",
+      electricity: "Electricity",
+      waste: "Waste",
+      food: "Food"
+    };
+    return names[category] || category;
   };
 
   if (loading) {
@@ -113,7 +125,7 @@ export default function AdminDashboard() {
     Object.entries(stats.categoryTotals).forEach(([category, value]) => {
       if (value > 0) {
         chartData.push({ 
-          name: category.charAt(0).toUpperCase() + category.slice(1), 
+          name: getCategoryDisplayName(category), 
           value: value 
         });
       }
@@ -128,7 +140,7 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
           <p className="text-gray-600 mt-1">
             {hasData 
-              ? `Here's what's happening with your platform.`
+              ? `Here's what's happening with your ${stats.totalUsers} users.`
               : "No data yet. Users haven't added any activities."}
           </p>
         </div>
@@ -193,7 +205,7 @@ export default function AdminDashboard() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Emissions by Category */}
+        {/* Emissions by Category - Pie Chart */}
         <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Emissions by Category</h2>
           <div className="h-80">
@@ -205,7 +217,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Category Breakdown */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm overflow-y-auto max-h-[500px]">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Category Breakdown</h2>
           <div className="space-y-4">
             {Object.entries(stats.categoryTotals || {}).map(([category, value]) => {
@@ -221,7 +233,9 @@ export default function AdminDashboard() {
                         <span className={`p-1.5 rounded-lg ${getCategoryColor(category)}`}>
                           {getCategoryIcon(category)}
                         </span>
-                        <span className="font-medium text-gray-900 capitalize">{category}</span>
+                        <span className="font-medium text-gray-900 capitalize">
+                          {getCategoryDisplayName(category)}
+                        </span>
                       </div>
                       <span className="text-sm font-medium text-gray-900">{value.toFixed(1)} kg</span>
                     </div>
@@ -249,7 +263,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h2>
           <div className="space-y-4">
-            {stats.recentActivities.slice(0, 5).map((activity) => (
+            {stats.recentActivities.slice(0, 10).map((activity) => (
               <div key={activity._id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold">
@@ -260,6 +274,13 @@ export default function AdminDashboard() {
                     <p className="text-sm text-gray-600">
                       Added {activity.totalEmissions} kg CO₂
                     </p>
+                    <div className="flex gap-1 mt-1">
+                      {activity.categories?.slice(0, 2).map(cat => (
+                        <span key={cat} className="text-xs px-2 py-0.5 bg-gray-100 rounded-full capitalize">
+                          {getCategoryDisplayName(cat)}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div className="text-right">
