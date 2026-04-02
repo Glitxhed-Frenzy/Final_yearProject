@@ -8,7 +8,11 @@ import {
   TrendingDown,
   Leaf,
   AlertCircle,
-  Loader
+  Loader,
+  FileJson,
+  FileSpreadsheet,
+  FileText,
+  ChevronDown
 } from "lucide-react";
 import { activityAPI } from '../../services/api';
 import {
@@ -28,6 +32,8 @@ import {
   Area,
   AreaChart
 } from 'recharts';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const COLORS = ['#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
 
@@ -35,6 +41,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [timeframe, setTimeframe] = useState('month');
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [stats, setStats] = useState({
     totalEmissions: 0,
     totalActivities: 0,
@@ -55,7 +62,6 @@ export default function Reports() {
     setError(null);
     
     try {
-      // Fetch stats and activities
       const [statsRes, activitiesRes] = await Promise.all([
         activityAPI.getStats(),
         activityAPI.getAll()
@@ -74,11 +80,10 @@ export default function Reports() {
       }));
       setChartData(monthlyTrend);
       
-      // Process category breakdown for pie chart (updated categories)
+      // Process category breakdown
       const categories = [];
       const categoryTotals = statsData.categoryTotals || {};
       
-      // Map category names to display names
       const categoryDisplayNames = {
         transport: "Transport",
         electricity: "Electricity",
@@ -104,16 +109,16 @@ export default function Reports() {
     }
   };
 
-  const handleExport = () => {
-    // Create export data
+  // ========== JSON EXPORT ==========
+  const exportJSON = () => {
     const exportData = {
       summary: stats,
       activities: activities,
       exportDate: new Date().toISOString(),
-      timeframe: timeframe
+      timeframe: timeframe,
+      reportType: 'JSON Export'
     };
     
-    // Convert to JSON and download
     const dataStr = JSON.stringify(exportData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     const exportFileDefaultName = `carbon-report-${new Date().toISOString().split('T')[0]}.json`;
@@ -122,6 +127,182 @@ export default function Reports() {
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
+    setShowExportMenu(false);
+  };
+
+  // ========== CSV EXPORT ==========
+  const exportCSV = () => {
+    // Prepare CSV data for activities
+    const csvRows = [];
+    
+    // Headers
+    const headers = ['Date', 'Categories', 'Total Emissions (kg CO₂)', 'Transport (kg)', 'Electricity (kg)', 'Waste (kg)', 'Food (kg)'];
+    csvRows.push(headers.join(','));
+    
+    // Add activity rows
+    activities.forEach(activity => {
+      const row = [
+        new Date(activity.date).toLocaleDateString(),
+        `"${activity.categories?.map(cat => getCategoryDisplayName(cat)).join(', ') || 'General'}"`,
+        activity.totalEmissions?.toFixed(2) || '0',
+        activity.categoryTotals?.transport?.toFixed(2) || '0',
+        activity.categoryTotals?.electricity?.toFixed(2) || '0',
+        activity.categoryTotals?.waste?.toFixed(2) || '0',
+        activity.categoryTotals?.food?.toFixed(2) || '0'
+      ];
+      csvRows.push(row.join(','));
+    });
+    
+    // Add summary section
+    csvRows.push(''); // Empty line
+    csvRows.push('"SUMMARY STATISTICS"');
+    csvRows.push(`"Total Emissions (kg CO₂)",${stats.totalEmissions?.toFixed(2) || 0}`);
+    csvRows.push(`"Total Activities",${stats.totalActivities || 0}`);
+    csvRows.push(`"Average per Activity (kg CO₂)",${stats.averagePerActivity?.toFixed(2) || 0}`);
+    
+    // Add category totals
+    csvRows.push('"Category Breakdown"');
+    Object.entries(stats.categoryTotals || {}).forEach(([category, value]) => {
+      csvRows.push(`"${getCategoryDisplayName(category)}",${value?.toFixed(2) || 0}`);
+    });
+    
+    // Create and download CSV file
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `carbon-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setShowExportMenu(false);
+  };
+
+  // ========== PDF EXPORT ==========
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPos = 20;
+    
+    // Title
+    doc.setFontSize(24);
+    doc.setTextColor(5, 150, 105); // Green color
+    doc.text('CarbonWise - Carbon Footprint Report', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 15;
+    
+    // Report info
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Report Generated: ${new Date().toLocaleString()}`, pageWidth / 2, yPos, { align: 'center' });
+    yPos += 10;
+    doc.text(`Timeframe: ${timeframe} view`, pageWidth / 2, yPos, { align: 'center' });
+    yPos += 20;
+    
+    // Summary Section
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Summary Statistics', 14, yPos);
+    yPos += 10;
+    
+    // Summary table
+    const summaryData = [
+      ['Total Emissions', `${stats.totalEmissions?.toFixed(2) || 0} kg CO₂`],
+      ['Total Activities', `${stats.totalActivities || 0}`],
+      ['Average per Activity', `${stats.averagePerActivity?.toFixed(2) || 0} kg CO₂`],
+    ];
+    
+    doc.autoTable({
+      startY: yPos,
+      head: [['Metric', 'Value']],
+      body: summaryData,
+      theme: 'striped',
+      headStyles: { fillColor: [5, 150, 105], textColor: 255 },
+      margin: { left: 14, right: 14 }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 15;
+    
+    // Category Breakdown Section
+    doc.setFontSize(16);
+    doc.text('Category Breakdown', 14, yPos);
+    yPos += 10;
+    
+    const categoryData_rows = Object.entries(stats.categoryTotals || {}).map(([category, value]) => [
+      getCategoryDisplayName(category),
+      `${value?.toFixed(2) || 0} kg CO₂`,
+      `${stats.totalEmissions > 0 ? ((value / stats.totalEmissions) * 100).toFixed(1) : 0}%`
+    ]);
+    
+    doc.autoTable({
+      startY: yPos,
+      head: [['Category', 'Emissions', 'Percentage']],
+      body: categoryData_rows,
+      theme: 'striped',
+      headStyles: { fillColor: [5, 150, 105], textColor: 255 },
+      margin: { left: 14, right: 14 }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 15;
+    
+    // Recent Activities Section
+    if (activities.length > 0) {
+      // Check if we need a new page
+      if (yPos > pageHeight - 60) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(16);
+      doc.text('Recent Activities', 14, yPos);
+      yPos += 10;
+      
+      const activitiesData = activities.slice(0, 10).map(activity => [
+        new Date(activity.date).toLocaleDateString(),
+        activity.categories?.map(cat => getCategoryDisplayName(cat)).join(', ') || 'General',
+        `${activity.totalEmissions?.toFixed(2) || 0} kg`
+      ]);
+      
+      doc.autoTable({
+        startY: yPos,
+        head: [['Date', 'Categories', 'Emissions']],
+        body: activitiesData,
+        theme: 'striped',
+        headStyles: { fillColor: [5, 150, 105], textColor: 255 },
+        margin: { left: 14, right: 14 }
+      });
+    }
+    
+    // Add footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(
+        `Page ${i} of ${pageCount} - CarbonWise Report`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: 'center' }
+      );
+    }
+    
+    // Save PDF
+    doc.save(`carbon-report-${new Date().toISOString().split('T')[0]}.pdf`);
+    setShowExportMenu(false);
+  };
+
+  const getCategoryDisplayName = (category) => {
+    const names = {
+      transport: "Transport",
+      electricity: "Electricity",
+      waste: "Waste",
+      food: "Food"
+    };
+    return names[category] || category;
   };
 
   if (loading) {
@@ -165,7 +346,6 @@ export default function Reports() {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
@@ -188,19 +368,54 @@ export default function Reports() {
                 <option value="year">Last 12 months</option>
               </select>
               
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                Export
-              </button>
+              {/* Export Dropdown Menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Export
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                
+                {showExportMenu && (
+                  <>
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                      <button
+                        onClick={exportJSON}
+                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <FileJson className="w-4 h-4 text-blue-600" />
+                        Export as JSON
+                      </button>
+                      <button
+                        onClick={exportCSV}
+                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                        Export as CSV
+                      </button>
+                      <button
+                        onClick={exportPDF}
+                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4 text-red-600" />
+                        Export as PDF
+                      </button>
+                    </div>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowExportMenu(false)}
+                    />
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
 
         {!hasData ? (
-          /* Empty State */
           <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
             <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">No Data Available</h2>
@@ -215,7 +430,6 @@ export default function Reports() {
             </button>
           </div>
         ) : (
-          /* Reports Content */
           <div className="space-y-8">
             
             {/* Summary Cards */}
@@ -341,10 +555,7 @@ export default function Reports() {
                           {new Date(activity.date).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
-                          {activity.categories?.map(cat => 
-                            cat === 'electricity' ? 'Electricity' : 
-                            cat.charAt(0).toUpperCase() + cat.slice(1)
-                          ).join(', ') || 'General'}
+                          {activity.categories?.map(cat => getCategoryDisplayName(cat)).join(', ') || 'General'}
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
                           {activity.totalEmissions?.toFixed(1)} kg

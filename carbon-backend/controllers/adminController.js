@@ -135,23 +135,38 @@ exports.getAdminStats = async (req, res) => {
       .limit(10)
       .populate('user', 'name email');
 
+    // FIXED: Updated category totals for new 4 categories
     const categoryTotals = {
       transport: 0,
-      home: 0,
-      food: 0,
-      purchases: 0,
-      water: 0,
-      electronics: 0
+      electricity: 0,
+      waste: 0,
+      food: 0
     };
 
     activities.forEach(activity => {
       if (activity.categoryTotals) {
-        Object.entries(activity.categoryTotals).forEach(([category, value]) => {
-          if (categoryTotals.hasOwnProperty(category)) {
-            categoryTotals[category] += value;
-          }
-        });
+        // Transport
+        if (activity.categoryTotals.transport) {
+          categoryTotals.transport += activity.categoryTotals.transport;
+        }
+        // Electricity
+        if (activity.categoryTotals.electricity) {
+          categoryTotals.electricity += activity.categoryTotals.electricity;
+        }
+        // Waste
+        if (activity.categoryTotals.waste) {
+          categoryTotals.waste += activity.categoryTotals.waste;
+        }
+        // Food
+        if (activity.categoryTotals.food) {
+          categoryTotals.food += activity.categoryTotals.food;
+        }
       }
+    });
+
+    // Round all values to 2 decimal places
+    Object.keys(categoryTotals).forEach(key => {
+      categoryTotals[key] = Math.round(categoryTotals[key] * 100) / 100;
     });
 
     res.status(200).json({
@@ -159,13 +174,14 @@ exports.getAdminStats = async (req, res) => {
       data: {
         totalUsers,
         totalActivities,
-        totalEmissions,
-        averagePerActivity: totalActivities > 0 ? totalEmissions / totalActivities : 0,
+        totalEmissions: Math.round(totalEmissions * 100) / 100,
+        averagePerActivity: totalActivities > 0 ? Math.round((totalEmissions / totalActivities) * 100) / 100 : 0,
         categoryTotals,
         recentActivities
       }
     });
   } catch (error) {
+    console.error('Error in getAdminStats:', error);
     res.status(500).json({
       success: false,
       message: error.message

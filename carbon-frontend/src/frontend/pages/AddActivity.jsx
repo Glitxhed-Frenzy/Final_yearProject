@@ -25,7 +25,6 @@ const questions = {
     icon: <Car className="w-6 h-6" />,
     color: "from-purple-500 to-violet-600",
     questions: [
-      // CAR - Collapsible Section
       {
         id: "car_section",
         text: "Car",
@@ -72,7 +71,6 @@ const questions = {
           }
         ]
       },
-      // BUS - Simple
       {
         id: "bus_km",
         text: "Bus Kilometers",
@@ -85,7 +83,6 @@ const questions = {
         icon: <Bus className="w-5 h-5" />,
         helpText: "How many kilometers did you travel by bus?"
       },
-      // TRAIN - Collapsible Section
       {
         id: "train_section",
         text: "Train",
@@ -117,7 +114,6 @@ const questions = {
           }
         ]
       },
-      // PLANE - Simple
       {
         id: "plane_km",
         text: "Plane Kilometers",
@@ -133,7 +129,6 @@ const questions = {
     ]
   },
   
-  // Electricity Category
   electricity: {
     title: "Electricity Usage",
     icon: <Zap className="w-6 h-6" />,
@@ -202,7 +197,6 @@ const questions = {
     ]
   },
   
-  // Waste Category
   waste: {
     title: "Waste Management",
     icon: <Trash2 className="w-6 h-6" />,
@@ -284,7 +278,6 @@ const questions = {
     ]
   },
   
-  // Food Category
   food: {
     title: "Food & Diet",
     icon: <Apple className="w-6 h-6" />,
@@ -357,30 +350,21 @@ const questions = {
 export default function AddActivity() {
   const navigate = useNavigate();
   const [currentCategory, setCurrentCategory] = useState("transport");
-  
-  // State for form values
   const [values, setValues] = useState({});
-  
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [showDeleteOptions, setShowDeleteOptions] = useState(false);
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // State for collapsible sections
   const [expandedSections, setExpandedSections] = useState({
     car_section: false,
     train_section: false
   });
-  
-  // State for selected options
   const [selectedCarType, setSelectedCarType] = useState(null);
   const [selectedCarFuel, setSelectedCarFuel] = useState(null);
   const [selectedTrainType, setSelectedTrainType] = useState(null);
   const [selectedFoodWaste, setSelectedFoodWaste] = useState(null);
   const [selectedRecyclingRate, setSelectedRecyclingRate] = useState(null);
-  
-  // Stats state for tips
   const [stats, setStats] = useState({
     total: null,
     transport: null,
@@ -389,71 +373,62 @@ export default function AddActivity() {
     food: null
   });
   
-  // Car factor map (type + fuel combination) - in kg CO₂ per km
+  const carFactorMap = {
+    hatchback_petrol: 0.124,
+    hatchback_diesel: 0.106,
+    sedan_petrol: 0.162,
+    sedan_diesel: 0.143,
+    sedan_hybrid: 0.099,
+    sedan_electric: 0.062,
+    suv_petrol: 0.217,
+    suv_diesel: 0.193,
+    suv_hybrid: 0.137,
+    suv_electric: 0.087,
+    muv_petrol: 0.199,
+    muv_diesel: 0.174,
+    muv_hybrid: 0.124,
+    muv_electric: 0.081
+  };
+  
+  const trainFactorMap = {
+    local: 0.025,
+    express: 0.062
+  };
+  
+  const foodWasteMultiplierMap = {
+    low: 1.0,
+    medium: 1.15,
+    high: 1.30
+  };
+  
+  const recyclingMultiplierMap = {
+    low: 1.0,
+    medium: 0.7,
+    high: 0.4,
+    very_high: 0.2
+  };
+  
   const getCarFactor = () => {
     if (!selectedCarType || !selectedCarFuel) return null;
-    
-    const factorMap = {
-      hatchback_petrol: 0.124,
-      hatchback_diesel: 0.106,
-      sedan_petrol: 0.162,
-      sedan_diesel: 0.143,
-      sedan_hybrid: 0.099,
-      sedan_electric: 0.062,
-      suv_petrol: 0.217,
-      suv_diesel: 0.193,
-      suv_hybrid: 0.137,
-      suv_electric: 0.087,
-      muv_petrol: 0.199,
-      muv_diesel: 0.174,
-      muv_hybrid: 0.124,
-      muv_electric: 0.081
-    };
-    
     const key = `${selectedCarType}_${selectedCarFuel}`;
-    return factorMap[key] || null;
+    return carFactorMap[key] || null;
   };
   
-  // Train factor map - in kg CO₂ per km
   const getTrainFactor = () => {
     if (!selectedTrainType) return null;
-    
-    const factorMap = {
-      local: 0.025,
-      express: 0.062
-    };
-    
-    return factorMap[selectedTrainType] || null;
+    return trainFactorMap[selectedTrainType] || null;
   };
   
-  // Food waste multiplier
   const getFoodWasteMultiplier = () => {
     if (!selectedFoodWaste) return 1.0;
-    
-    const wasteMap = {
-      low: 1.0,
-      medium: 1.15,
-      high: 1.30
-    };
-    
-    return wasteMap[selectedFoodWaste] || 1.0;
+    return foodWasteMultiplierMap[selectedFoodWaste] || 1.0;
   };
   
-  // Recycling rate multiplier
   const getRecyclingMultiplier = () => {
     if (!selectedRecyclingRate) return 1.0;
-    
-    const rateMap = {
-      low: 1.0,
-      medium: 0.7,
-      high: 0.4,
-      very_high: 0.2
-    };
-    
-    return rateMap[selectedRecyclingRate] || 1.0;
+    return recyclingMultiplierMap[selectedRecyclingRate] || 1.0;
   };
   
-  // Toggle collapsible section
   const toggleSection = (sectionId) => {
     setExpandedSections(prev => ({
       ...prev,
@@ -461,7 +436,6 @@ export default function AddActivity() {
     }));
   };
   
-  // Load existing activities and stats
   useEffect(() => {
     fetchActivities();
     fetchStats();
@@ -494,76 +468,45 @@ export default function AddActivity() {
     }
   };
 
-  // Handle input changes
   const handleInputChange = (questionId, value, question) => {
     setValues(prev => ({
       ...prev,
       [questionId]: value
     }));
     
-    if (questionId === "car_type") {
-      setSelectedCarType(value);
-    }
-    
-    if (questionId === "car_fuel") {
-      setSelectedCarFuel(value);
-    }
-    
-    if (questionId === "train_type") {
-      setSelectedTrainType(value);
-    }
-    
-    if (questionId === "food_waste") {
-      setSelectedFoodWaste(value);
-    }
-    
-    if (questionId === "recycling_rate") {
-      setSelectedRecyclingRate(value);
-    }
+    if (questionId === "car_type") setSelectedCarType(value);
+    if (questionId === "car_fuel") setSelectedCarFuel(value);
+    if (questionId === "train_type") setSelectedTrainType(value);
+    if (questionId === "food_waste") setSelectedFoodWaste(value);
+    if (questionId === "recycling_rate") setSelectedRecyclingRate(value);
   };
 
-  // Calculate estimated emission for a single question
   const getEstimatedEmission = (questionId, value, question) => {
     if (!value || value <= 0) return null;
     
-    // For car km
     if (questionId === "car_km") {
       const carFactor = getCarFactor();
-      if (carFactor) {
-        return (value * carFactor).toFixed(2);
-      }
+      if (carFactor) return (value * carFactor).toFixed(2);
       return null;
     }
     
-    // For train km
     if (questionId === "train_km") {
       const trainFactor = getTrainFactor();
-      if (trainFactor) {
-        return (value * trainFactor).toFixed(2);
-      }
+      if (trainFactor) return (value * trainFactor).toFixed(2);
       return null;
     }
     
-    // For waste items - apply recycling multiplier
     if (["food_waste_kg", "plastic_waste_kg", "paper_waste_kg", "metal_waste_kg", "ewaste_kg"].includes(questionId)) {
       const recyclingMultiplier = getRecyclingMultiplier();
-      if (question?.factor) {
-        return (value * question.factor * recyclingMultiplier).toFixed(2);
-      }
+      if (question?.factor) return (value * question.factor * recyclingMultiplier).toFixed(2);
     }
     
-    // For food items - apply food waste multiplier
     if (["chicken_servings", "fish_servings", "dairy_servings", "vegetarian_meals"].includes(questionId)) {
       const wasteMultiplier = getFoodWasteMultiplier();
-      if (question?.factor) {
-        return (value * question.factor * wasteMultiplier).toFixed(2);
-      }
+      if (question?.factor) return (value * question.factor * wasteMultiplier).toFixed(2);
     }
     
-    // For other questions
-    if (question?.factor) {
-      return (value * question.factor).toFixed(2);
-    }
+    if (question?.factor) return (value * question.factor).toFixed(2);
     
     return null;
   };
@@ -572,7 +515,6 @@ export default function AddActivity() {
     return Object.keys(values).some(key => values[key] > 0);
   };
 
-  // Save activity
   const saveActivity = async () => {
     if (!hasAnyData()) {
       alert("Please add some data first");
@@ -582,7 +524,6 @@ export default function AddActivity() {
     setIsLoading(true);
 
     try {
-      // Prepare data
       const dataToSend = {};
       Object.keys(values).forEach(key => {
         if (values[key] > 0) {
@@ -595,24 +536,20 @@ export default function AddActivity() {
         dataToSend.car_fuel = selectedCarFuel;
       }
       
-      if (selectedTrainType) {
-        dataToSend.train_type = selectedTrainType;
-      }
-      
-      if (selectedFoodWaste) {
-        dataToSend.food_waste = selectedFoodWaste;
-      }
-      
-      if (selectedRecyclingRate) {
-        dataToSend.recycling_rate = selectedRecyclingRate;
-      }
+      if (selectedTrainType) dataToSend.train_type = selectedTrainType;
+      if (selectedFoodWaste) dataToSend.food_waste = selectedFoodWaste;
+      if (selectedRecyclingRate) dataToSend.recycling_rate = selectedRecyclingRate;
+
+      // FIXED: Send local date with timezone offset
+      const now = new Date();
+      const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+      dataToSend.date = localDate.toISOString();
 
       const response = await activityAPI.create(dataToSend);
       
       setActivities(prev => [response.data.data, ...prev]);
       fetchStats();
       
-      // Calculate total for success message
       let total = 0;
       const wasteMultiplier = getFoodWasteMultiplier();
       const recyclingMultiplier = getRecyclingMultiplier();
@@ -620,29 +557,19 @@ export default function AddActivity() {
       Object.keys(values).forEach(key => {
         if (key === "car_km") {
           const carFactor = getCarFactor();
-          if (carFactor && values[key] > 0) {
-            total += values[key] * carFactor;
-          }
+          if (carFactor && values[key] > 0) total += values[key] * carFactor;
         } else if (key === "train_km") {
           const trainFactor = getTrainFactor();
-          if (trainFactor && values[key] > 0) {
-            total += values[key] * trainFactor;
-          }
+          if (trainFactor && values[key] > 0) total += values[key] * trainFactor;
         } else if (["food_waste_kg", "plastic_waste_kg", "paper_waste_kg", "metal_waste_kg", "ewaste_kg"].includes(key)) {
           const question = findQuestion(key);
-          if (question && values[key] > 0 && question.factor) {
-            total += values[key] * question.factor * recyclingMultiplier;
-          }
+          if (question && values[key] > 0 && question.factor) total += values[key] * question.factor * recyclingMultiplier;
         } else if (["chicken_servings", "fish_servings", "dairy_servings", "vegetarian_meals"].includes(key)) {
           const question = findQuestion(key);
-          if (question && values[key] > 0 && question.factor) {
-            total += values[key] * question.factor * wasteMultiplier;
-          }
+          if (question && values[key] > 0 && question.factor) total += values[key] * question.factor * wasteMultiplier;
         } else {
           const question = findQuestion(key);
-          if (question && values[key] > 0 && question.factor) {
-            total += values[key] * question.factor;
-          }
+          if (question && values[key] > 0 && question.factor) total += values[key] * question.factor;
         }
       });
       
@@ -666,7 +593,6 @@ export default function AddActivity() {
     }
   };
 
-  // Helper to find question by ID
   const findQuestion = (questionId) => {
     for (const cat of Object.values(questions)) {
       const q = cat.questions.find(q => q.id === questionId);
@@ -682,7 +608,6 @@ export default function AddActivity() {
     return null;
   };
 
-  // Reset form
   const resetForm = () => {
     if (hasAnyData()) {
       if (window.confirm("Clear all data?")) {
@@ -696,7 +621,6 @@ export default function AddActivity() {
     }
   };
 
-  // Delete activity
   const deleteActivity = async (activityId) => {
     if (window.confirm("Delete this activity?")) {
       try {
@@ -714,12 +638,6 @@ export default function AddActivity() {
     }
   };
 
-  const getCategoryColor = (categoryId) => {
-    const cat = categories.find(c => c.id === categoryId);
-    return cat?.color || 'gray';
-  };
-
-  // Helper functions for summary labels
   const getCarTypeLabel = (value) => {
     const carType = questions.transport.questions
       .find(q => q.id === "car_section")?.children
@@ -762,7 +680,6 @@ export default function AddActivity() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Success Notification */}
         {showSuccess && (
           <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl shadow-lg z-50 flex items-center gap-2 animate-slide-down">
             <CheckCircle className="w-5 h-5" />
@@ -770,24 +687,17 @@ export default function AddActivity() {
           </div>
         )}
 
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Add Activity</h1>
-            <p className="text-gray-600 mt-2">
-              Enter your monthly usage below
-            </p>
+            <p className="text-gray-600 mt-2">Enter your monthly usage below</p>
           </div>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900"
-          >
+          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900">
             <ArrowLeft className="w-4 h-4" />
             Dashboard
           </button>
         </div>
 
-        {/* Action Buttons */}
         <div className="mb-6 flex flex-wrap gap-3">
           <button
             onClick={saveActivity}
@@ -812,10 +722,7 @@ export default function AddActivity() {
           </button>
 
           {hasAnyData() && !isLoading && (
-            <button
-              onClick={resetForm}
-              className="flex items-center gap-2 px-4 py-3 bg-orange-100 text-orange-700 rounded-xl hover:bg-orange-200"
-            >
+            <button onClick={resetForm} className="flex items-center gap-2 px-4 py-3 bg-orange-100 text-orange-700 rounded-xl hover:bg-orange-200">
               <RefreshCw className="w-4 h-4" />
               Reset
             </button>
@@ -823,29 +730,18 @@ export default function AddActivity() {
 
           {activities.length > 0 && !isLoading && (
             <div className="relative">
-              <button
-                onClick={() => setShowDeleteOptions(!showDeleteOptions)}
-                className="flex items-center gap-2 px-4 py-3 bg-red-100 text-red-700 rounded-xl hover:bg-red-200"
-              >
+              <button onClick={() => setShowDeleteOptions(!showDeleteOptions)} className="flex items-center gap-2 px-4 py-3 bg-red-100 text-red-700 rounded-xl hover:bg-red-200">
                 <Trash2 className="w-4 h-4" />
                 Delete
               </button>
               
               {showDeleteOptions && (
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border py-2 z-50">
-                  <button
-                    onClick={() => setShowDeleteOptions(false)}
-                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 border-b"
-                  >
+                  <button onClick={() => setShowDeleteOptions(false)} className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 border-b">
                     ← Cancel
                   </button>
-                  
                   {activities.slice(0, 5).map(activity => (
-                    <button
-                      key={activity._id}
-                      onClick={() => deleteActivity(activity._id)}
-                      className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex justify-between"
-                    >
+                    <button key={activity._id} onClick={() => deleteActivity(activity._id)} className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex justify-between">
                       <span>{new Date(activity.date).toLocaleDateString()}</span>
                       <span>{activity.totalEmissions} kg</span>
                     </button>
@@ -856,19 +752,12 @@ export default function AddActivity() {
           )}
         </div>
 
-        {/* Category Tabs */}
         <div className="mb-8 overflow-x-auto">
           <div className="bg-white rounded-xl shadow-sm p-2 inline-flex gap-2">
             {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setCurrentCategory(cat.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                  currentCategory === cat.id
-                    ? `bg-gradient-to-r from-${cat.color}-500 to-${cat.color}-600 text-white`
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
+              <button key={cat.id} onClick={() => setCurrentCategory(cat.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                currentCategory === cat.id ? `bg-gradient-to-r from-${cat.color}-500 to-${cat.color}-600 text-white` : 'text-gray-600 hover:bg-gray-100'
+              }`}>
                 {cat.icon}
                 {cat.label}
               </button>
@@ -876,7 +765,6 @@ export default function AddActivity() {
           </div>
         </div>
 
-        {/* Questions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -894,14 +782,9 @@ export default function AddActivity() {
                     
                     return (
                       <div key={q.id} className="border border-gray-200 rounded-xl overflow-hidden">
-                        <button
-                          onClick={() => toggleSection(q.id)}
-                          className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-                        >
+                        <button onClick={() => toggleSection(q.id)} className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-gray-200 rounded-lg">
-                              {q.icon}
-                            </div>
+                            <div className="p-2 bg-gray-200 rounded-lg">{q.icon}</div>
                             <span className="font-semibold text-gray-900">{q.text}</span>
                           </div>
                           <ChevronRight className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
@@ -916,56 +799,26 @@ export default function AddActivity() {
                               return (
                                 <div key={childQ.id} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
                                   <div className="flex items-start gap-3">
-                                    <div className="p-2 bg-gray-100 rounded-lg">
-                                      {childQ.icon}
-                                    </div>
+                                    <div className="p-2 bg-gray-100 rounded-lg">{childQ.icon}</div>
                                     <div className="flex-1">
-                                      <label className="block font-medium text-gray-900 mb-2">
-                                        {childQ.text}
-                                      </label>
+                                      <label className="block font-medium text-gray-900 mb-2">{childQ.text}</label>
                                       
                                       {childQ.type === "select" ? (
-                                        <select
-                                          value={values[childQ.id] || ''}
-                                          onChange={(e) => handleInputChange(childQ.id, e.target.value, childQ)}
-                                          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 bg-white"
-                                          disabled={isLoading}
-                                        >
+                                        <select value={values[childQ.id] || ''} onChange={(e) => handleInputChange(childQ.id, e.target.value, childQ)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 bg-white" disabled={isLoading}>
                                           <option value="">Select {childQ.text}</option>
                                           {childQ.options.map((option) => (
-                                            <option key={option.value} value={option.value}>
-                                              {option.label}
-                                            </option>
+                                            <option key={option.value} value={option.value}>{option.label}</option>
                                           ))}
                                         </select>
                                       ) : (
                                         <div className="relative">
-                                          <input
-                                            type="number"
-                                            min={childQ.min}
-                                            max={childQ.max}
-                                            step={childQ.step}
-                                            value={currentValue || ''}
-                                            onChange={(e) => handleInputChange(childQ.id, e.target.value, childQ)}
-                                            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500"
-                                            placeholder={`Enter ${childQ.unit}`}
-                                            disabled={isLoading}
-                                          />
-                                          <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
-                                            {childQ.unit}
-                                          </span>
+                                          <input type="number" min={childQ.min} max={childQ.max} step={childQ.step} value={currentValue || ''} onChange={(e) => handleInputChange(childQ.id, e.target.value, childQ)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500" placeholder={`Enter ${childQ.unit}`} disabled={isLoading} />
+                                          <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">{childQ.unit}</span>
                                         </div>
                                       )}
 
-                                      {childQ.helpText && (
-                                        <p className="text-xs text-gray-500 mt-2">💡 {childQ.helpText}</p>
-                                      )}
-
-                                      {emission && (
-                                        <p className="text-sm text-green-600 font-medium mt-2">
-                                          ≈ {emission} kg CO₂
-                                        </p>
-                                      )}
+                                      {childQ.helpText && <p className="text-xs text-gray-500 mt-2">💡 {childQ.helpText}</p>}
+                                      {emission && <p className="text-sm text-green-600 font-medium mt-2">≈ {emission} kg CO₂</p>}
                                     </div>
                                   </div>
                                 </div>
@@ -983,56 +836,26 @@ export default function AddActivity() {
                   return (
                     <div key={q.id} className="border-b border-gray-100 pb-6 last:border-0">
                       <div className="flex items-start gap-3">
-                        <div className="p-2 bg-gray-100 rounded-lg">
-                          {q.icon}
-                        </div>
+                        <div className="p-2 bg-gray-100 rounded-lg">{q.icon}</div>
                         <div className="flex-1">
-                          <label className="block font-medium text-gray-900 mb-2">
-                            {q.text}
-                          </label>
+                          <label className="block font-medium text-gray-900 mb-2">{q.text}</label>
                           
                           {q.type === "select" ? (
-                            <select
-                              value={values[q.id] || ''}
-                              onChange={(e) => handleInputChange(q.id, e.target.value, q)}
-                              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 bg-white"
-                              disabled={isLoading}
-                            >
+                            <select value={values[q.id] || ''} onChange={(e) => handleInputChange(q.id, e.target.value, q)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 bg-white" disabled={isLoading}>
                               <option value="">Select {q.text}</option>
                               {q.options.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
+                                <option key={option.value} value={option.value}>{option.label}</option>
                               ))}
                             </select>
                           ) : (
                             <div className="relative">
-                              <input
-                                type="number"
-                                min={q.min}
-                                max={q.max}
-                                step={q.step}
-                                value={currentValue || ''}
-                                onChange={(e) => handleInputChange(q.id, e.target.value, q)}
-                                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500"
-                                placeholder={`Enter ${q.unit}`}
-                                disabled={isLoading}
-                              />
-                              <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
-                                {q.unit}
-                              </span>
+                              <input type="number" min={q.min} max={q.max} step={q.step} value={currentValue || ''} onChange={(e) => handleInputChange(q.id, e.target.value, q)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500" placeholder={`Enter ${q.unit}`} disabled={isLoading} />
+                              <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">{q.unit}</span>
                             </div>
                           )}
 
-                          {q.helpText && (
-                            <p className="text-xs text-gray-500 mt-2">💡 {q.helpText}</p>
-                          )}
-
-                          {emission && (
-                            <p className="text-sm text-green-600 font-medium mt-2">
-                              ≈ {emission} kg CO₂
-                            </p>
-                          )}
+                          {q.helpText && <p className="text-xs text-gray-500 mt-2">💡 {q.helpText}</p>}
+                          {emission && <p className="text-sm text-green-600 font-medium mt-2">≈ {emission} kg CO₂</p>}
                         </div>
                       </div>
                     </div>
@@ -1042,9 +865,7 @@ export default function AddActivity() {
             </div>
           </div>
 
-          {/* Summary & Tips Section */}
           <div className="space-y-6">
-            {/* Summary Card */}
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-6">
               <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
                 <AlertCircle className="w-5 h-5" />
@@ -1056,96 +877,42 @@ export default function AddActivity() {
                   Object.entries(values).map(([id, val]) => {
                     if (val <= 0) return null;
                     
-                    if (id === "car_type") {
-                      return (
-                        <div key={id} className="flex justify-between text-sm">
-                          <span className="text-gray-600">Car Type</span>
-                          <span className="font-medium">{getCarTypeLabel(val)}</span>
-                        </div>
-                      );
-                    }
-                    
-                    if (id === "car_fuel") {
-                      return (
-                        <div key={id} className="flex justify-between text-sm">
-                          <span className="text-gray-600">Fuel Type</span>
-                          <span className="font-medium">{getCarFuelLabel(val)}</span>
-                        </div>
-                      );
-                    }
-                    
-                    if (id === "train_type") {
-                      return (
-                        <div key={id} className="flex justify-between text-sm">
-                          <span className="text-gray-600">Train Type</span>
-                          <span className="font-medium">{getTrainTypeLabel(val)}</span>
-                        </div>
-                      );
-                    }
-                    
-                    if (id === "food_waste") {
-                      return (
-                        <div key={id} className="flex justify-between text-sm">
-                          <span className="text-gray-600">Food Waste</span>
-                          <span className="font-medium">{getFoodWasteLabel(val)}</span>
-                        </div>
-                      );
-                    }
-                    
-                    if (id === "recycling_rate") {
-                      return (
-                        <div key={id} className="flex justify-between text-sm">
-                          <span className="text-gray-600">Recycling Rate</span>
-                          <span className="font-medium">{getRecyclingRateLabel(val)}</span>
-                        </div>
-                      );
-                    }
+                    if (id === "car_type") return <div key={id} className="flex justify-between text-sm"><span className="text-gray-600">Car Type</span><span className="font-medium">{getCarTypeLabel(val)}</span></div>;
+                    if (id === "car_fuel") return <div key={id} className="flex justify-between text-sm"><span className="text-gray-600">Fuel Type</span><span className="font-medium">{getCarFuelLabel(val)}</span></div>;
+                    if (id === "train_type") return <div key={id} className="flex justify-between text-sm"><span className="text-gray-600">Train Type</span><span className="font-medium">{getTrainTypeLabel(val)}</span></div>;
+                    if (id === "food_waste") return <div key={id} className="flex justify-between text-sm"><span className="text-gray-600">Food Waste</span><span className="font-medium">{getFoodWasteLabel(val)}</span></div>;
+                    if (id === "recycling_rate") return <div key={id} className="flex justify-between text-sm"><span className="text-gray-600">Recycling Rate</span><span className="font-medium">{getRecyclingRateLabel(val)}</span></div>;
                     
                     const q = findQuestion(id);
                     if (!q) return null;
                     
-                    return (
-                      <div key={id} className="flex justify-between text-sm">
-                        <span className="text-gray-600">{q.text}</span>
-                        <span className="font-medium">{val} {q.unit || ''}</span>
-                      </div>
-                    );
+                    return <div key={id} className="flex justify-between text-sm"><span className="text-gray-600">{q.text}</span><span className="font-medium">{val} {q.unit || ''}</span></div>;
                   })
                 ) : (
-                  <p className="text-gray-500 text-center py-4">
-                    No data yet
-                  </p>
+                  <p className="text-gray-500 text-center py-4">No data yet</p>
                 )}
               </div>
 
               {hasAnyData() && (
-                <button
-                  onClick={saveActivity}
-                  disabled={isLoading}
-                  className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button onClick={saveActivity} disabled={isLoading} className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed">
                   {isLoading ? 'Saving...' : 'Save Activity'}
                 </button>
               )}
             </div>
 
-            {/* Smart Tips Section */}
             {stats && stats.total !== null && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <CarbonTips stats={stats} activities={activities} />
               </div>
             )}
 
-            {/* Recent Activities */}
             {activities.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Recent</h3>
                 <div className="space-y-2">
                   {activities.slice(0, 3).map(activity => (
                     <div key={activity._id} className="flex justify-between text-sm">
-                      <span className="text-gray-600">
-                        {new Date(activity.date).toLocaleDateString()}
-                      </span>
+                      <span className="text-gray-600">{new Date(activity.date).toLocaleDateString()}</span>
                       <span className="font-medium">{activity.totalEmissions} kg</span>
                     </div>
                   ))}
