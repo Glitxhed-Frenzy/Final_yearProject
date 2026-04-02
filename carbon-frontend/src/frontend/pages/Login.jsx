@@ -155,36 +155,6 @@ export default function Login() {
     }
   };
 
-  const handleDemoLogin = () => {
-    setFormData({
-      email: "demo@example.com",
-      password: "Demo123"
-    });
-    setRememberMe(true);
-    
-    setTimeout(() => {
-      const mockUser = {
-        id: 2,
-        name: "Demo User",
-        email: "demo@example.com",
-        role: "user",
-        lastLogin: new Date().toISOString()
-      };
-      
-      localStorage.setItem("user", JSON.stringify(mockUser));
-      localStorage.setItem("token", "mock-jwt-token");
-      
-      const verifyUser = localStorage.getItem("user");
-      if (verifyUser) {
-        navigate("/dashboard");
-      } else {
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 200);
-      }
-    }, 1000);
-  };
-
   // Load remembered email
   useEffect(() => {
     const rememberedEmail = localStorage.getItem("rememberedEmail");
@@ -380,16 +350,6 @@ export default function Login() {
               ) : (
                 "Sign In"
               )}
-            </button>
-
-            {/* Demo Login Button */}
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              disabled={isLoading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 font-medium rounded-xl border border-blue-200 hover:border-blue-300 hover:from-blue-100 hover:to-cyan-100 transition-all duration-200"
-            >
-              Try Demo Account
             </button>
           </form>
 
