@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import MetricCard from "../components/MetricCard";
 import ActivityCard from "../components/ActivityCard";
 import DonutPlaceholder from "../components/DonutPlaceholder";
-import { Calendar, Leaf, Activity, AlertCircle } from "lucide-react";
+import { Calendar, Activity, AlertCircle, Clock, CalendarDays, TrendingUp } from "lucide-react";
 import { activityAPI } from '../../services/api';
 
 export default function Dashboard() {
@@ -14,7 +14,6 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState("Month");
   
-  // Updated stats structure for new categories
   const [stats, setStats] = useState({
     total: null,
     transport: null,
@@ -24,6 +23,7 @@ export default function Dashboard() {
   });
   
   const [activities, setActivities] = useState([]);
+  const [filteredActivities, setFilteredActivities] = useState([]);
   const [categoryBreakdown, setCategoryBreakdown] = useState([]);
   const [hasData, setHasData] = useState(false);
 
@@ -32,11 +32,12 @@ export default function Dashboard() {
     loadDashboardData();
   }, []);
 
+  // Re-filter when selectedPeriod changes or activities load
   useEffect(() => {
-    if (!loading) {
-      loadDashboardData();
+    if (activities.length > 0) {
+      filterActivitiesByPeriod();
     }
-  }, [selectedPeriod]);
+  }, [selectedPeriod, activities]);
 
   const loadUserData = () => {
     const userData = localStorage.getItem("user");
@@ -51,46 +52,101 @@ export default function Dashboard() {
     }
   };
 
-  // Simplified data loading
+  // Helper function to get start date based on selected period
+  const getStartDate = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch(selectedPeriod) {
+      case 'Today':
+        return today;
+      case 'Week':
+        return new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      case 'Month':
+        return new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      case 'Year':
+        return new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+      default:
+        return new Date(0); // Beginning of time
+    }
+  };
+
+  // Filter activities by selected time period
+  const filterActivitiesByPeriod = () => {
+    const startDate = getStartDate();
+    const filtered = activities.filter(activity => {
+      const activityDate = new Date(activity.date);
+      return activityDate >= startDate;
+    });
+    setFilteredActivities(filtered);
+    calculateFilteredStats(filtered);
+  };
+
+  // Calculate stats based on filtered activities
+  const calculateFilteredStats = (filteredActivities) => {
+    if (filteredActivities.length === 0) {
+      setStats({
+        total: null,
+        transport: null,
+        electricity: null,
+        waste: null,
+        food: null
+      });
+      setCategoryBreakdown([]);
+      setHasData(false);
+      return;
+    }
+
+    let totalEmissions = 0;
+    const categoryTotals = {
+      transport: 0,
+      electricity: 0,
+      waste: 0,
+      food: 0
+    };
+
+    filteredActivities.forEach(activity => {
+      totalEmissions += activity.totalEmissions || 0;
+      
+      if (activity.categoryTotals) {
+        categoryTotals.transport += activity.categoryTotals.transport || 0;
+        categoryTotals.electricity += activity.categoryTotals.electricity || 0;
+        categoryTotals.waste += activity.categoryTotals.waste || 0;
+        categoryTotals.food += activity.categoryTotals.food || 0;
+      }
+    });
+
+    const newStats = {
+      total: totalEmissions,
+      transport: categoryTotals.transport,
+      electricity: categoryTotals.electricity,
+      waste: categoryTotals.waste,
+      food: categoryTotals.food
+    };
+
+    setStats(newStats);
+    
+    // Prepare chart data
+    const chartData = [];
+    if (newStats.transport > 0) chartData.push({ name: "Transport", value: newStats.transport });
+    if (newStats.electricity > 0) chartData.push({ name: "Electricity", value: newStats.electricity });
+    if (newStats.waste > 0) chartData.push({ name: "Waste", value: newStats.waste });
+    if (newStats.food > 0) chartData.push({ name: "Food", value: newStats.food });
+    
+    setCategoryBreakdown(chartData);
+    setHasData(filteredActivities.length > 0);
+  };
+
   const loadDashboardData = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Fetch activities and stats in parallel
-      const [activitiesRes, statsRes] = await Promise.all([
-        activityAPI.getAll(),
-        activityAPI.getStats()
-      ]);
-      
-      const activitiesData = activitiesRes.data.data || [];
-      const statsData = statsRes.data.data || {};
-      
+      const response = await activityAPI.getAll();
+      const activitiesData = response.data.data || [];
       setActivities(activitiesData);
       
-      // Updated stats mapping for new categories
-      const categoryTotals = statsData.categoryTotals || {};
-      
-      const newStats = {
-        total: statsData.totalEmissions || null,
-        transport: categoryTotals.transport || null,
-        electricity: categoryTotals.electricity || null,
-        waste: categoryTotals.waste || null,
-        food: categoryTotals.food || null
-      };
-      
-      setStats(newStats);
-      
-      // Prepare chart data (only categories with values)
-      const chartData = [];
-      if (newStats.transport) chartData.push({ name: "Transport", value: newStats.transport });
-      if (newStats.electricity) chartData.push({ name: "Electricity", value: newStats.electricity });
-      if (newStats.waste) chartData.push({ name: "Waste", value: newStats.waste });
-      if (newStats.food) chartData.push({ name: "Food", value: newStats.food });
-      
-      setCategoryBreakdown(chartData);
-      setHasData(activitiesData.length > 0);
-      
+      // Initial filter will happen in useEffect
     } catch (error) {
       console.error("Error loading dashboard data:", error);
       setError("Failed to load dashboard data. Please try again.");
@@ -99,7 +155,6 @@ export default function Dashboard() {
     }
   };
 
-  // Simple activity title generator
   const getActivityTitle = (activity) => {
     if (activity.categories && activity.categories.length > 0) {
       const category = activity.categories[0];
@@ -123,15 +178,34 @@ export default function Dashboard() {
     return icons[category] || icons.general;
   };
 
+  // Fixed formatDate function
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffDays = Math.ceil(Math.abs(now - date) / (1000 * 60 * 60 * 24));
+    
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const activityDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    const diffTime = today - activityDate;
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
     return date.toLocaleDateString();
+  };
+
+  // Get date range display text
+  const getDateRangeText = () => {
+    const startDate = getStartDate();
+    const endDate = new Date();
+    
+    if (selectedPeriod === 'Today') {
+      return `Today, ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    }
+    
+    return `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
   };
 
   if (loading) {
@@ -140,8 +214,8 @@ export default function Dashboard() {
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
           <div className="h-4 bg-gray-200 rounded w-96 mb-8"></div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            {[1,2,3,4].map(i => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+            {[1,2,3,4,5].map(i => (
               <div key={i} className="bg-white rounded-2xl p-6 h-32 border border-gray-200">
                 <div className="h-4 bg-gray-200 rounded w-24 mb-4"></div>
                 <div className="h-8 bg-gray-200 rounded w-32"></div>
@@ -173,7 +247,7 @@ export default function Dashboard() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Header with greeting */}
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
           Welcome back, {userName || "User"}! 👋
@@ -183,26 +257,51 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Time filter */}
+      {/* Enhanced Time Filter with Functionality */}
       <div className="mb-8">
-        <div className="inline-flex items-center space-x-1 bg-white rounded-lg border border-gray-200 p-1">
-          {['Today', 'Week', 'Month', 'Year'].map((period) => (
-            <button
-              key={period}
-              onClick={() => setSelectedPeriod(period)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                period === selectedPeriod
-                  ? 'bg-green-50 text-green-700 border border-green-200'
-                  : 'text-gray-600 hover:text-green-600 hover:bg-gray-50'
-              }`}
-            >
-              {period}
-            </button>
-          ))}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="inline-flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+            {[
+              { label: 'Today', icon: <Clock className="w-4 h-4" /> },
+              { label: 'Week', icon: <Calendar className="w-4 h-4" /> },
+              { label: 'Month', icon: <CalendarDays className="w-4 h-4" /> },
+              { label: 'Year', icon: <TrendingUp className="w-4 h-4" /> }
+            ].map((period) => (
+              <button
+                key={period.label}
+                onClick={() => setSelectedPeriod(period.label)}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium 
+                  transition-all duration-200
+                  ${period.label === selectedPeriod 
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md shadow-green-500/25' 
+                    : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                  }
+                `}
+              >
+                {period.icon}
+                {period.label}
+                {period.label === selectedPeriod && (
+                  <span className="ml-1 w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                )}
+              </button>
+            ))}
+          </div>
+          
+          {/* Date range indicator */}
+          <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            <span>{getDateRangeText()}</span>
+            {filteredActivities.length > 0 && (
+              <span className="ml-1 text-green-600 font-medium">
+                ({filteredActivities.length} activities)
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Stats Grid - 4 cards for our 4 categories */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         <MetricCard 
           title="Total CO₂" 
@@ -238,27 +337,29 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* ===== Updated Section: Charts and Activities ===== */}
+      {/* Charts and Activities */}
       <div className="space-y-8">
-        {/* TOP ROW - Chart and Recent Activities (2 columns) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Chart Section - Takes 2 columns */}
+          
+          {/* Chart Section */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">Emissions Breakdown</h2>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Calendar className="w-4 h-4" />
-                  <span>{selectedPeriod} • {new Date().toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
+                  <span>{selectedPeriod} • {getDateRangeText()}</span>
                 </div>
               </div>
               
               {!hasData ? (
                 <div className="h-80 flex flex-col items-center justify-center text-center">
-                  <Leaf className="w-16 h-16 text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">No emissions data for {selectedPeriod}</h3>
+                  <Activity className="w-16 h-16 text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">No data for {selectedPeriod}</h3>
                   <p className="text-gray-500 mb-6 max-w-md">
-                    Start by adding your first activity using the "+ Add Activity" button
+                    {selectedPeriod === 'Today' 
+                      ? "You haven't added any activities today. Add your first activity!" 
+                      : `No activities found for this ${selectedPeriod.toLowerCase()}. Try a different time period or add new activities.`}
                   </p>
                   <button
                     onClick={() => navigate('/add')}
@@ -290,20 +391,20 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Recent Activities - Takes 1 column */}
+          {/* Recent Activities */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 h-full">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Activities</h2>
               
-              {activities.length === 0 ? (
+              {filteredActivities.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Activity className="w-12 h-12 text-gray-300 mb-3" />
-                  <p className="text-gray-600 mb-2">No activities yet</p>
+                  <p className="text-gray-600 mb-2">No activities for {selectedPeriod.toLowerCase()}</p>
                   <p className="text-sm text-gray-500">Click the + Add Activity button to start tracking</p>
                 </div>
               ) : (
                 <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                  {activities.slice(0, 5).map((activity) => (
+                  {filteredActivities.slice(0, 5).map((activity) => (
                     <ActivityCard 
                       key={activity._id}
                       title={getActivityTitle(activity)}
@@ -313,12 +414,12 @@ export default function Dashboard() {
                       icon={getCategoryIcon(getMainCategory(activity))}
                     />
                   ))}
-                  {activities.length > 5 && (
+                  {filteredActivities.length > 5 && (
                     <button
                       onClick={() => navigate('/reports')}
                       className="w-full mt-4 px-4 py-2 text-green-600 hover:text-green-700 font-medium border border-green-200 rounded-xl hover:bg-green-50 transition-colors"
                     >
-                      View All Activities
+                      View All {filteredActivities.length} Activities
                     </button>
                   )}
                 </div>
