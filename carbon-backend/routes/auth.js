@@ -9,8 +9,9 @@ const {
   updatePassword
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+const { validateEmailDomain } = require('../middleware/validateEmail');
 
-router.post('/register', register);
+router.post('/register', validateEmailDomain, register);
 router.post('/login', login);
 router.get('/me', protect, getMe);
 router.put('/updatedetails', protect, updateDetails);

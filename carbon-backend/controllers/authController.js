@@ -2,6 +2,9 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 
+// Allowed domains for admin
+const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com'];
+
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
@@ -67,6 +70,15 @@ exports.login = async (req, res) => {
       return res.status(401).json({ 
         success: false, 
         message: 'Invalid credentials' 
+      });
+    }
+
+    // ADMIN EMAIL DOMAIN VALIDATION - Check if user is admin and has valid domain
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (user.role === 'admin' && !allowedDomains.includes(domain)) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Admin access only allowed with Gmail, Yahoo, or Outlook email addresses' 
       });
     }
 

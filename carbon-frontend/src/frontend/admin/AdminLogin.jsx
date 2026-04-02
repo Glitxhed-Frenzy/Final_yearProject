@@ -1,7 +1,7 @@
 // src/frontend/admin/AdminLogin.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, User, Shield, Eye, EyeOff, Leaf, Mail } from "lucide-react";
+import { Lock, User, Shield, Eye, EyeOff, Leaf, Mail, AlertCircle } from "lucide-react";
 import { authAPI } from '../../services/api';
 
 export default function AdminLogin() {
@@ -15,10 +15,24 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
+  // Validate email domain (only Gmail, Yahoo, Outlook)
+  const validateEmailDomain = (email) => {
+    const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com'];
+    const domain = email.split('@')[1]?.toLowerCase();
+    return allowedDomains.includes(domain);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+
+    // Client-side email domain validation
+    if (!validateEmailDomain(credentials.email)) {
+      setError("Only Gmail, Yahoo, and Outlook email addresses are allowed for admin access.");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       // Use the real auth API
@@ -29,6 +43,11 @@ export default function AdminLogin() {
       // Check if user has admin role
       if (user.role !== 'admin') {
         throw new Error('Access denied. Admin privileges required.');
+      }
+      
+      // Double-check email domain on client side
+      if (!validateEmailDomain(user.email)) {
+        throw new Error('Invalid admin email domain. Only Gmail, Yahoo, and Outlook allowed.');
       }
       
       // Store tokens
@@ -76,6 +95,7 @@ export default function AdminLogin() {
           </div>
           <h1 className="text-3xl font-bold text-white">Admin Portal</h1>
           <p className="text-green-200 mt-2">Secure access for administrators</p>
+          <p className="text-green-300/70 text-xs mt-1">Only @gmail.com, @yahoo.com, @outlook.com allowed</p>
         </div>
 
         {/* Login Card */}
@@ -84,14 +104,17 @@ export default function AdminLogin() {
             {/* Error Message */}
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-                <p className="text-red-200 text-sm text-center">{error}</p>
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-red-200 text-sm">{error}</p>
+                </div>
               </div>
             )}
 
             {/* Email Field */}
             <div>
               <label className="block text-sm font-medium text-green-200 mb-2">
-                Email Address
+                Email Address <span className="text-red-400">*</span>
               </label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
@@ -103,16 +126,19 @@ export default function AdminLogin() {
                   value={credentials.email}
                   onChange={(e) => setCredentials({...credentials, email: e.target.value})}
                   className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-green-300/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                  placeholder="Enter your email address"
+                  placeholder="admin@gmail.com"
                   disabled={isLoading}
                 />
               </div>
+              <p className="text-xs text-green-300/60 mt-2">
+                Allowed domains: @gmail.com, @yahoo.com, @outlook.com
+              </p>
             </div>
 
             {/* Password Field */}
             <div>
               <label className="block text-sm font-medium text-green-200 mb-2">
-                Password
+                Password <span className="text-red-400">*</span>
               </label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
@@ -177,7 +203,7 @@ export default function AdminLogin() {
           <div className="mt-6 text-center">
             <p className="text-xs text-green-300/60">
               This area is restricted to authorized personnel only.
-              <br />All access is logged and monitored.
+              <br />Only Gmail, Yahoo, and Outlook email addresses are permitted.
             </p>
           </div>
         </div>
