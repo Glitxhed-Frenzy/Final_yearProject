@@ -1,5 +1,5 @@
 // src/frontend/pages/Reports.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   BarChart3, 
   Calendar, 
@@ -12,7 +12,14 @@ import {
   FileJson,
   FileSpreadsheet,
   FileText,
-  ChevronDown
+  ChevronDown,
+  Printer,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar as CalendarIcon,
+  Activity
 } from "lucide-react";
 import { activityAPI } from '../../services/api';
 import {
@@ -33,7 +40,7 @@ import {
   AreaChart
 } from 'recharts';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const COLORS = ['#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
 
@@ -52,10 +59,28 @@ export default function Reports() {
   const [activities, setActivities] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
+  const [user, setUser] = useState(null);
+
+  // Refs for capturing charts
+  const pieChartRef = useRef(null);
+  const barChartRef = useRef(null);
+  const trendChartRef = useRef(null);
 
   useEffect(() => {
+    loadUserData();
     loadReportData();
   }, [timeframe]);
+
+  const loadUserData = () => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        setUser(JSON.parse(userData));
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    }
+  };
 
   const loadReportData = async () => {
     setLoading(true);
@@ -73,14 +98,12 @@ export default function Reports() {
       setStats(statsData);
       setActivities(activitiesData);
       
-      // Process monthly trend data
       const monthlyTrend = Object.entries(statsData.monthlyData || {}).map(([month, value]) => ({
         month,
         emissions: value
       }));
       setChartData(monthlyTrend);
       
-      // Process category breakdown
       const categories = [];
       const categoryTotals = statsData.categoryTotals || {};
       
@@ -109,9 +132,51 @@ export default function Reports() {
     }
   };
 
-  // ========== JSON EXPORT ==========
+  // Helper to capture chart as image
+  const captureChart = async (chartContainer) => {
+    if (!chartContainer) return null;
+    
+    try {
+      const svg = chartContainer.querySelector('svg');
+      if (!svg) return null;
+      
+      const width = svg.clientWidth || 500;
+      const height = svg.clientHeight || 300;
+      
+      const clonedSvg = svg.cloneNode(true);
+      clonedSvg.setAttribute('width', width);
+      clonedSvg.setAttribute('height', height);
+      clonedSvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      
+      const serializer = new XMLSerializer();
+      let svgString = serializer.serializeToString(clonedSvg);
+      svgString = svgString.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+      
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve(null);
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+      });
+    } catch (error) {
+      console.error('Error capturing chart:', error);
+      return null;
+    }
+  };
+
+  // JSON Export
   const exportJSON = () => {
     const exportData = {
+      user: user,
       summary: stats,
       activities: activities,
       exportDate: new Date().toISOString(),
@@ -130,16 +195,23 @@ export default function Reports() {
     setShowExportMenu(false);
   };
 
-  // ========== CSV EXPORT ==========
+  // CSV Export
   const exportCSV = () => {
-    // Prepare CSV data for activities
     const csvRows = [];
     
-    // Headers
+    // User info section (only in CSV export)
+    csvRows.push('"USER INFORMATION"');
+    csvRows.push(`"Name",${user?.name || 'N/A'}`);
+    csvRows.push(`"Email",${user?.email || 'N/A'}`);
+    csvRows.push(`"Phone",${user?.phone || 'N/A'}`);
+    csvRows.push(`"Location",${user?.location || 'N/A'}`);
+    csvRows.push(`"Member Since",${user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}`);
+    csvRows.push('');
+    
+    // Activities section
     const headers = ['Date', 'Categories', 'Total Emissions (kg CO₂)', 'Transport (kg)', 'Electricity (kg)', 'Waste (kg)', 'Food (kg)'];
     csvRows.push(headers.join(','));
     
-    // Add activity rows
     activities.forEach(activity => {
       const row = [
         new Date(activity.date).toLocaleDateString(),
@@ -153,146 +225,267 @@ export default function Reports() {
       csvRows.push(row.join(','));
     });
     
-    // Add summary section
-    csvRows.push(''); // Empty line
+    csvRows.push('');
     csvRows.push('"SUMMARY STATISTICS"');
     csvRows.push(`"Total Emissions (kg CO₂)",${stats.totalEmissions?.toFixed(2) || 0}`);
     csvRows.push(`"Total Activities",${stats.totalActivities || 0}`);
     csvRows.push(`"Average per Activity (kg CO₂)",${stats.averagePerActivity?.toFixed(2) || 0}`);
     
-    // Add category totals
     csvRows.push('"Category Breakdown"');
     Object.entries(stats.categoryTotals || {}).forEach(([category, value]) => {
       csvRows.push(`"${getCategoryDisplayName(category)}",${value?.toFixed(2) || 0}`);
     });
     
-    // Create and download CSV file
     const csvContent = csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
     link.setAttribute('download', `carbon-report-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
     URL.revokeObjectURL(url);
     setShowExportMenu(false);
   };
 
-  // ========== PDF EXPORT ==========
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    let yPos = 20;
+  // PDF Export with User Details (ONLY in PDF, not on page)
+  const exportPDF = async () => {
+    const loadingToast = document.createElement('div');
+    loadingToast.innerHTML = '📄 Generating PDF with your data...';
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+    document.body.appendChild(loadingToast);
     
-    // Title
-    doc.setFontSize(24);
-    doc.setTextColor(5, 150, 105); // Green color
-    doc.text('CarbonWise - Carbon Footprint Report', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 15;
-    
-    // Report info
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Report Generated: ${new Date().toLocaleString()}`, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 10;
-    doc.text(`Timeframe: ${timeframe} view`, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 20;
-    
-    // Summary Section
-    doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
-    doc.text('Summary Statistics', 14, yPos);
-    yPos += 10;
-    
-    // Summary table
-    const summaryData = [
-      ['Total Emissions', `${stats.totalEmissions?.toFixed(2) || 0} kg CO₂`],
-      ['Total Activities', `${stats.totalActivities || 0}`],
-      ['Average per Activity', `${stats.averagePerActivity?.toFixed(2) || 0} kg CO₂`],
-    ];
-    
-    doc.autoTable({
-      startY: yPos,
-      head: [['Metric', 'Value']],
-      body: summaryData,
-      theme: 'striped',
-      headStyles: { fillColor: [5, 150, 105], textColor: 255 },
-      margin: { left: 14, right: 14 }
-    });
-    
-    yPos = doc.lastAutoTable.finalY + 15;
-    
-    // Category Breakdown Section
-    doc.setFontSize(16);
-    doc.text('Category Breakdown', 14, yPos);
-    yPos += 10;
-    
-    const categoryData_rows = Object.entries(stats.categoryTotals || {}).map(([category, value]) => [
-      getCategoryDisplayName(category),
-      `${value?.toFixed(2) || 0} kg CO₂`,
-      `${stats.totalEmissions > 0 ? ((value / stats.totalEmissions) * 100).toFixed(1) : 0}%`
-    ]);
-    
-    doc.autoTable({
-      startY: yPos,
-      head: [['Category', 'Emissions', 'Percentage']],
-      body: categoryData_rows,
-      theme: 'striped',
-      headStyles: { fillColor: [5, 150, 105], textColor: 255 },
-      margin: { left: 14, right: 14 }
-    });
-    
-    yPos = doc.lastAutoTable.finalY + 15;
-    
-    // Recent Activities Section
-    if (activities.length > 0) {
-      // Check if we need a new page
+    try {
+      // Capture charts
+      const pieImage = await captureChart(pieChartRef.current);
+      const barImage = await captureChart(barChartRef.current);
+      const trendImage = await captureChart(trendChartRef.current);
+      
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let yPos = 20;
+      
+      // ========== HEADER ==========
+      doc.setFontSize(24);
+      doc.setTextColor(5, 150, 105);
+      doc.text('CarbonWise', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 8;
+      
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Carbon Footprint Report', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+      
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 5;
+      doc.text(`Timeframe: ${timeframe} view`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 15;
+      
+      // ========== USER INFORMATION SECTION (ONLY IN PDF) ==========
+      doc.setFillColor(240, 253, 244);
+      doc.rect(14, yPos, pageWidth - 28, 45, 'F');
+      doc.setDrawColor(5, 150, 105);
+      doc.setLineWidth(0.5);
+      doc.rect(14, yPos, pageWidth - 28, 45, 'D');
+      
+      doc.setFontSize(12);
+      doc.setTextColor(5, 150, 105);
+      doc.text('User Information', 20, yPos + 8);
+      
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      
+      // Left column
+      doc.text(`Name: ${user?.name || 'N/A'}`, 20, yPos + 18);
+      doc.text(`Email: ${user?.email || 'N/A'}`, 20, yPos + 26);
+      doc.text(`Phone: ${user?.phone || 'N/A'}`, 20, yPos + 34);
+      
+      // Right column
+      doc.text(`Location: ${user?.location || 'N/A'}`, pageWidth / 2 + 10, yPos + 18);
+      doc.text(`Member Since: ${user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}`, pageWidth / 2 + 10, yPos + 26);
+      doc.text(`Total Activities: ${stats.totalActivities || 0}`, pageWidth / 2 + 10, yPos + 34);
+      
+      yPos += 55;
+      
+      // ========== SUMMARY CARDS ==========
+      // Card 1
+      doc.setFillColor(5, 150, 105);
+      doc.roundedRect(14, yPos, 85, 30, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Total CO₂', 20, yPos + 8);
+      doc.setFontSize(16);
+      doc.text(`${stats.totalEmissions?.toFixed(1) || 0} kg`, 20, yPos + 22);
+      
+      // Card 2
+      doc.setFillColor(16, 185, 129);
+      doc.roundedRect(103, yPos, 85, 30, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.text('Activities', 109, yPos + 8);
+      doc.setFontSize(16);
+      doc.text(`${stats.totalActivities || 0}`, 109, yPos + 22);
+      
+      yPos += 40;
+      
+      // Card 3
+      doc.setFillColor(52, 211, 153);
+      doc.roundedRect(14, yPos, 85, 30, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.text('Avg per Activity', 20, yPos + 8);
+      doc.setFontSize(16);
+      doc.text(`${stats.averagePerActivity?.toFixed(1) || 0} kg`, 20, yPos + 22);
+      
+      // Card 4
+      doc.setFillColor(110, 231, 183);
+      doc.roundedRect(103, yPos, 85, 30, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.text('Carbon Intensity', 109, yPos + 8);
+      doc.setFontSize(16);
+      doc.text(`${(stats.totalEmissions / (stats.totalActivities || 1)).toFixed(1)} kg/act`, 109, yPos + 22);
+      
+      yPos += 50;
+      doc.setTextColor(0, 0, 0);
+      
+      // ========== PIE CHART ==========
+      if (pieImage && categoryData.length > 0) {
+        if (yPos > pageHeight - 80) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(14);
+        doc.text('Emissions by Category', 14, yPos);
+        yPos += 5;
+        
+        doc.addImage(pieImage, 'PNG', 14, yPos, 90, 70);
+        
+        let legendY = yPos + 10;
+        categoryData.forEach((category, index) => {
+          const hexColor = COLORS[index % COLORS.length];
+          const rgb = hexColor.replace('#', '').match(/.{2}/g).map(c => parseInt(c, 16));
+          doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+          doc.rect(pageWidth - 50, legendY, 5, 5, 'F');
+          doc.setFontSize(8);
+          doc.setTextColor(0, 0, 0);
+          doc.text(`${category.name}: ${category.value.toFixed(1)} kg (${((category.value / stats.totalEmissions) * 100).toFixed(1)}%)`, pageWidth - 43, legendY + 4);
+          legendY += 6;
+        });
+        
+        yPos += 85;
+      }
+      
+      // ========== CATEGORY TABLE ==========
       if (yPos > pageHeight - 60) {
         doc.addPage();
         yPos = 20;
       }
       
-      doc.setFontSize(16);
-      doc.text('Recent Activities', 14, yPos);
+      doc.setFontSize(14);
+      doc.text('Category Breakdown', 14, yPos);
       yPos += 10;
       
-      const activitiesData = activities.slice(0, 10).map(activity => [
-        new Date(activity.date).toLocaleDateString(),
-        activity.categories?.map(cat => getCategoryDisplayName(cat)).join(', ') || 'General',
-        `${activity.totalEmissions?.toFixed(2) || 0} kg`
+      const categoryTableData = Object.entries(stats.categoryTotals || {}).map(([category, value]) => [
+        getCategoryDisplayName(category),
+        `${value?.toFixed(2) || 0} kg CO₂`,
+        `${stats.totalEmissions > 0 ? ((value / stats.totalEmissions) * 100).toFixed(1) : 0}%`
       ]);
       
-      doc.autoTable({
+      autoTable(doc, {
         startY: yPos,
-        head: [['Date', 'Categories', 'Emissions']],
-        body: activitiesData,
+        head: [['Category', 'Emissions', 'Percentage']],
+        body: categoryTableData,
         theme: 'striped',
-        headStyles: { fillColor: [5, 150, 105], textColor: 255 },
+        headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255] },
         margin: { left: 14, right: 14 }
       });
+      
+      yPos = doc.lastAutoTable.finalY + 15;
+      
+      // ========== BAR CHART ==========
+      if (barImage && categoryData.length > 0) {
+        if (yPos > pageHeight - 80) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(14);
+        doc.text('Category Comparison', 14, yPos);
+        yPos += 5;
+        doc.addImage(barImage, 'PNG', 14, yPos, 180, 70);
+        yPos += 85;
+      }
+      
+      // ========== TREND CHART ==========
+      if (trendImage && chartData.length > 0) {
+        if (yPos > pageHeight - 80) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(14);
+        doc.text('Emission Trends', 14, yPos);
+        yPos += 5;
+        doc.addImage(trendImage, 'PNG', 14, yPos, 180, 70);
+        yPos += 85;
+      }
+      
+      // ========== RECENT ACTIVITIES ==========
+      if (activities.length > 0) {
+        if (yPos > pageHeight - 60) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(14);
+        doc.text('Recent Activities', 14, yPos);
+        yPos += 10;
+        
+        const activitiesData = activities.slice(0, 10).map(activity => [
+          new Date(activity.date).toLocaleDateString(),
+          activity.categories?.map(cat => getCategoryDisplayName(cat)).join(', ') || 'General',
+          `${activity.totalEmissions?.toFixed(2) || 0} kg`
+        ]);
+        
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Date', 'Categories', 'Emissions']],
+          body: activitiesData,
+          theme: 'striped',
+          headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255] },
+          margin: { left: 14, right: 14 }
+        });
+      }
+      
+      // ========== FOOTER ==========
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Page ${i} of ${pageCount} - CarbonWise Report | ${new Date().toLocaleDateString()}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
+      
+      doc.save(`carbon-report-${user?.name?.replace(/\s/g, '_') || 'user'}-${new Date().toISOString().split('T')[0]}.pdf`);
+      
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Error: ' + error.message);
+    } finally {
+      document.body.removeChild(loadingToast);
+      setShowExportMenu(false);
     }
-    
-    // Add footer
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(150, 150, 150);
-      doc.text(
-        `Page ${i} of ${pageCount} - CarbonWise Report`,
-        pageWidth / 2,
-        pageHeight - 10,
-        { align: 'center' }
-      );
-    }
-    
-    // Save PDF
-    doc.save(`carbon-report-${new Date().toISOString().split('T')[0]}.pdf`);
-    setShowExportMenu(false);
   };
 
   const getCategoryDisplayName = (category) => {
@@ -368,7 +561,7 @@ export default function Reports() {
                 <option value="year">Last 12 months</option>
               </select>
               
-              {/* Export Dropdown Menu */}
+              {/* Export Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setShowExportMenu(!showExportMenu)}
@@ -401,7 +594,7 @@ export default function Reports() {
                         className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                       >
                         <FileText className="w-4 h-4 text-red-600" />
-                        Export as PDF
+                        Export as PDF (with charts)
                       </button>
                     </div>
                     <div 
@@ -432,7 +625,7 @@ export default function Reports() {
         ) : (
           <div className="space-y-8">
             
-            {/* Summary Cards */}
+            {/* Summary Cards - NO USER INFO HERE */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <p className="text-sm text-gray-600 mb-2">Total Emissions</p>
@@ -461,13 +654,13 @@ export default function Reports() {
               </div>
             </div>
 
-            {/* Charts Grid */}
+            {/* Charts Grid with refs for capturing */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               
               {/* Trend Line Chart */}
               <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Emission Trends</h2>
-                <div className="h-80">
+                <div className="h-80" ref={trendChartRef}>
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -490,7 +683,7 @@ export default function Reports() {
               {/* Category Pie Chart */}
               <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Emissions by Category</h2>
-                <div className="h-80">
+                <div className="h-80" ref={pieChartRef}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -517,7 +710,7 @@ export default function Reports() {
               {/* Bar Chart - Category Comparison */}
               <div className="bg-white rounded-2xl p-6 border border-gray-200 lg:col-span-2">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Category Comparison</h2>
-                <div className="h-80">
+                <div className="h-80" ref={barChartRef}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={categoryData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -561,10 +754,7 @@ export default function Reports() {
                           {activity.totalEmissions?.toFixed(1)} kg
                         </td>
                         <td className="px-4 py-3 text-sm">
-                          <button
-                            onClick={() => {/* View details */}}
-                            className="text-green-600 hover:text-green-700"
-                          >
+                          <button className="text-green-600 hover:text-green-700">
                             View
                           </button>
                         </td>
