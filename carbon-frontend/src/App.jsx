@@ -11,7 +11,9 @@ import Login from "./frontend/pages/Login";
 import NotFound from "./frontend/pages/NotFound";
 import Profile from "./frontend/pages/Profile";
 import SignUp from "./frontend/pages/SignUp";
+import ForgotPassword from "./frontend/pages/ForgotPassword";  // ADD THIS
 
+import AdminForgotPassword from "./frontend/admin/AdminForgotPassword";
 import AdminLayout from "./frontend/admin/AdminLayout";
 import AdminLogin from "./frontend/admin/AdminLogin";
 import AdminDashboard from "./frontend/admin/AdminDashboard";
@@ -21,25 +23,18 @@ import Users from "./frontend/admin/Users";
 export default function App() {
   const location = useLocation();
   
-  // Hide navbar on:
-  // - Login/signup pages
-  // - All admin routes (any path starting with /admin)
   const hideNavbarRoutes = [
     '/login',
     '/signup',
     '/register',
-    '/forgot-password'
+    '/forgot-password'  // ADD THIS
   ];
   
-  // Check if current path is an admin route
   const isAdminRoute = location.pathname.startsWith('/admin');
-  
-  // Show navbar only if not on hideNavbarRoutes AND not an admin route
   const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname) && !isAdminRoute;
 
   return (
     <div className="min-h-screen bg-slate-100 text-gray-900">
-      {/* Conditionally render Navbar - hidden on admin routes */}
       {shouldShowNavbar && <Navbar />}
 
       <Routes>
@@ -52,8 +47,12 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/profile" element={<Profile />} />
+        
+        {/* ADD THIS ROUTE */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Admin - Navbar is hidden for all admin routes */}
+        {/* Admin */}
+        <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />

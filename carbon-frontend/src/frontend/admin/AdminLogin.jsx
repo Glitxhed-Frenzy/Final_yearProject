@@ -1,6 +1,6 @@
 // src/frontend/admin/AdminLogin.jsx
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Lock, User, Shield, Eye, EyeOff, Leaf, Mail, AlertCircle } from "lucide-react";
 import { authAPI } from '../../services/api';
 
@@ -166,17 +166,12 @@ export default function AdminLogin() {
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
               <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-green-600 border-white/20 rounded focus:ring-green-500 bg-white/5"
-                />
+                <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="w-4 h-4 text-green-600 border-white/20 rounded focus:ring-green-500 bg-white/5" />
                 <span className="ml-2 text-sm text-green-200">Remember me</span>
               </label>
-              <button type="button" className="text-sm text-green-300 hover:text-white transition-colors">
+              <Link to="/admin/forgot-password" className="text-sm text-green-300 hover:text-white transition-colors">
                 Forgot password?
-              </button>
+              </Link>
             </div>
 
             {/* Submit Button */}
