@@ -17,14 +17,19 @@ import {
   Home,
   Car,
   Apple,
-  Droplets,
+  Trash2,
   Laptop,
   Award,
   Clock,
   Coins,
   TreePine,
   Wind,
-  Sun
+  Sun,
+  Calendar,
+  Download,
+  Share2,
+  Activity,
+  Lightbulb
 } from "lucide-react";
 
 export default function Welcome() {
@@ -37,65 +42,64 @@ export default function Welcome() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Categories data for interactive section
+  // Actual categories that match the app
   const categories = [
-    { icon: <Car className="w-6 h-6" />, name: "Transport", color: "purple", desc: "Track car, bus, train & plane emissions" },
-    { icon: <Home className="w-6 h-6" />, name: "Home Energy", color: "blue", desc: "Monitor electricity, AC & heating usage" },
-    { icon: <Laptop className="w-6 h-6" />, name: "Electronics", color: "indigo", desc: "Calculate device energy consumption" },
-    { icon: <Droplets className="w-6 h-6" />, name: "Water", color: "cyan", desc: "Track showers, laundry & water usage" },
-    { icon: <Apple className="w-6 h-6" />, name: "Food", color: "amber", desc: "Monitor diet & food choices impact" }
+    { icon: <Car className="w-6 h-6" />, name: "Transport", color: "purple", desc: "Track car, bus, train & plane emissions with real-time calculation" },
+    { icon: <Zap className="w-6 h-6" />, name: "Electricity", color: "blue", desc: "Monitor AC, heater, laptop & TV electricity consumption" },
+    { icon: <Trash2 className="w-6 h-6" />, name: "Waste", color: "emerald", desc: "Track food, plastic, paper, metal & e-waste with recycling rates" },
+    { icon: <Apple className="w-6 h-6" />, name: "Food", color: "amber", desc: "Log chicken, fish, dairy & vegetarian meals" }
   ];
 
-  // Impact stats (replacing the numbers)
+  // Impact stats
   const impacts = [
-    { icon: <TreePine className="w-8 h-8" />, title: "Trees Saved", value: "5,234", desc: "Equivalent to 10 football fields" },
-    { icon: <Wind className="w-8 h-8" />, title: "CO₂ Reduced", value: "125 tons", desc: "Same as taking 25 cars off road" },
-    { icon: <Sun className="w-8 h-8" />, title: "Clean Energy", value: "850 MWh", desc: "Powers 80 homes for a year" }
+    { icon: <TreePine className="w-8 h-8" />, title: "CO₂ Tracked", value: "125+ tons", desc: "Collectively monitored by our community" },
+    { icon: <Wind className="w-8 h-8" />, title: "Active Users", value: "5,234+", desc: "Eco-conscious individuals making a difference" },
+    { icon: <Sun className="w-8 h-8" />, title: "Activities Logged", value: "50K+", desc: "Daily activities tracked globally" }
   ];
 
-  // Features with more detail
+  // Updated features based on actual functionality
   const features = [
     {
-      icon: <BarChart3 className="w-7 h-7" />,
-      title: "Smart Tracking",
-      description: "Automatically calculate your carbon footprint based on daily activities",
-      details: ["5 categories", "Real-time calculations", "Historical data"],
+      icon: <Activity className="w-7 h-7" />,
+      title: "4-Category Tracking",
+      description: "Comprehensive carbon tracking across Transport, Electricity, Waste, and Food",
+      details: ["🚗 Transport with 14 car variants", "⚡ Electricity usage tracking", "🗑️ Waste with recycling multiplier", "🍎 Food with waste multiplier"],
       color: "green"
     },
     {
-      icon: <TrendingDown className="w-7 h-7" />,
-      title: "Progress Tracking",
-      description: "Watch your carbon footprint decrease over time",
-      details: ["Monthly reports", "Trend analysis", "Goal setting"],
+      icon: <Calendar className="w-7 h-7" />,
+      title: "Date Range Analytics",
+      description: "View your carbon footprint for any specific date with our calendar picker",
+      details: ["Pick any date", "See daily emissions", "Track progress over time", "Compare day by day"],
       color: "blue"
     },
     {
-      icon: <Target className="w-7 h-7" />,
-      title: "Personalized Goals",
-      description: "Set and track personal reduction goals",
-      details: ["Custom targets", "Progress alerts", "Achievement badges"],
+      icon: <BarChart3 className="w-7 h-7" />,
+      title: "Visual Reports",
+      description: "Beautiful charts and insights to understand your carbon impact",
+      details: ["Donut chart breakdown", "Category comparison", "Export as PDF/CSV/JSON", "Share on social media"],
       color: "purple"
     },
     {
-      icon: <Users className="w-7 h-7" />,
-      title: "Community",
-      description: "Join a community of eco-conscious individuals",
-      details: ["Share tips", "Group challenges", "Leaderboards"],
+      icon: <Download className="w-7 h-7" />,
+      title: "Export & Share",
+      description: "Download your data or share your progress with friends",
+      details: ["JSON export for developers", "CSV for spreadsheets", "PDF with charts", "Share on social platforms"],
       color: "amber"
     },
     {
-      icon: <Globe className="w-7 h-7" />,
-      title: "Real Impact",
-      description: "See the real-world impact of your efforts",
-      details: ["Carbon equivalents", "Visual representations", "Impact reports"],
-      color: "rose"
+      icon: <Lightbulb className="w-7 h-7" />,
+      title: "Smart Carbon Tips",
+      description: "Get personalized tips based on your actual emission patterns",
+      details: ["Category-specific advice", "Real-time suggestions", "Impact estimates", "Actionable recommendations"],
+      color: "teal"
     },
     {
-      icon: <Sparkles className="w-7 h-7" />,
-      title: "Smart Insights",
-      description: "Get personalized tips and insights",
-      details: ["AI recommendations", "Pattern detection", "Eco tips"],
-      color: "teal"
+      icon: <Shield className="w-7 h-7" />,
+      title: "Admin Dashboard",
+      description: "Full control for administrators to manage users and emission factors",
+      details: ["User management", "Emission factor CRUD", "Platform analytics", "User impersonation"],
+      color: "rose"
     }
   ];
 
@@ -141,7 +145,7 @@ export default function Welcome() {
             </div>
           </div>
 
-          {/* Headline - UPDATED */}
+          {/* Headline */}
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
             Welcome to
             <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent block mt-2">
@@ -151,8 +155,8 @@ export default function Welcome() {
 
           {/* Subheadline */}
           <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
-            Join thousands of eco-conscious individuals making a difference. 
-            Measure, track, and reduce your environmental impact today.
+            Track your carbon footprint across Transport, Electricity, Waste, and Food. 
+            Get insights, export reports, and make a difference for our planet.
           </p>
 
           {/* CTA Buttons */}
@@ -175,10 +179,10 @@ export default function Welcome() {
             </Link>
           </div>
 
-          {/* REPLACED STATS WITH CATEGORY SHOWCASE */}
+          {/* Category Showcase - Updated to match actual categories */}
           <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-8 shadow-xl border border-gray-100 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Track Everything That Matters</h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Track 4 Key Categories</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {categories.map((cat, idx) => (
                 <div key={idx} className="text-center group cursor-pointer">
                   <div className={`w-16 h-16 mx-auto bg-${cat.color}-100 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform group-hover:shadow-lg`}>
@@ -203,7 +207,7 @@ export default function Welcome() {
       </section>
 
       {/* ============================================ */}
-      {/* IMPACT SECTION - WITH INSPIRING QUOTES */}
+      {/* IMPACT SECTION - INSPIRATIONAL QUOTES */}
       {/* ============================================ */}
       <section className="py-24 bg-gradient-to-br from-green-600 to-emerald-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -321,129 +325,130 @@ export default function Welcome() {
       </section>
 
       {/* ============================================ */}
-      {/* FEATURES SECTION (Enhanced) */}
+      {/* FEATURES SECTION - Updated to match actual functionality */}
       {/* ============================================ */}
       <section className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Powerful Features
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Everything you need to understand and reduce your carbon footprint
-            </p>
-          </div>
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <div className="text-center mb-16">
+      <h2 className="text-4xl font-bold text-gray-900 mb-4">
+        Powerful Features
+      </h2>
+      <p className="text-xl text-gray-600">
+        Everything you need to track your carbon footprint
+      </p>
+    </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, idx) => (
-              <div key={idx} className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 group hover:-translate-y-1">
-                <div className={`w-14 h-14 bg-${feature.color}-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                  <div className={`text-${feature.color}-600`}>{feature.icon}</div>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-600 mb-4">{feature.description}</p>
-                <ul className="space-y-2">
-                  {feature.details.map((detail, i) => (
-                    <li key={i} className="text-sm text-gray-500 flex items-center gap-2">
-                      <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                      {detail}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      
+      <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all group hover:-translate-y-1">
+        <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <Activity className="w-6 h-6 text-green-600" />
         </div>
-      </section>
+        <h3 className="font-semibold text-gray-900 mb-1">4-Category Tracking</h3>
+        <p className="text-sm text-gray-500">Transport, Electricity, Waste, Food</p>
+      </div>
+
+      <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all group hover:-translate-y-1">
+        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <Calendar className="w-6 h-6 text-blue-600" />
+        </div>
+        <h3 className="font-semibold text-gray-900 mb-1">Date Range Analytics</h3>
+        <p className="text-sm text-gray-500">View any specific date</p>
+      </div>
+
+      <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all group hover:-translate-y-1">
+        <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <BarChart3 className="w-6 h-6 text-purple-600" />
+        </div>
+        <h3 className="font-semibold text-gray-900 mb-1">Visual Reports</h3>
+        <p className="text-sm text-gray-500">Charts & insights</p>
+      </div>
+
+      <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all group hover:-translate-y-1">
+        <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <Download className="w-6 h-6 text-amber-600" />
+        </div>
+        <h3 className="font-semibold text-gray-900 mb-1">Export & Share</h3>
+        <p className="text-sm text-gray-500">JSON, CSV, PDF, Social media</p>
+      </div>
+
+      <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all group hover:-translate-y-1">
+        <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <Lightbulb className="w-6 h-6 text-teal-600" />
+        </div>
+        <h3 className="font-semibold text-gray-900 mb-1">Smart Tips</h3>
+        <p className="text-sm text-gray-500">Personalized suggestions</p>
+      </div>
+
+      <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all group hover:-translate-y-1">
+        <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <Shield className="w-6 h-6 text-rose-600" />
+        </div>
+        <h3 className="font-semibold text-gray-900 mb-1">Admin Panel</h3>
+        <p className="text-sm text-gray-500">Full user & factor management</p>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* ============================================ */}
       {/* HOW IT WORKS SECTION */}
       {/* ============================================ */}
       <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
-            <p className="text-xl text-gray-600">Three simple steps to start your journey</p>
-          </div>
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <div className="text-center mb-16">
+      <h2 className="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
+      <p className="text-xl text-gray-600">Three simple steps to start your journey</p>
+    </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            
-            {/* Step 1 */}
-            <div className="text-center relative">
-              <div className="w-20 h-20 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
-                <span className="absolute -top-3 -right-3 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">
-                  1
-                </span>
-                <Users className="w-10 h-10 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Create Account</h3>
-              <p className="text-gray-600">
-                Sign up for free in less than a minute. No credit card required.
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="text-center relative">
-              <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
-                <span className="absolute -top-3 -right-3 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                  2
-                </span>
-                <Zap className="w-10 h-10 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Track Activities</h3>
-              <p className="text-gray-600">
-                Log your daily activities across 5 categories: Transport, Home, Electronics, Water, Food.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="text-center relative">
-              <div className="w-20 h-20 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
-                <span className="absolute -top-3 -right-3 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                  3
-                </span>
-                <Award className="w-10 h-10 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Make Impact</h3>
-              <p className="text-gray-600">
-                Get insights, earn badges, and track your progress as you reduce your carbon footprint.
-              </p>
-            </div>
-          </div>
-
-          {/* Interactive Timeline */}
-          <div className="mt-16 bg-gray-50 rounded-3xl p-8 max-w-3xl mx-auto">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 text-center">Your Journey Timeline</h4>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-green-600 font-bold">1</span>
-                </div>
-                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="w-0 bg-green-500 h-full rounded-full group-hover:w-full transition-all duration-1000"></div>
-                </div>
-                <span className="text-sm text-gray-500">Week 1: Get started</span>
-              </div>
-              <div className="flex items-center gap-4 opacity-50">
-                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-gray-400 font-bold">2</span>
-                </div>
-                <div className="flex-1 h-2 bg-gray-200 rounded-full"></div>
-                <span className="text-sm text-gray-400">Week 4: See progress</span>
-              </div>
-              <div className="flex items-center gap-4 opacity-30">
-                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-gray-400 font-bold">3</span>
-                </div>
-                <div className="flex-1 h-2 bg-gray-200 rounded-full"></div>
-                <span className="text-sm text-gray-400">Month 3: Make impact</span>
-              </div>
-            </div>
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+      
+      {/* Step 1 */}
+      <div className="text-center">
+        <div className="w-20 h-20 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
+          <span className="absolute -top-3 -right-3 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">
+            1
+          </span>
+          <Users className="w-10 h-10 text-green-600" />
         </div>
-      </section>
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">Create Account</h3>
+        <p className="text-gray-600">
+          Sign up for free with your email.
+        </p>
+      </div>
+
+      {/* Step 2 */}
+      <div className="text-center">
+        <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
+          <span className="absolute -top-3 -right-3 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+            2
+          </span>
+          <Activity className="w-10 h-10 text-blue-600" />
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">Track Activities</h3>
+        <p className="text-gray-600">
+          Log your daily activities across 4 categories.
+        </p>
+      </div>
+
+      {/* Step 3 */}
+      <div className="text-center">
+        <div className="w-20 h-20 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
+          <span className="absolute -top-3 -right-3 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+            3
+          </span>
+          <Award className="w-10 h-10 text-purple-600" />
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">Analyze & Reduce</h3>
+        <p className="text-gray-600">
+          View reports and get personalized tips.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* ============================================ */}
       {/* FINAL CTA SECTION */}
@@ -473,50 +478,28 @@ export default function Welcome() {
         </div>
       </section>
 
-      {/* ============================================ */}
-      {/* FOOTER - UPDATED */}
-      {/* ============================================ */}
-      <footer className="bg-gray-900 text-gray-300 py-12">
+      {/* FOOTER -*/}
+      <footer className="bg-gray-900 text-gray-300 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             
-            {/* Logo and description - UPDATED */}
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <Leaf className="w-6 h-6 text-green-400" />
-                <span className="text-xl font-bold text-white">CarbonWise</span>
-              </div>
-              <p className="text-sm">
-                Empowering individuals to track, understand, and reduce their carbon footprint for a sustainable future.
-              </p>
+            {/* Logo and description */}
+            <div className="flex items-center gap-2">
+              <Leaf className="w-5 h-5 text-green-400" />
+              <span className="text-lg font-bold text-white">CarbonWise</span>
+              <span className="text-xs text-gray-500 ml-2">Track. Reduce. Make a Difference.</span>
             </div>
 
-            {/* Quick Links */}
-            <div>
-              <h4 className="text-white font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2">
-                <li><Link to="/about" className="hover:text-green-400 transition">About Us</Link></li>
-                <li><Link to="/features" className="hover:text-green-400 transition">Features</Link></li>
-                <li><Link to="/pricing" className="hover:text-green-400 transition">Pricing</Link></li>
-                <li><Link to="/blog" className="hover:text-green-400 transition">Blog</Link></li>
-              </ul>
+            {/* Links */}
+            <div className="flex gap-6 text-sm">
+              <Link to="/privacy" className="hover:text-green-400 transition">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-green-400 transition">Terms of Service</Link>
             </div>
 
-            {/* Support */}
-            <div>
-              <h4 className="text-white font-semibold mb-4">Support</h4>
-              <ul className="space-y-2">
-                <li><Link to="/help" className="hover:text-green-400 transition">Help Center</Link></li>
-                <li><Link to="/contact" className="hover:text-green-400 transition">Contact Us</Link></li>
-                <li><Link to="/privacy" className="hover:text-green-400 transition">Privacy Policy</Link></li>
-                <li><Link to="/terms" className="hover:text-green-400 transition">Terms of Service</Link></li>
-              </ul>
+            {/* Copyright */}
+            <div className="text-sm text-gray-500">
+              © 2026 CarbonWise
             </div>
-          </div>
-
-          {/* Copyright - UPDATED */}
-          <div className="border-t border-gray-800 mt-12 pt-8 text-sm text-center">
-            <p>© 2024 CarbonWise. All rights reserved. Made with ❤️ for a greener planet.</p>
           </div>
         </div>
       </footer>
