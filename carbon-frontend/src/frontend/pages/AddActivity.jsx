@@ -5,7 +5,7 @@ import {
   Home, Car, Plane, Train, Bus, Zap, Droplets, Thermometer,
   Tv, Laptop, Shirt, Apple, 
   ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Save,
-  Trash2, RefreshCw, ArrowLeft
+  Trash2, RefreshCw, ArrowLeft, Clock
 } from "lucide-react";
 import { activityAPI } from '../../services/api';
 import CarbonTips from "../components/CarbonTips";
@@ -677,195 +677,216 @@ export default function AddActivity() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {showSuccess && (
-          <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl shadow-lg z-50 flex items-center gap-2 animate-slide-down">
-            <CheckCircle className="w-5 h-5" />
-            {successMessage}
-          </div>
+  <div className="min-h-screen bg-gray-50 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      {showSuccess && (
+        <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl shadow-lg z-50 flex items-center gap-2 animate-slide-down">
+          <CheckCircle className="w-5 h-5" />
+          {successMessage}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Add Activity</h1>
+          <p className="text-gray-600 mt-2">Enter your monthly usage below</p>
+        </div>
+        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900">
+          <ArrowLeft className="w-4 h-4" />
+          Dashboard
+        </button>
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-3">
+        <button
+          onClick={saveActivity}
+          disabled={!hasAnyData() || isLoading}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${
+            hasAnyData() && !isLoading
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
+              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+          }`}
+        >
+          {isLoading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="w-5 h-5" />
+              Save Activity
+            </>
+          )}
+        </button>
+
+        {hasAnyData() && !isLoading && (
+          <button onClick={resetForm} className="flex items-center gap-2 px-4 py-3 bg-orange-100 text-orange-700 rounded-xl hover:bg-orange-200">
+            <RefreshCw className="w-4 h-4" />
+            Reset
+          </button>
         )}
 
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Add Activity</h1>
-            <p className="text-gray-600 mt-2">Enter your monthly usage below</p>
-          </div>
-          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900">
-            <ArrowLeft className="w-4 h-4" />
-            Dashboard
-          </button>
-        </div>
-
-        <div className="mb-6 flex flex-wrap gap-3">
-          <button
-            onClick={saveActivity}
-            disabled={!hasAnyData() || isLoading}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${
-              hasAnyData() && !isLoading
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
-                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            {isLoading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-5 h-5" />
-                Save Activity
-              </>
-            )}
-          </button>
-
-          {hasAnyData() && !isLoading && (
-            <button onClick={resetForm} className="flex items-center gap-2 px-4 py-3 bg-orange-100 text-orange-700 rounded-xl hover:bg-orange-200">
-              <RefreshCw className="w-4 h-4" />
-              Reset
+        {activities.length > 0 && !isLoading && (
+          <div className="relative">
+            <button onClick={() => setShowDeleteOptions(!showDeleteOptions)} className="flex items-center gap-2 px-4 py-3 bg-red-100 text-red-700 rounded-xl hover:bg-red-200">
+              <Trash2 className="w-4 h-4" />
+              Delete
             </button>
-          )}
-
-          {activities.length > 0 && !isLoading && (
-            <div className="relative">
-              <button onClick={() => setShowDeleteOptions(!showDeleteOptions)} className="flex items-center gap-2 px-4 py-3 bg-red-100 text-red-700 rounded-xl hover:bg-red-200">
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
-              
-              {showDeleteOptions && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border py-2 z-50">
-                  <button onClick={() => setShowDeleteOptions(false)} className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 border-b">
-                    ← Cancel
+            
+            {showDeleteOptions && (
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border py-2 z-50">
+                <button onClick={() => setShowDeleteOptions(false)} className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 border-b">
+                  ← Cancel
+                </button>
+                {activities.slice(0, 5).map(activity => (
+                  <button key={activity._id} onClick={() => deleteActivity(activity._id)} className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex justify-between">
+                    <span>{new Date(activity.date).toLocaleDateString()}</span>
+                    <span>{activity.totalEmissions} kg</span>
                   </button>
-                  {activities.slice(0, 5).map(activity => (
-                    <button key={activity._id} onClick={() => deleteActivity(activity._id)} className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex justify-between">
-                      <span>{new Date(activity.date).toLocaleDateString()}</span>
-                      <span>{activity.totalEmissions} kg</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="mb-8 overflow-x-auto">
-          <div className="bg-white rounded-xl shadow-sm p-2 inline-flex gap-2">
-            {categories.map((cat) => (
-              <button key={cat.id} onClick={() => setCurrentCategory(cat.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                currentCategory === cat.id ? `bg-gradient-to-r from-${cat.color}-500 to-${cat.color}-600 text-white` : 'text-gray-600 hover:bg-gray-100'
-              }`}>
-                {cat.icon}
-                {cat.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className={`p-3 rounded-xl bg-gradient-to-br ${questions[currentCategory].color} text-white`}>
-                  {questions[currentCategory].icon}
-                </div>
-                <h2 className="text-xl font-bold text-gray-900">{questions[currentCategory].title}</h2>
+                ))}
               </div>
+            )}
+          </div>
+        )}
+      </div>
 
-              <div className="space-y-6">
-                {questions[currentCategory].questions.map((q) => {
-                  if (q.type === "section") {
-                    const isExpanded = expandedSections[q.id];
-                    
-                    return (
-                      <div key={q.id} className="border border-gray-200 rounded-xl overflow-hidden">
-                        <button onClick={() => toggleSection(q.id)} className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-gray-200 rounded-lg">{q.icon}</div>
-                            <span className="font-semibold text-gray-900">{q.text}</span>
-                          </div>
-                          <ChevronRight className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                        </button>
-                        
-                        {isExpanded && (
-                          <div className="p-4 space-y-4 border-t border-gray-100">
-                            {q.children.map((childQ) => {
-                              const currentValue = values[childQ.id];
-                              const emission = getEstimatedEmission(childQ.id, currentValue, childQ);
-                              
-                              return (
-                                <div key={childQ.id} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                                  <div className="flex items-start gap-3">
-                                    <div className="p-2 bg-gray-100 rounded-lg">{childQ.icon}</div>
-                                    <div className="flex-1">
-                                      <label className="block font-medium text-gray-900 mb-2">{childQ.text}</label>
-                                      
-                                      {childQ.type === "select" ? (
-                                        <select value={values[childQ.id] || ''} onChange={(e) => handleInputChange(childQ.id, e.target.value, childQ)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 bg-white" disabled={isLoading}>
-                                          <option value="">Select {childQ.text}</option>
-                                          {childQ.options.map((option) => (
-                                            <option key={option.value} value={option.value}>{option.label}</option>
-                                          ))}
-                                        </select>
-                                      ) : (
-                                        <div className="relative">
-                                          <input type="number" min={childQ.min} max={childQ.max} step={childQ.step} value={currentValue || ''} onChange={(e) => handleInputChange(childQ.id, e.target.value, childQ)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500" placeholder={`Enter ${childQ.unit}`} disabled={isLoading} />
-                                          <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">{childQ.unit}</span>
-                                        </div>
-                                      )}
+      <div className="mb-8 overflow-x-auto">
+        <div className="bg-white rounded-xl shadow-sm p-2 inline-flex gap-2">
+          {categories.map((cat) => (
+            <button key={cat.id} onClick={() => setCurrentCategory(cat.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              currentCategory === cat.id ? `bg-gradient-to-r from-${cat.color}-500 to-${cat.color}-600 text-white` : 'text-gray-600 hover:bg-gray-100'
+            }`}>
+              {cat.icon}
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-                                      {childQ.helpText && <p className="text-xs text-gray-500 mt-2">💡 {childQ.helpText}</p>}
-                                      {emission && <p className="text-sm text-green-600 font-medium mt-2">≈ {emission} kg CO₂</p>}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-                  
-                  const currentValue = values[q.id];
-                  const emission = getEstimatedEmission(q.id, currentValue, q);
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* LEFT COLUMN - Questionnaire Form + Recent Activities */}
+        <div className="lg:col-span-2">
+          {/* Main Form */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`p-3 rounded-xl bg-gradient-to-br ${questions[currentCategory].color} text-white`}>
+                {questions[currentCategory].icon}
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">{questions[currentCategory].title}</h2>
+            </div>
+
+            <div className="space-y-6">
+              {questions[currentCategory].questions.map((q) => {
+                if (q.type === "section") {
+                  const isExpanded = expandedSections[q.id];
                   
                   return (
-                    <div key={q.id} className="border-b border-gray-100 pb-6 last:border-0">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-gray-100 rounded-lg">{q.icon}</div>
-                        <div className="flex-1">
-                          <label className="block font-medium text-gray-900 mb-2">{q.text}</label>
-                          
-                          {q.type === "select" ? (
-                            <select value={values[q.id] || ''} onChange={(e) => handleInputChange(q.id, e.target.value, q)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 bg-white" disabled={isLoading}>
-                              <option value="">Select {q.text}</option>
-                              {q.options.map((option) => (
-                                <option key={option.value} value={option.value}>{option.label}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <div className="relative">
-                              <input type="number" min={q.min} max={q.max} step={q.step} value={currentValue || ''} onChange={(e) => handleInputChange(q.id, e.target.value, q)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500" placeholder={`Enter ${q.unit}`} disabled={isLoading} />
-                              <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">{q.unit}</span>
-                            </div>
-                          )}
-
-                          {q.helpText && <p className="text-xs text-gray-500 mt-2">💡 {q.helpText}</p>}
-                          {emission && <p className="text-sm text-green-600 font-medium mt-2">≈ {emission} kg CO₂</p>}
+                    <div key={q.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                      <button onClick={() => toggleSection(q.id)} className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-gray-200 rounded-lg">{q.icon}</div>
+                          <span className="font-semibold text-gray-900">{q.text}</span>
                         </div>
-                      </div>
+                        <ChevronRight className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                      </button>
+                      
+                      {isExpanded && (
+                        <div className="p-4 space-y-4 border-t border-gray-100">
+                          {q.children.map((childQ) => {
+                            const currentValue = values[childQ.id];
+                            const emission = getEstimatedEmission(childQ.id, currentValue, childQ);
+                            
+                            return (
+                              <div key={childQ.id} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                                <div className="flex items-start gap-3">
+                                  <div className="p-2 bg-gray-100 rounded-lg">{childQ.icon}</div>
+                                  <div className="flex-1">
+                                    <label className="block font-medium text-gray-900 mb-2">{childQ.text}</label>
+                                    
+                                    {childQ.type === "select" ? (
+                                      <select value={values[childQ.id] || ''} onChange={(e) => handleInputChange(childQ.id, e.target.value, childQ)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 bg-white" disabled={isLoading}>
+                                        <option value="">Select {childQ.text}</option>
+                                        {childQ.options.map((option) => (
+                                          <option key={option.value} value={option.value}>{option.label}</option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <div className="relative">
+                                        <input type="number" min={childQ.min} max={childQ.max} step={childQ.step} value={currentValue || ''} onChange={(e) => handleInputChange(childQ.id, e.target.value, childQ)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500" placeholder={`Enter ${childQ.unit}`} disabled={isLoading} />
+                                        <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">{childQ.unit}</span>
+                                      </div>
+                                    )}
+
+                                    {childQ.helpText && <p className="text-xs text-gray-500 mt-2">💡 {childQ.helpText}</p>}
+                                    {emission && <p className="text-sm text-green-600 font-medium mt-2">≈ {emission} kg CO₂</p>}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
-                })}
-              </div>
+                }
+                
+                const currentValue = values[q.id];
+                const emission = getEstimatedEmission(q.id, currentValue, q);
+                
+                return (
+                  <div key={q.id} className="border-b border-gray-100 pb-6 last:border-0">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-gray-100 rounded-lg">{q.icon}</div>
+                      <div className="flex-1">
+                        <label className="block font-medium text-gray-900 mb-2">{q.text}</label>
+                        
+                        {q.type === "select" ? (
+                          <select value={values[q.id] || ''} onChange={(e) => handleInputChange(q.id, e.target.value, q)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 bg-white" disabled={isLoading}>
+                            <option value="">Select {q.text}</option>
+                            {q.options.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <div className="relative">
+                            <input type="number" min={q.min} max={q.max} step={q.step} value={currentValue || ''} onChange={(e) => handleInputChange(q.id, e.target.value, q)} className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500" placeholder={`Enter ${q.unit}`} disabled={isLoading} />
+                            <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">{q.unit}</span>
+                          </div>
+                        )}
+
+                        {q.helpText && <p className="text-xs text-gray-500 mt-2">💡 {q.helpText}</p>}
+                        {emission && <p className="text-sm text-green-600 font-medium mt-2">≈ {emission} kg CO₂</p>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
+          {/* RECENT ACTIVITIES - Now below the form on the left side */}
+          {activities.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-8">
+              <h3 className="font-semibold text-gray-900 mb-4">Recent</h3>
+              <div className="space-y-2">
+                {activities.slice(0, 5).map(activity => (
+                  <div key={activity._id} className="flex justify-between text-sm">
+                    <span className="text-gray-600">{new Date(activity.date).toLocaleDateString()}</span>
+                    <span className="font-medium">{activity.totalEmissions} kg</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN - Summary & Tips */}
+        <div className="lg:col-span-1">
           <div className="space-y-6">
+            {/* Summary Card */}
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-6">
               <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
                 <AlertCircle className="w-5 h-5" />
@@ -900,28 +921,16 @@ export default function AddActivity() {
               )}
             </div>
 
+            {/* Tips Section */}
             {stats && stats.total !== null && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <CarbonTips stats={stats} activities={activities} />
-              </div>
-            )}
-
-            {activities.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Recent</h3>
-                <div className="space-y-2">
-                  {activities.slice(0, 3).map(activity => (
-                    <div key={activity._id} className="flex justify-between text-sm">
-                      <span className="text-gray-600">{new Date(activity.date).toLocaleDateString()}</span>
-                      <span className="font-medium">{activity.totalEmissions} kg</span>
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
           </div>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }
