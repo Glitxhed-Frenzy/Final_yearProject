@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import MetricCard from "../components/MetricCard";
 import ActivityCard from "../components/ActivityCard";
 import DonutPlaceholder from "../components/DonutPlaceholder";
-import { Calendar, Activity, AlertCircle, Clock, CalendarDays, TrendingUp } from "lucide-react";
+import { Calendar, Activity, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { activityAPI } from '../../services/api';
 
 export default function Dashboard() {
@@ -12,7 +12,12 @@ export default function Dashboard() {
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedPeriod, setSelectedPeriod] = useState("Month");
+  
+  // Selected date state - default to today
+  const [selectedDate, setSelectedDate] = useState(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+  const [showCalendar, setShowCalendar] = useState(false);
   
   const [stats, setStats] = useState({
     total: null,
@@ -32,12 +37,12 @@ export default function Dashboard() {
     loadDashboardData();
   }, []);
 
-  // Re-filter when selectedPeriod changes or activities load
+  // Filter activities when selected date changes
   useEffect(() => {
     if (activities.length > 0) {
-      filterActivitiesByPeriod();
+      filterActivitiesByDate();
     }
-  }, [selectedPeriod, activities]);
+  }, [selectedDate, activities]);
 
   const loadUserData = () => {
     const userData = localStorage.getItem("user");
@@ -52,37 +57,23 @@ export default function Dashboard() {
     }
   };
 
-  // Helper function to get start date based on selected period
-  const getStartDate = () => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const filterActivitiesByDate = () => {
+    // Create date range for the selected day (start to end of day)
+    const start = new Date(selectedDate);
+    start.setHours(0, 0, 0, 0);
     
-    switch(selectedPeriod) {
-      case 'Today':
-        return today;
-      case 'Week':
-        return new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      case 'Month':
-        return new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-      case 'Year':
-        return new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
-      default:
-        return new Date(0); // Beginning of time
-    }
-  };
-
-  // Filter activities by selected time period
-  const filterActivitiesByPeriod = () => {
-    const startDate = getStartDate();
+    const end = new Date(selectedDate);
+    end.setHours(23, 59, 59, 999);
+    
     const filtered = activities.filter(activity => {
       const activityDate = new Date(activity.date);
-      return activityDate >= startDate;
+      return activityDate >= start && activityDate <= end;
     });
+    
     setFilteredActivities(filtered);
     calculateFilteredStats(filtered);
   };
 
-  // Calculate stats based on filtered activities
   const calculateFilteredStats = (filteredActivities) => {
     if (filteredActivities.length === 0) {
       setStats({
@@ -145,14 +136,33 @@ export default function Dashboard() {
       const response = await activityAPI.getAll();
       const activitiesData = response.data.data || [];
       setActivities(activitiesData);
-      
-      // Initial filter will happen in useEffect
     } catch (error) {
       console.error("Error loading dashboard data:", error);
       setError("Failed to load dashboard data. Please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDateChange = (e) => {
+    setSelectedDate(e.target.value);
+    setShowCalendar(false);
+  };
+
+  const goToPreviousDay = () => {
+    const date = new Date(selectedDate);
+    date.setDate(date.getDate() - 1);
+    setSelectedDate(date.toISOString().split('T')[0]);
+  };
+
+  const goToNextDay = () => {
+    const date = new Date(selectedDate);
+    date.setDate(date.getDate() + 1);
+    setSelectedDate(date.toISOString().split('T')[0]);
+  };
+
+  const goToToday = () => {
+    setSelectedDate(new Date().toISOString().split('T')[0]);
   };
 
   const getActivityTitle = (activity) => {
@@ -178,34 +188,41 @@ export default function Dashboard() {
     return icons[category] || icons.general;
   };
 
-  // Fixed formatDate function
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const now = new Date();
+    const today = new Date();
+    const selected = new Date(selectedDate);
     
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const activityDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    // Check if the activity date matches the selected date
+    if (date.toDateString() === selected.toDateString()) {
+      return formatTime(date);
+    }
     
-    const diffTime = today - activityDate;
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
     return date.toLocaleDateString();
   };
 
-  // Get date range display text
-  const getDateRangeText = () => {
-    const startDate = getStartDate();
-    const endDate = new Date();
+  const formatTime = (date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatSelectedDate = () => {
+    const date = new Date(selectedDate);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
     
-    if (selectedPeriod === 'Today') {
-      return `Today, ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    if (date.toDateString() === today.toDateString()) {
+      return "Today";
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return "Yesterday";
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
     }
-    
-    return `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
   };
 
   if (loading) {
@@ -257,44 +274,82 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Enhanced Time Filter with Functionality */}
+      {/* Calendar Date Picker */}
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="inline-flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-            {[
-              { label: 'Today', icon: <Clock className="w-4 h-4" /> },
-              { label: 'Week', icon: <Calendar className="w-4 h-4" /> },
-              { label: 'Month', icon: <CalendarDays className="w-4 h-4" /> },
-              { label: 'Year', icon: <TrendingUp className="w-4 h-4" /> }
-            ].map((period) => (
+          <div className="flex items-center gap-3">
+            {/* Previous Day Button */}
+            <button
+              onClick={goToPreviousDay}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Previous day"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-600" />
+            </button>
+
+            {/* Date Display with Calendar */}
+            <div className="relative">
               <button
-                key={period.label}
-                onClick={() => setSelectedPeriod(period.label)}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium 
-                  transition-all duration-200
-                  ${period.label === selectedPeriod 
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md shadow-green-500/25' 
-                    : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
-                  }
-                `}
+                onClick={() => setShowCalendar(!showCalendar)}
+                className="flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-300 rounded-xl hover:border-green-500 hover:shadow-sm transition-all"
               >
-                {period.icon}
-                {period.label}
-                {period.label === selectedPeriod && (
-                  <span className="ml-1 w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                )}
+                <Calendar className="w-4 h-4 text-green-600" />
+                <span className="text-gray-700 font-medium">{formatSelectedDate()}</span>
               </button>
-            ))}
+
+              {/* Calendar Dropdown */}
+              {showCalendar && (
+                <>
+                  <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-200 p-4 z-50">
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={handleDateChange}
+                      className="p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                      max={new Date().toISOString().split('T')[0]}
+                    />
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        onClick={goToToday}
+                        className="px-4 py-2 text-sm text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      >
+                        Today
+                      </button>
+                    </div>
+                  </div>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowCalendar(false)}
+                  />
+                </>
+              )}
+            </div>
+
+            {/* Next Day Button */}
+            <button
+              onClick={goToNextDay}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Next day"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-600" />
+            </button>
+
+            {/* Today Button */}
+            <button
+              onClick={goToToday}
+              className="px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+            >
+              Today
+            </button>
           </div>
-          
-          {/* Date range indicator */}
+
+          {/* Activity count indicator */}
           <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full flex items-center gap-1">
             <Calendar className="w-3 h-3" />
-            <span>{getDateRangeText()}</span>
+            <span>{formatSelectedDate()}</span>
             {filteredActivities.length > 0 && (
               <span className="ml-1 text-green-600 font-medium">
-                ({filteredActivities.length} activities)
+                ({filteredActivities.length} {filteredActivities.length === 1 ? 'activity' : 'activities'})
               </span>
             )}
           </div>
@@ -306,7 +361,7 @@ export default function Dashboard() {
         <MetricCard 
           title="Total CO₂" 
           value={stats.total ? `${stats.total.toFixed(1)} kg` : "—"}
-          subtitle={stats.total ? `This ${selectedPeriod.toLowerCase()}` : "No data"}
+          subtitle={stats.total ? `For ${formatSelectedDate().toLowerCase()}` : "No data"}
           highlight={!stats.total}
           icon="🌍"
           color="green"
@@ -348,24 +403,22 @@ export default function Dashboard() {
                 <h2 className="text-xl font-semibold text-gray-900">Emissions Breakdown</h2>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Calendar className="w-4 h-4" />
-                  <span>{selectedPeriod} • {getDateRangeText()}</span>
+                  <span>{formatSelectedDate()}</span>
                 </div>
               </div>
               
               {!hasData ? (
                 <div className="h-80 flex flex-col items-center justify-center text-center">
                   <Activity className="w-16 h-16 text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">No data for {selectedPeriod}</h3>
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">No data for {formatSelectedDate().toLowerCase()}</h3>
                   <p className="text-gray-500 mb-6 max-w-md">
-                    {selectedPeriod === 'Today' 
-                      ? "You haven't added any activities today. Add your first activity!" 
-                      : `No activities found for this ${selectedPeriod.toLowerCase()}. Try a different time period or add new activities.`}
+                    You haven't added any activities for this date.
                   </p>
                   <button
                     onClick={() => navigate('/add')}
                     className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium"
                   >
-                    Add Your First Activity
+                    Add Activity
                   </button>
                 </div>
               ) : (
@@ -394,17 +447,19 @@ export default function Dashboard() {
           {/* Recent Activities */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 h-full">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Activities</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                Activities for {formatSelectedDate()}
+              </h2>
               
               {filteredActivities.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Activity className="w-12 h-12 text-gray-300 mb-3" />
-                  <p className="text-gray-600 mb-2">No activities for {selectedPeriod.toLowerCase()}</p>
+                  <p className="text-gray-600 mb-2">No activities for this day</p>
                   <p className="text-sm text-gray-500">Click the + Add Activity button to start tracking</p>
                 </div>
               ) : (
                 <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                  {filteredActivities.slice(0, 5).map((activity) => (
+                  {filteredActivities.map((activity) => (
                     <ActivityCard 
                       key={activity._id}
                       title={getActivityTitle(activity)}
@@ -414,14 +469,6 @@ export default function Dashboard() {
                       icon={getCategoryIcon(getMainCategory(activity))}
                     />
                   ))}
-                  {filteredActivities.length > 5 && (
-                    <button
-                      onClick={() => navigate('/reports')}
-                      className="w-full mt-4 px-4 py-2 text-green-600 hover:text-green-700 font-medium border border-green-200 rounded-xl hover:bg-green-50 transition-colors"
-                    >
-                      View All {filteredActivities.length} Activities
-                    </button>
-                  )}
                 </div>
               )}
             </div>
