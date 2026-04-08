@@ -18,7 +18,6 @@ router.get('/me', protect, getMe);
 router.put('/updatedetails', protect, updateDetails);
 router.put('/updatepassword', protect, updatePassword);
 
-// This line is causing the error - make sure verifyAndResetPassword exists
 router.post('/verify-and-reset', verifyAndResetPassword);
 
 module.exports = router;
