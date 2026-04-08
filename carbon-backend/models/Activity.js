@@ -23,28 +23,39 @@ const activitySchema = new mongoose.Schema({
   },
   answers: {
     type: Map,
-    of: answerSchema
+    of: answerSchema,
+    default: new Map()
   },
   categoryTotals: {
-    transport: Number,
-    electricity: Number,
-    waste: Number,
-    food: Number
+    transport: { type: Number, default: 0 },
+    electricity: { type: Number, default: 0 },
+    waste: { type: Number, default: 0 },
+    food: { type: Number, default: 0 }
   },
   totalEmissions: {
     type: Number,
-    required: true
+    required: true,
+    default: 0
   },
-  categories: [String],
+  categories: {
+    type: [String],
+    default: []
+  },
   notes: String
 }, {
   timestamps: true,
-  // FIXED: Ensure dates are stored consistently
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
 
-// FIXED: Add virtual field for local date display
+// FIXED: Remove 'next' parameter and use async function
+activitySchema.pre('save', function() {
+  if (this.date) {
+    const date = new Date(this.date);
+    this.date = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  }
+});
+
 activitySchema.virtual('localDate').get(function() {
   const date = new Date(this.date);
   return date.toLocaleDateString();
@@ -54,7 +65,6 @@ activitySchema.virtual('localDateDisplay').get(function() {
   const date = new Date(this.date);
   const now = new Date();
   
-  // Reset to midnight for accurate comparison
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const activityDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   
@@ -66,17 +76,6 @@ activitySchema.virtual('localDateDisplay').get(function() {
   if (diffDays < 7) return `${diffDays} days ago`;
   if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
   return date.toLocaleDateString();
-});
-
-// FIXED: Add middleware to ensure date is stored with timezone offset
-activitySchema.pre('save', function(next) {
-  // Ensure the date is stored consistently
-  if (this.date) {
-    const date = new Date(this.date);
-    // Store as UTC midnight for consistent comparison
-    this.date = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  }
-  next();
 });
 
 module.exports = mongoose.model('Activity', activitySchema);
