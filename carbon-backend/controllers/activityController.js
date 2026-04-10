@@ -1,72 +1,48 @@
 // controllers/activityController.js
 const Activity = require('../models/Activity');
 const EmissionFactor = require('../models/EmissionFactor');
+const { updateMonthlyLeaderboard } = require('./leaderboardController');
 
-// Car factor map (type + fuel combination) - kg CO₂ per km
-const carFactorMap = {
-  // Hatchback
-  hatchback_petrol: 0.124,
-  hatchback_diesel: 0.106,
-  // Sedan
-  sedan_petrol: 0.162,
-  sedan_diesel: 0.143,
-  sedan_hybrid: 0.099,
-  sedan_electric: 0.062,
-  // SUV
-  suv_petrol: 0.217,
-  suv_diesel: 0.193,
-  suv_hybrid: 0.137,
-  suv_electric: 0.087,
-  // MUV/MPV
-  muv_petrol: 0.199,
-  muv_diesel: 0.174,
-  muv_hybrid: 0.124,
-  muv_electric: 0.081
+// Cache for emission factors (load once and reuse)
+let factorCache = null;
+let lastCacheUpdate = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Helper function to load factors from database
+const loadFactorsFromDB = async () => {
+  const now = Date.now();
+  if (factorCache && (now - lastCacheUpdate) < CACHE_DURATION) {
+    return factorCache;
+  }
+  
+  const factors = await EmissionFactor.find();
+  factorCache = {};
+  
+  factors.forEach(factor => {
+    factorCache[factor.activityId] = factor.factor;
+  });
+  
+  lastCacheUpdate = now;
+  console.log('📦 Emission factors loaded from database:', Object.keys(factorCache).length);
+  return factorCache;
 };
 
-// Train factor map - kg CO₂ per km
-const trainFactorMap = {
-  local: 0.025,   // Mumbai Local Trains
-  express: 0.062  // Express/Mail Trains
+// Get a single factor
+const getFactor = async (activityId) => {
+  const factors = await loadFactorsFromDB();
+  return factors[activityId] || null;
 };
 
-// Recycling rate multiplier
-const recyclingMultiplierMap = {
-  low: 1.0,
-  medium: 0.7,
-  high: 0.4,
-  very_high: 0.2
+// Car factor helper
+const getCarFactorFromDB = async (carType, carFuel) => {
+  const activityId = `car_${carType}_${carFuel}`;
+  return await getFactor(activityId);
 };
 
-// Food waste multiplier
-const foodWasteMultiplierMap = {
-  low: 1.0,
-  medium: 1.15,
-  high: 1.30
-};
-
-// Fallback factors for regular activities (in kg CO₂ per unit)
-const fallbackFactors = {
-  // Transport
-  bus_km: 0.11,
-  plane_km: 0.33,
-  // Electricity
-  electricity_kwh: 0.85,
-  ac_hours: 2.0,
-  heater_hours: 2.8,
-  laptop_hours: 0.012,
-  tv_hours: 0.025,
-  // Waste
-  food_waste_kg: 0.5,
-  plastic_waste_kg: 3.0,
-  paper_waste_kg: 0.8,
-  metal_waste_kg: 2.5,
-  ewaste_kg: 15.0,
-  // Food
-  chicken_servings: 6.9,
-  fish_servings: 3.5,
-  dairy_servings: 2.5,
-  vegetarian_meals: 2.0
+// Train factor helper
+const getTrainFactorFromDB = async (trainType) => {
+  const activityId = `train_${trainType}`;
+  return await getFactor(activityId);
 };
 
 // @desc    Create new activity
@@ -74,454 +50,293 @@ const fallbackFactors = {
 // @access  Private
 exports.createActivity = async (req, res) => {
   try {
-    console.log('📥 Received data:', JSON.stringify(req.body, null, 2));
+    console.log('📥 Received:', JSON.stringify(req.body, null, 2));
+    await loadFactorsFromDB();
     
-    // Get raw values from frontend
     const rawData = req.body;
-    
-    // Prepare answers object and calculate totals
     const answers = {};
-    const categoryTotals = {
-      transport: 0,
-      electricity: 0,
-      waste: 0,
-      food: 0
-    };
-    
+    const categoryTotals = { transport: 0, electricity: 0, waste: 0, food: 0 };
     let totalEmissions = 0;
     
-    // Store selected options
     let selectedCarType = rawData.car_type;
     let selectedCarFuel = rawData.car_fuel;
     let selectedTrainType = rawData.train_type;
-    let selectedFoodWaste = rawData.food_waste;
-    let selectedRecyclingRate = rawData.recycling_rate;
     
-    console.log('🚗 Car selections:', { selectedCarType, selectedCarFuel });
-    console.log('🚂 Train selections:', { selectedTrainType });
-    console.log('♻️ Recycling rate:', selectedRecyclingRate);
-    console.log('🍽️ Food waste:', selectedFoodWaste);
-    
-    // Get multipliers
-    const recyclingMultiplier = selectedRecyclingRate ? (recyclingMultiplierMap[selectedRecyclingRate] || 1.0) : 1.0;
-    const foodWasteMultiplier = selectedFoodWaste ? (foodWasteMultiplierMap[selectedFoodWaste] || 1.0) : 1.0;
-    
-    console.log('📊 Multipliers:', { recyclingMultiplier, foodWasteMultiplier });
-    
-    // Process each activity
-    Object.keys(rawData).forEach(activityId => {
-      let value = rawData[activityId];
-      
-      // Skip metadata fields
+    for (const [activityId, value] of Object.entries(rawData)) {
       if (activityId === "car_type" || activityId === "car_fuel" || 
-          activityId === "train_type" || activityId === "food_waste" || 
-          activityId === "recycling_rate") {
-        return;
+          activityId === "train_type" || activityId === "date") {
+        continue;
       }
       
-      // Convert string to number if needed
-      if (typeof value === 'string') {
-        value = parseFloat(value);
-      }
-      
-      // Skip if no value or not a positive number
-      if (isNaN(value) || value <= 0) return;
-      
-      console.log(`📊 Processing: ${activityId} = ${value}`);
+      let numValue = typeof value === 'string' ? parseFloat(value) : value;
+      if (isNaN(numValue) || numValue <= 0) continue;
       
       // ========== TRANSPORT ==========
-      // Handle CAR KM
       if (activityId === "car_km" && selectedCarType && selectedCarFuel) {
-        const key = `${selectedCarType}_${selectedCarFuel}`;
-        const factor = carFactorMap[key];
-        
-        console.log(`🔍 Car factor lookup: ${key} = ${factor}`);
-        
+        const factor = await getCarFactorFromDB(selectedCarType, selectedCarFuel);
         if (factor) {
-          const emission = value * factor;
-          
-          answers.car_km = {
-            value: value,
-            emission: Math.round(emission * 100) / 100,
-            category: "transport",
-            factor: factor,
-            carType: selectedCarType,
-            carFuel: selectedCarFuel
+          const emission = numValue * factor;
+          answers.car_km = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "transport", 
+            factor: factor 
           };
-          
           categoryTotals.transport += emission;
           totalEmissions += emission;
-          
-          console.log(`✅ Car emission: ${value} km × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+          console.log(`✅ Car: ${numValue} km × ${factor} = ${emission.toFixed(2)} kg CO₂`);
         }
-        return;
+        continue;
       }
       
-      // Handle TRAIN KM
       if (activityId === "train_km" && selectedTrainType) {
-        const factor = trainFactorMap[selectedTrainType];
-        
-        console.log(`🔍 Train factor lookup: ${selectedTrainType} = ${factor}`);
-        
+        const factor = await getTrainFactorFromDB(selectedTrainType);
         if (factor) {
-          const emission = value * factor;
-          
-          answers.train_km = {
-            value: value,
-            emission: Math.round(emission * 100) / 100,
-            category: "transport",
-            factor: factor,
-            trainType: selectedTrainType
+          const emission = numValue * factor;
+          answers.train_km = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "transport", 
+            factor: factor 
           };
-          
           categoryTotals.transport += emission;
           totalEmissions += emission;
-          
-          console.log(`✅ Train emission: ${value} km × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+          console.log(`✅ Train: ${numValue} km × ${factor} = ${emission.toFixed(2)} kg CO₂`);
         }
-        return;
+        continue;
       }
       
-      // Handle BUS KM
       if (activityId === "bus_km") {
-        const factor = fallbackFactors.bus_km;
-        const emission = value * factor;
-        
-        answers.bus_km = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "transport",
-          factor: factor
-        };
-        
-        categoryTotals.transport += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Bus emission: ${value} km × ${factor} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('bus_km');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.bus_km = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "transport", 
+            factor: factor 
+          };
+          categoryTotals.transport += emission;
+          totalEmissions += emission;
+          console.log(`✅ Bus: ${numValue} km × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
-      // Handle PLANE KM
       if (activityId === "plane_km") {
-        const factor = fallbackFactors.plane_km;
-        const emission = value * factor;
-        
-        answers.plane_km = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "transport",
-          factor: factor
-        };
-        
-        categoryTotals.transport += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Plane emission: ${value} km × ${factor} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('plane_km');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.plane_km = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "transport", 
+            factor: factor 
+          };
+          categoryTotals.transport += emission;
+          totalEmissions += emission;
+          console.log(`✅ Plane: ${numValue} km × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
       // ========== ELECTRICITY ==========
-      if (activityId === "electricity_kwh") {
-        const factor = fallbackFactors.electricity_kwh;
-        const emission = value * factor;
-        
-        answers.electricity_kwh = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "electricity",
-          factor: factor
-        };
-        
-        categoryTotals.electricity += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Electricity: ${value} kWh × ${factor} = ${emission.toFixed(2)} kg CO₂`);
-        return;
-      }
-      
       if (activityId === "ac_hours") {
-        const factor = fallbackFactors.ac_hours;
-        const emission = value * factor;
-        
-        answers.ac_hours = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "electricity",
-          factor: factor
-        };
-        
-        categoryTotals.electricity += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ AC: ${value} hours/day × ${factor} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('ac_hours');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.ac_hours = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "electricity", 
+            factor: factor 
+          };
+          categoryTotals.electricity += emission;
+          totalEmissions += emission;
+          console.log(`✅ AC: ${numValue} hours × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
       if (activityId === "heater_hours") {
-        const factor = fallbackFactors.heater_hours;
-        const emission = value * factor;
-        
-        answers.heater_hours = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "electricity",
-          factor: factor
-        };
-        
-        categoryTotals.electricity += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Heater: ${value} hours/day × ${factor} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('heater_hours');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.heater_hours = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "electricity", 
+            factor: factor 
+          };
+          categoryTotals.electricity += emission;
+          totalEmissions += emission;
+          console.log(`✅ Heater: ${numValue} hours × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
       if (activityId === "laptop_hours") {
-        const factor = fallbackFactors.laptop_hours;
-        const emission = value * factor;
-        
-        answers.laptop_hours = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "electricity",
-          factor: factor
-        };
-        
-        categoryTotals.electricity += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Laptop: ${value} hours/day × ${factor} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('laptop_hours');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.laptop_hours = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "electricity", 
+            factor: factor 
+          };
+          categoryTotals.electricity += emission;
+          totalEmissions += emission;
+          console.log(`✅ Laptop: ${numValue} hours × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
       if (activityId === "tv_hours") {
-        const factor = fallbackFactors.tv_hours;
-        const emission = value * factor;
-        
-        answers.tv_hours = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "electricity",
-          factor: factor
-        };
-        
-        categoryTotals.electricity += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ TV: ${value} hours/day × ${factor} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('tv_hours');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.tv_hours = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "electricity", 
+            factor: factor 
+          };
+          categoryTotals.electricity += emission;
+          totalEmissions += emission;
+          console.log(`✅ TV: ${numValue} hours × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
-      // ========== WASTE ==========
+      // ========== WASTE (per day) ==========
       if (activityId === "food_waste_kg") {
-        const factor = fallbackFactors.food_waste_kg;
-        const emission = value * factor * recyclingMultiplier;
-        
-        answers.food_waste_kg = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "waste",
-          factor: factor,
-          recyclingMultiplier: recyclingMultiplier
-        };
-        
-        categoryTotals.waste += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Food Waste: ${value} kg/week × ${factor} × ${recyclingMultiplier} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('food_waste_kg');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.food_waste_kg = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "waste", 
+            factor: factor 
+          };
+          categoryTotals.waste += emission;
+          totalEmissions += emission;
+          console.log(`✅ Food Waste: ${numValue} kg × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
       if (activityId === "plastic_waste_kg") {
-        const factor = fallbackFactors.plastic_waste_kg;
-        const emission = value * factor * recyclingMultiplier;
-        
-        answers.plastic_waste_kg = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "waste",
-          factor: factor,
-          recyclingMultiplier: recyclingMultiplier
-        };
-        
-        categoryTotals.waste += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Plastic Waste: ${value} kg/week × ${factor} × ${recyclingMultiplier} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('plastic_waste_kg');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.plastic_waste_kg = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "waste", 
+            factor: factor 
+          };
+          categoryTotals.waste += emission;
+          totalEmissions += emission;
+          console.log(`✅ Plastic Waste: ${numValue} kg × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
       if (activityId === "paper_waste_kg") {
-        const factor = fallbackFactors.paper_waste_kg;
-        const emission = value * factor * recyclingMultiplier;
-        
-        answers.paper_waste_kg = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "waste",
-          factor: factor,
-          recyclingMultiplier: recyclingMultiplier
-        };
-        
-        categoryTotals.waste += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Paper Waste: ${value} kg/week × ${factor} × ${recyclingMultiplier} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('paper_waste_kg');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.paper_waste_kg = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "waste", 
+            factor: factor 
+          };
+          categoryTotals.waste += emission;
+          totalEmissions += emission;
+          console.log(`✅ Paper Waste: ${numValue} kg × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
-      if (activityId === "metal_waste_kg") {
-        const factor = fallbackFactors.metal_waste_kg;
-        const emission = value * factor * recyclingMultiplier;
-        
-        answers.metal_waste_kg = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "waste",
-          factor: factor,
-          recyclingMultiplier: recyclingMultiplier
-        };
-        
-        categoryTotals.waste += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Metal Waste: ${value} kg/month × ${factor} × ${recyclingMultiplier} = ${emission.toFixed(2)} kg CO₂`);
-        return;
-      }
-      
-      if (activityId === "ewaste_kg") {
-        const factor = fallbackFactors.ewaste_kg;
-        const emission = value * factor * recyclingMultiplier;
-        
-        answers.ewaste_kg = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "waste",
-          factor: factor,
-          recyclingMultiplier: recyclingMultiplier
-        };
-        
-        categoryTotals.waste += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ E-Waste: ${value} kg/year × ${factor} × ${recyclingMultiplier} = ${emission.toFixed(2)} kg CO₂`);
-        return;
-      }
-      
-      // ========== FOOD ==========
+      // ========== FOOD (per day) ==========
       if (activityId === "chicken_servings") {
-        const factor = fallbackFactors.chicken_servings;
-        const emission = value * factor * foodWasteMultiplier;
-        
-        answers.chicken_servings = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "food",
-          factor: factor,
-          foodWasteMultiplier: foodWasteMultiplier
-        };
-        
-        categoryTotals.food += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Chicken: ${value} servings/week × ${factor} × ${foodWasteMultiplier} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('chicken_servings');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.chicken_servings = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "food", 
+            factor: factor 
+          };
+          categoryTotals.food += emission;
+          totalEmissions += emission;
+          console.log(`✅ Chicken: ${numValue} servings × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
       if (activityId === "fish_servings") {
-        const factor = fallbackFactors.fish_servings;
-        const emission = value * factor * foodWasteMultiplier;
-        
-        answers.fish_servings = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "food",
-          factor: factor,
-          foodWasteMultiplier: foodWasteMultiplier
-        };
-        
-        categoryTotals.food += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Fish: ${value} servings/week × ${factor} × ${foodWasteMultiplier} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('fish_servings');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.fish_servings = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "food", 
+            factor: factor 
+          };
+          categoryTotals.food += emission;
+          totalEmissions += emission;
+          console.log(`✅ Fish: ${numValue} servings × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
       if (activityId === "dairy_servings") {
-        const factor = fallbackFactors.dairy_servings;
-        const emission = value * factor * foodWasteMultiplier;
-        
-        answers.dairy_servings = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "food",
-          factor: factor,
-          foodWasteMultiplier: foodWasteMultiplier
-        };
-        
-        categoryTotals.food += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Dairy: ${value} servings/week × ${factor} × ${foodWasteMultiplier} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('dairy_servings');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.dairy_servings = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "food", 
+            factor: factor 
+          };
+          categoryTotals.food += emission;
+          totalEmissions += emission;
+          console.log(`✅ Dairy: ${numValue} servings × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
       
       if (activityId === "vegetarian_meals") {
-        const factor = fallbackFactors.vegetarian_meals;
-        const emission = value * factor * foodWasteMultiplier;
-        
-        answers.vegetarian_meals = {
-          value: value,
-          emission: Math.round(emission * 100) / 100,
-          category: "food",
-          factor: factor,
-          foodWasteMultiplier: foodWasteMultiplier
-        };
-        
-        categoryTotals.food += emission;
-        totalEmissions += emission;
-        
-        console.log(`✅ Vegetarian: ${value} meals/week × ${factor} × ${foodWasteMultiplier} = ${emission.toFixed(2)} kg CO₂`);
-        return;
+        const factor = await getFactor('vegetarian_meals');
+        if (factor) {
+          const emission = numValue * factor;
+          answers.vegetarian_meals = { 
+            value: numValue, 
+            emission: Math.round(emission * 100) / 100, 
+            category: "food", 
+            factor: factor 
+          };
+          categoryTotals.food += emission;
+          totalEmissions += emission;
+          console.log(`✅ Vegetarian: ${numValue} meals × ${factor} = ${emission.toFixed(2)} kg CO₂`);
+        }
+        continue;
       }
-      
-      // If no matching activity found
-      console.log(`⚠️ Unknown activity ID: ${activityId}`);
-    });
+    }
     
-    // Store selected metadata for reference
+    // Store selected metadata
     if (selectedCarType && selectedCarFuel) {
-      answers.car_selected = {
-        type: selectedCarType,
-        fuel: selectedCarFuel,
-        emission: 0,
-        category: "transport"
-      };
+      answers.car_selected = { type: selectedCarType, fuel: selectedCarFuel, category: "transport" };
     }
-    
     if (selectedTrainType) {
-      answers.train_selected = {
-        type: selectedTrainType,
-        emission: 0,
-        category: "transport"
-      };
-    }
-    
-    if (selectedFoodWaste) {
-      answers.food_waste_selected = {
-        level: selectedFoodWaste,
-        multiplier: foodWasteMultiplier,
-        emission: 0,
-        category: "food"
-      };
-    }
-    
-    if (selectedRecyclingRate) {
-      answers.recycling_rate_selected = {
-        level: selectedRecyclingRate,
-        multiplier: recyclingMultiplier,
-        emission: 0,
-        category: "waste"
-      };
+      answers.train_selected = { type: selectedTrainType, category: "transport" };
     }
     
     // Round totals
@@ -532,7 +347,6 @@ exports.createActivity = async (req, res) => {
     
     console.log('📊 Final totals:', { totalEmissions, categoryTotals });
     
-    // Create categories array
     const categoriesList = Object.keys(categoryTotals).filter(cat => categoryTotals[cat] > 0);
     
     // Create activity
@@ -547,6 +361,15 @@ exports.createActivity = async (req, res) => {
     
     console.log('✅ Activity saved with ID:', activity._id);
     console.log('✅ Total emissions:', totalEmissions, 'kg CO₂');
+    
+    // ========== UPDATE LEADERBOARD ==========
+    try {
+      await updateMonthlyLeaderboard();
+      console.log('✅ Leaderboard updated');
+    } catch (err) {
+      console.log('⚠️ Leaderboard update error:', err.message);
+    }
+    // ========== END LEADERBOARD UPDATE ==========
     
     res.status(201).json({
       success: true,
@@ -597,7 +420,6 @@ exports.getActivity = async (req, res) => {
       });
     }
 
-    // Make sure user owns activity
     if (activity.user.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(401).json({
         success: false,
@@ -631,7 +453,6 @@ exports.updateActivity = async (req, res) => {
       });
     }
 
-    // Make sure user owns activity
     if (activity.user.toString() !== req.user.id) {
       return res.status(401).json({
         success: false,
@@ -670,7 +491,6 @@ exports.deleteActivity = async (req, res) => {
       });
     }
 
-    // Make sure user owns activity
     if (activity.user.toString() !== req.user.id) {
       return res.status(401).json({
         success: false,
@@ -713,10 +533,8 @@ exports.getStats = async (req, res) => {
     };
 
     activities.forEach(activity => {
-      // Total emissions
       stats.totalEmissions += activity.totalEmissions || 0;
 
-      // Category totals
       if (activity.categoryTotals) {
         Object.entries(activity.categoryTotals).forEach(([category, value]) => {
           if (stats.categoryTotals.hasOwnProperty(category)) {
@@ -725,7 +543,6 @@ exports.getStats = async (req, res) => {
         });
       }
 
-      // Monthly data
       const month = new Date(activity.date).toLocaleString('default', { month: 'short', year: 'numeric' });
       stats.monthlyData[month] = (stats.monthlyData[month] || 0) + (activity.totalEmissions || 0);
     });
@@ -734,7 +551,6 @@ exports.getStats = async (req, res) => {
       ? stats.totalEmissions / activities.length 
       : 0;
 
-    // Round to 2 decimals
     stats.totalEmissions = Math.round(stats.totalEmissions * 100) / 100;
     stats.averagePerActivity = Math.round(stats.averagePerActivity * 100) / 100;
     

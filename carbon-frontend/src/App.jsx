@@ -12,6 +12,7 @@ import NotFound from "./frontend/pages/NotFound";
 import Profile from "./frontend/pages/Profile";
 import SignUp from "./frontend/pages/SignUp";
 import ForgotPassword from "./frontend/pages/ForgotPassword";
+import Leaderboard from "./frontend/pages/Leaderboard";  
 import AdminForgotPassword from "./frontend/admin/AdminForgotPassword";
 import AdminLayout from "./frontend/admin/AdminLayout";
 import AdminLogin from "./frontend/admin/AdminLogin";
@@ -29,10 +30,8 @@ export default function App() {
     const user = localStorage.getItem("user");
     const rememberMe = localStorage.getItem("rememberMe");
     
-    // If token exists and user exists, and rememberMe is true, redirect to dashboard
     if (token && user && rememberMe === "true") {
       const currentPath = location.pathname;
-      // Only redirect if on public pages
       if (currentPath === '/' || currentPath === '/login' || currentPath === '/signup' || currentPath === '/forgot-password') {
         navigate("/dashboard");
       }
@@ -64,6 +63,7 @@ export default function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />  {/* ← ADD THIS */}
 
         {/* Admin */}
         <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />

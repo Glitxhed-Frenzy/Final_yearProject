@@ -77,6 +77,16 @@ export default function Navbar() {
             >
               Reports
             </NavLink>
+            <NavLink 
+              to="/leaderboard" 
+              className={({ isActive }) => 
+                `hover:text-green-600 transition-colors whitespace-nowrap ${
+                  isActive ? 'text-green-600' : 'text-gray-700'
+                }`
+              }
+            >
+              Leaderboard
+            </NavLink>
           </nav>
         )}
 
