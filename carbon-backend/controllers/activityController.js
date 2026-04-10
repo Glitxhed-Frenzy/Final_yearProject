@@ -499,6 +499,16 @@ exports.deleteActivity = async (req, res) => {
     }
 
     await activity.deleteOne();
+    
+    // ========== UPDATE LEADERBOARD AFTER DELETE ==========
+    try {
+      const { updateMonthlyLeaderboard } = require('./leaderboardController');
+      await updateMonthlyLeaderboard();
+      console.log('✅ Leaderboard updated after delete');
+    } catch (err) {
+      console.log('⚠️ Leaderboard update error:', err.message);
+    }
+    // ========== END LEADERBOARD UPDATE ==========
 
     res.status(200).json({
       success: true,

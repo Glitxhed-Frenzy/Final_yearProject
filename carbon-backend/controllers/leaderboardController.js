@@ -115,17 +115,20 @@ exports.getLeaderboard = async (req, res) => {
       .limit(limit)
       .populate('userId', 'name email createdAt');
     
+    // Filter out entries where userId is null (orphaned records)
+    const validEntries = leaderboardEntries.filter(entry => entry.userId !== null);
+    
     // Format leaderboard data
-    const leaderboard = leaderboardEntries.map(entry => ({
+    const leaderboard = validEntries.map(entry => ({
       rank: entry.rank,
-      userId: entry.userId._id,
-      name: entry.userId.name,
-      email: entry.userId.email,
+      userId: entry.userId?._id || 'unknown',
+      name: entry.userId?.name || 'Deleted User',
+      email: entry.userId?.email || 'unknown@email.com',
       totalEmissions: entry.totalEmissions,
-      avatar: entry.userId.name?.charAt(0) || 'U'
+      avatar: entry.userId?.name?.charAt(0) || '?'
     }));
     
-    // Get current user's rank and emissions (only if eligible)
+    // Get current user's rank and emissions
     const currentUserEntry = await Leaderboard.findOne({
       userId: req.user.id,
       month: month
@@ -137,7 +140,6 @@ exports.getLeaderboard = async (req, res) => {
     const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
     const isAccountOldEnough = accountAge >= oneWeekInMs;
     const hasActivities = await Activity.countDocuments({ user: req.user.id }) > 0;
-    const isEligible = isAccountOldEnough && hasActivities;
     
     res.status(200).json({
       success: true,
@@ -147,7 +149,7 @@ exports.getLeaderboard = async (req, res) => {
         currentUser: {
           rank: currentUserEntry?.rank || null,
           emissions: currentUserEntry?.totalEmissions || 0,
-          isEligible: isEligible,
+          isEligible: isAccountOldEnough && hasActivities,
           accountAgeDays: Math.floor(accountAge / (24 * 60 * 60 * 1000)),
           hasActivities: hasActivities
         },
@@ -158,6 +160,35 @@ exports.getLeaderboard = async (req, res) => {
     
   } catch (error) {
     console.error('Error getting leaderboard:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// @desc    Force refresh leaderboard (admin only)
+// @route   POST /api/leaderboard/refresh
+// @access  Private/Admin
+exports.refreshLeaderboard = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+    
+    console.log('🔄 Manual leaderboard refresh triggered by admin:', req.user.email);
+    const result = await exports.updateMonthlyLeaderboard();
+    
+    res.status(200).json({
+      success: result.success,
+      message: `Leaderboard refreshed successfully! ${result.count} users updated.`,
+      count: result.count
+    });
+  } catch (error) {
+    console.error('Error refreshing leaderboard:', error);
     res.status(500).json({
       success: false,
       message: error.message
