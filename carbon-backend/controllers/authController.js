@@ -1,5 +1,6 @@
 // controllers/authController.js
 const User = require('../models/User');
+const Activity = require('../models/Activity'); 
 const generateToken = require('../utils/generateToken');
 const crypto = require('crypto');
 
@@ -148,6 +149,26 @@ exports.updateDetails = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: error.message 
+    });
+  }
+};
+
+exports.deleteAccount = async (req, res) => {
+  try {
+    // Delete all user activities
+    await Activity.deleteMany({ user: req.user.id });
+    
+    // Delete user
+    await User.findByIdAndDelete(req.user.id);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
     });
   }
 };

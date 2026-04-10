@@ -29,7 +29,8 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   updateDetails: (data) => api.put('/auth/updatedetails', data),
   updatePassword: (data) => api.put('/auth/updatepassword', data),
-  verifyAndReset: (data) => api.post('/auth/verify-and-reset', data)
+  verifyAndReset: (data) => api.post('/auth/verify-and-reset', data),
+  deleteAccount: () => api.delete('/auth/deleteaccount')
 };
 
 // Activity APIs

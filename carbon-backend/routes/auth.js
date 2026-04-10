@@ -7,13 +7,17 @@ const {
   getMe,
   updateDetails,
   updatePassword,
-  verifyAndResetPassword  // Make sure this is spelled correctly
+  verifyAndResetPassword,
+  deleteAccount
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { validateEmailDomain } = require('../middleware/validateEmail');
 
 router.post('/register', validateEmailDomain, register);
 router.post('/login', login);
+
+router.delete('/deleteaccount', protect, deleteAccount);
+
 router.get('/me', protect, getMe);
 router.put('/updatedetails', protect, updateDetails);
 router.put('/updatepassword', protect, updatePassword);

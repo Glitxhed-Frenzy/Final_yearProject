@@ -25,9 +25,15 @@ import {
   Zap,
   Trash2 as TrashIcon,
   Car,
-  Apple
+  Apple,
+  FileJson,
+  FileSpreadsheet,
+  FileText,
+  ChevronDown
 } from "lucide-react";
-import { activityAPI, authAPI } from '../../services/api';
+import { activityAPI, authAPI,adminAPI } from '../../services/api';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -37,7 +43,9 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [activities, setActivities] = useState([]);
   const [stats, setStats] = useState({
     totalActivities: 0,
     totalEmissions: 0,
@@ -101,14 +109,14 @@ export default function Profile() {
   const loadUserStats = async () => {
     try {
       const response = await activityAPI.getAll();
-      const activities = response.data.data || [];
+      const activitiesData = response.data.data || [];
+      setActivities(activitiesData);
       
       const statsRes = await activityAPI.getStats();
       const statsData = statsRes.data.data || {};
       
-      // Calculate category counts from activities
       const categoryCounts = {};
-      activities.forEach(act => {
+      activitiesData.forEach(act => {
         if (act.categories) {
           act.categories.forEach(cat => {
             categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
@@ -117,7 +125,7 @@ export default function Profile() {
       });
 
       setStats({
-        totalActivities: activities.length,
+        totalActivities: activitiesData.length,
         totalEmissions: statsData.totalEmissions || 0,
         averagePerActivity: statsData.averagePerActivity || 0,
         joinDate: user?.createdAt || new Date().toISOString(),
@@ -149,7 +157,6 @@ export default function Profile() {
     }
 
     try {
-      // Update via API
       await authAPI.updateDetails({
         name: profileForm.name,
         email: profileForm.email,
@@ -202,60 +209,243 @@ export default function Profile() {
     }
   };
 
-  const handleDeleteAccount = () => {
-    // Clear all user data
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    localStorage.removeItem("carbon_activities");
-    localStorage.removeItem("current_session_answers");
-    
-    // Clear Remember Me flags
-    localStorage.removeItem("rememberedEmail");
-    localStorage.removeItem("rememberMe");
-    localStorage.removeItem("adminAuth");
-    localStorage.removeItem("rememberedAdmin");
-    
-    navigate("/login");
+  const handleDeleteAccount = async () => {
+  if (window.confirm("Are you absolutely sure? This action cannot be undone!")) {
+    try {
+      await authAPI.deleteAccount();
+      
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("rememberedEmail");
+      localStorage.removeItem("rememberMe");
+      localStorage.removeItem("adminAuth");
+      localStorage.removeItem("rememberedAdmin");
+      
+      alert("Your account has been permanently deleted.");
+      navigate("/");
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      alert(error.response?.data?.message || "Failed to delete account");
+     }
+    }
   };
 
   const handleSignOut = () => {
-    // Clear all user data
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    
-    // Clear Remember Me flags
     localStorage.removeItem("rememberedEmail");
     localStorage.removeItem("rememberMe");
     localStorage.removeItem("adminAuth");
     localStorage.removeItem("rememberedAdmin");
-    
     navigate("/login");
   };
 
-  const handleExportData = async () => {
-    try {
-      const activitiesRes = await activityAPI.getAll();
-      const activities = activitiesRes.data.data || [];
-      
-      const userData = {
-        user: user,
-        activities: activities,
-        stats: stats,
-        exportDate: new Date().toISOString()
-      };
+  const getCategoryDisplayName = (category) => {
+    const names = {
+      transport: "Transport",
+      electricity: "Electricity",
+      waste: "Waste",
+      food: "Food"
+    };
+    return names[category] || category;
+  };
 
-      const dataStr = JSON.stringify(userData, null, 2);
-      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-      const exportFileDefaultName = `carbon-footprint-export-${new Date().toISOString().split('T')[0]}.json`;
-      const linkElement = document.createElement('a');
-      linkElement.setAttribute('href', dataUri);
-      linkElement.setAttribute('download', exportFileDefaultName);
-      linkElement.click();
+  // JSON Export
+  const exportJSON = () => {
+    const exportData = {
+      user: user,
+      activities: activities,
+      stats: stats,
+      exportDate: new Date().toISOString(),
+      reportType: 'JSON Export'
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `carbon-footprint-export-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    showSuccessMessage("JSON exported successfully!");
+    setShowExportMenu(false);
+  };
+
+  // CSV Export
+  const exportCSV = () => {
+    const csvRows = [];
+    
+    csvRows.push('"USER INFORMATION"');
+    csvRows.push(`"Name",${user?.name || 'N/A'}`);
+    csvRows.push(`"Email",${user?.email || 'N/A'}`);
+    csvRows.push(`"Phone",${user?.phone || 'N/A'}`);
+    csvRows.push(`"Location",${user?.location || 'N/A'}`);
+    csvRows.push(`"Member Since",${user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}`);
+    csvRows.push('');
+    
+    const headers = ['Date', 'Categories', 'Total Emissions (kg CO₂)'];
+    csvRows.push(headers.join(','));
+    
+    activities.forEach(activity => {
+      const row = [
+        new Date(activity.date).toLocaleDateString(),
+        `"${activity.categories?.map(cat => getCategoryDisplayName(cat)).join(', ') || 'General'}"`,
+        activity.totalEmissions?.toFixed(2) || '0'
+      ];
+      csvRows.push(row.join(','));
+    });
+    
+    csvRows.push('');
+    csvRows.push('"SUMMARY STATISTICS"');
+    csvRows.push(`"Total Emissions (kg CO₂)",${stats.totalEmissions?.toFixed(2) || 0}`);
+    csvRows.push(`"Total Activities",${stats.totalActivities || 0}`);
+    csvRows.push(`"Average per Activity (kg CO₂)",${stats.averagePerActivity?.toFixed(2) || 0}`);
+    
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `carbon-footprint-export-${new Date().toISOString().split('T')[0]}.csv`);
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    showSuccessMessage("CSV exported successfully!");
+    setShowExportMenu(false);
+  };
+
+  // PDF Export
+  const exportPDF = async () => {
+    const loadingToast = document.createElement('div');
+    loadingToast.innerHTML = '📄 Generating PDF with your data...';
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+    document.body.appendChild(loadingToast);
+    
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
       
-      showSuccessMessage("Data exported successfully!");
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let yPos = 20;
+      
+      doc.setFontSize(24);
+      doc.setTextColor(5, 150, 105);
+      doc.text('CarbonWise', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 8;
+      
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.text('My Carbon Footprint Report', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+      
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 15;
+      
+      doc.setFillColor(240, 253, 244);
+      doc.rect(14, yPos, pageWidth - 28, 45, 'F');
+      doc.setDrawColor(5, 150, 105);
+      doc.setLineWidth(0.5);
+      doc.rect(14, yPos, pageWidth - 28, 45, 'D');
+      
+      doc.setFontSize(12);
+      doc.setTextColor(5, 150, 105);
+      doc.text('User Information', 20, yPos + 8);
+      
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      
+      doc.text(`Name: ${user?.name || 'N/A'}`, 20, yPos + 18);
+      doc.text(`Email: ${user?.email || 'N/A'}`, 20, yPos + 26);
+      doc.text(`Phone: ${user?.phone || 'N/A'}`, 20, yPos + 34);
+      
+      doc.text(`Location: ${user?.location || 'N/A'}`, pageWidth / 2 + 10, yPos + 18);
+      doc.text(`Member Since: ${user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}`, pageWidth / 2 + 10, yPos + 26);
+      doc.text(`Total Activities: ${stats.totalActivities || 0}`, pageWidth / 2 + 10, yPos + 34);
+      
+      yPos += 55;
+      
+      doc.setFillColor(5, 150, 105);
+      doc.roundedRect(14, yPos, 85, 30, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Total CO₂', 20, yPos + 8);
+      doc.setFontSize(16);
+      doc.text(`${stats.totalEmissions?.toFixed(1) || 0} kg`, 20, yPos + 22);
+      
+      doc.setFillColor(16, 185, 129);
+      doc.roundedRect(103, yPos, 85, 30, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.text('Activities', 109, yPos + 8);
+      doc.setFontSize(16);
+      doc.text(`${stats.totalActivities || 0}`, 109, yPos + 22);
+      
+      yPos += 40;
+      
+      doc.setFillColor(52, 211, 153);
+      doc.roundedRect(14, yPos, 85, 30, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.text('Avg per Activity', 20, yPos + 8);
+      doc.setFontSize(16);
+      doc.text(`${stats.averagePerActivity?.toFixed(1) || 0} kg`, 20, yPos + 22);
+      
+      yPos += 50;
+      
+      if (activities.length > 0) {
+        if (yPos > pageHeight - 60) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(14);
+        doc.text('Recent Activities', 14, yPos);
+        yPos += 10;
+        
+        const activitiesData = activities.slice(0, 10).map(activity => [
+          new Date(activity.date).toLocaleDateString(),
+          activity.categories?.map(cat => getCategoryDisplayName(cat)).join(', ') || 'General',
+          `${activity.totalEmissions?.toFixed(2) || 0} kg`
+        ]);
+        
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Date', 'Categories', 'Emissions']],
+          body: activitiesData,
+          theme: 'striped',
+          headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255] },
+          margin: { left: 14, right: 14 }
+        });
+      }
+      
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Page ${i} of ${pageCount} - CarbonWise Report | ${new Date().toLocaleDateString()}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
+      
+      doc.save(`carbon-report-${user?.name?.replace(/\s/g, '_') || 'user'}-${new Date().toISOString().split('T')[0]}.pdf`);
+      showSuccessMessage("PDF exported successfully!");
+      
     } catch (error) {
-      console.error("Error exporting data:", error);
-      alert("Failed to export data");
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Error: ' + error.message);
+    } finally {
+      document.body.removeChild(loadingToast);
+      setShowExportMenu(false);
     }
   };
 
@@ -275,28 +465,13 @@ export default function Profile() {
     return icons[category] || <Activity className="w-5 h-5" />;
   };
 
-  const getCategoryDisplayName = (category) => {
-    const names = {
-      transport: "Transport",
-      electricity: "Electricity",
-      waste: "Waste",
-      food: "Food"
-    };
-    return names[category] || category;
-  };
-
   const formatJoinDate = (dateString) => {
     if (!dateString) return "Just now";
-    
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return "Just now";
-      
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        year: 'numeric' 
-      });
-    } catch (error) {
+      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    } catch {
       return "Just now";
     }
   };
@@ -326,7 +501,6 @@ export default function Profile() {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Success Notification */}
         {showSuccess && (
           <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl shadow-lg z-50 flex items-center gap-2 animate-slide-down">
             <CheckCircle className="w-5 h-5" />
@@ -334,7 +508,6 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Header */}
         <div className="mb-12">
           <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
           <p className="text-gray-600 mt-2 text-lg">
@@ -342,13 +515,11 @@ export default function Profile() {
           </p>
         </div>
 
-        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Left Column - Profile Card */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 sticky top-24">
-              {/* Profile Picture */}
               <div className="text-center mb-8">
                 <div className="w-28 h-28 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mx-auto mb-5 flex items-center justify-center shadow-lg">
                   <span className="text-4xl font-bold text-white">
@@ -369,7 +540,6 @@ export default function Profile() {
                 )}
               </div>
 
-              {/* Stats */}
               <div className="space-y-5 pt-6 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-600">
@@ -404,15 +574,50 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons with Export Dropdown */}
               <div className="space-y-3 mt-8">
-                <button
-                  onClick={handleExportData}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 rounded-xl hover:bg-green-100 transition-colors border border-green-200"
-                >
-                  <Download className="w-4 h-4" />
-                  Export My Data
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowExportMenu(!showExportMenu)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 rounded-xl hover:bg-green-100 transition-colors border border-green-200"
+                  >
+                    <Download className="w-4 h-4" />
+                    Export My Data
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                  
+                  {showExportMenu && (
+                    <>
+                      <div className="absolute bottom-full left-0 mb-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                        <button
+                          onClick={exportJSON}
+                          className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <FileJson className="w-4 h-4 text-blue-600" />
+                          Export as JSON
+                        </button>
+                        <button
+                          onClick={exportCSV}
+                          className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                          Export as CSV
+                        </button>
+                        <button
+                          onClick={exportPDF}
+                          className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <FileText className="w-4 h-4 text-red-600" />
+                          Export as PDF
+                        </button>
+                      </div>
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowExportMenu(false)}
+                      />
+                    </>
+                  )}
+                </div>
                 
                 <button
                   onClick={handleSignOut}
@@ -444,7 +649,6 @@ export default function Profile() {
               </div>
 
               {!editing ? (
-                // View Mode
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                   <div>
                     <label className="text-sm text-gray-500 flex items-center gap-2 mb-1">
@@ -483,7 +687,6 @@ export default function Profile() {
                   </div>
                 </div>
               ) : (
-                // Edit Mode
                 <form onSubmit={handleProfileUpdate} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -501,9 +704,7 @@ export default function Profile() {
                           errors.name ? 'border-red-300' : 'border-gray-300'
                         }`}
                       />
-                      {errors.name && (
-                        <p className="mt-2 text-sm text-red-600">{errors.name}</p>
-                      )}
+                      {errors.name && <p className="mt-2 text-sm text-red-600">{errors.name}</p>}
                     </div>
                     
                     <div>
@@ -521,9 +722,7 @@ export default function Profile() {
                           errors.email ? 'border-red-300' : 'border-gray-300'
                         }`}
                       />
-                      {errors.email && (
-                        <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-                      )}
+                      {errors.email && <p className="mt-2 text-sm text-red-600">{errors.email}</p>}
                     </div>
                     
                     <div>
@@ -690,9 +889,7 @@ export default function Profile() {
                     {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                {errors.currentPassword && (
-                  <p className="mt-2 text-sm text-red-600">{errors.currentPassword}</p>
-                )}
+                {errors.currentPassword && <p className="mt-2 text-sm text-red-600">{errors.currentPassword}</p>}
               </div>
 
               <div>
@@ -716,9 +913,7 @@ export default function Profile() {
                     {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                {errors.newPassword && (
-                  <p className="mt-2 text-sm text-red-600">{errors.newPassword}</p>
-                )}
+                {errors.newPassword && <p className="mt-2 text-sm text-red-600">{errors.newPassword}</p>}
               </div>
 
               <div>
@@ -742,9 +937,7 @@ export default function Profile() {
                     {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                {errors.confirmPassword && (
-                  <p className="mt-2 text-sm text-red-600">{errors.confirmPassword}</p>
-                )}
+                {errors.confirmPassword && <p className="mt-2 text-sm text-red-600">{errors.confirmPassword}</p>}
               </div>
 
               <div className="flex gap-4 mt-8">
