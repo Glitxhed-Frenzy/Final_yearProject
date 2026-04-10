@@ -29,7 +29,10 @@ import {
   Download,
   Share2,
   Activity,
-  Lightbulb
+  Lightbulb,
+  Trophy,
+  Crown, 
+  Medal
 } from "lucide-react";
 
 export default function Welcome() {
@@ -447,6 +450,56 @@ export default function Welcome() {
         </p>
       </div>
     </div>
+  </div>
+</section>
+
+  {/* ============================================ */}
+{/* LEADERBOARD SECTION */}
+{/* ============================================ */}
+<section className="py-20 bg-gray-50">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    
+    <div className="flex justify-center mb-4">
+      <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-2xl flex items-center justify-center shadow-lg">
+        <Trophy className="w-7 h-7 text-white" />
+      </div>
+    </div>
+    
+    <h2 className="text-3xl font-bold text-gray-900 mb-3">Monthly Leaderboard</h2>
+    <p className="text-gray-600 max-w-2xl mx-auto mb-8">
+      Lower emissions = Higher rank. Compete monthly and climb the leaderboard!
+    </p>
+
+    <div className="flex justify-center gap-6 mb-8">
+      <div className="text-center">
+        <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto shadow-lg">
+          <Crown className="w-8 h-8 text-white" />
+        </div>
+        <p className="font-semibold text-gray-900 mt-2">#1</p>
+        <p className="text-xs text-gray-500">Climate Champion</p>
+      </div>
+      <div className="text-center">
+        <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center mx-auto shadow-lg">
+          <Medal className="w-8 h-8 text-white" />
+        </div>
+        <p className="font-semibold text-gray-900 mt-2">#2</p>
+        <p className="text-xs text-gray-500">Eco Warrior</p>
+      </div>
+      <div className="text-center">
+        <div className="w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
+          <Medal className="w-8 h-8 text-white" />
+        </div>
+        <p className="font-semibold text-gray-900 mt-2">#3</p>
+        <p className="text-xs text-gray-500">Green Guardian</p>
+      </div>
+    </div>
+
+    <Link
+      to="/signup"
+      className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition"
+    >
+      Join Leaderboard <ArrowRight className="w-4 h-4" />
+    </Link>
   </div>
 </section>
 
