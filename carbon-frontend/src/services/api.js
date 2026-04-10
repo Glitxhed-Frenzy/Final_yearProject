@@ -1,4 +1,4 @@
-// services/api.js - Add verifyAndReset to authAPI
+// services/api.js
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
@@ -29,7 +29,6 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   updateDetails: (data) => api.put('/auth/updatedetails', data),
   updatePassword: (data) => api.put('/auth/updatepassword', data),
-  // ADD THIS:
   verifyAndReset: (data) => api.post('/auth/verify-and-reset', data)
 };
 
@@ -55,6 +54,18 @@ export const adminAPI = {
   createEmissionFactor: (data) => api.post('/admin/emission-factors', data),
   updateEmissionFactor: (id, data) => api.put(`/admin/emission-factors/${id}`, data),
   deleteEmissionFactor: (id) => api.delete(`/admin/emission-factors/${id}`)
+};
+
+// Mission APIs
+export const missionAPI = {
+  getMissions: () => api.get('/missions'),
+  getLeaderboard: (type = 'all_time', limit = 50) => api.get(`/missions/leaderboard?type=${type}&limit=${limit}`)
+};
+
+// ========== LEADERBOARD APIs  ==========
+export const leaderboardAPI = {
+  getLeaderboard: (limit = 50) => api.get(`/leaderboard?limit=${limit}`),
+  getUserHistory: () => api.get('/leaderboard/history')
 };
 
 export default api;
