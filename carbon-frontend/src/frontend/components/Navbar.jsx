@@ -16,14 +16,24 @@ export default function Navbar() {
     }
   }, []);
 
-  // Don't render navbar on login page
-  if (location.pathname === '/login' || location.pathname === '/') {
+  // Don't render navbar on login page and signup page
+  if (location.pathname === '/login' || location.pathname === '/' || location.pathname === '/signup') {
     return null;
   }
 
   const handleLogout = () => {
+    // Clear user data
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    
+    // Clear Remember Me flags
+    localStorage.removeItem("rememberedEmail");
+    localStorage.removeItem("rememberMe");
+    
+    // Clear admin flags (if any)
+    localStorage.removeItem("adminAuth");
+    localStorage.removeItem("rememberedAdmin");
+    
     setUser(null);
     setShowDropdown(false);
     navigate("/login");
@@ -36,10 +46,10 @@ export default function Navbar() {
   return (
     <header className="bg-white/80 backdrop-blur border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        {/* Logo - Now Clickable */}
+        {/* Logo - Clickable */}
         <h1 
           onClick={goToDashboard}
-          className="text-xl font-bold text-green-600 cursor-pointer hover:text-green-700 transition-colors"
+          className="text-xl font-bold text-green-600 cursor-pointer hover:text-green-700 transition-colors whitespace-nowrap"
         >
           CarbonWise
         </h1>
@@ -50,7 +60,7 @@ export default function Navbar() {
             <NavLink 
               to="/dashboard" 
               className={({ isActive }) => 
-                `hover:text-green-600 transition-colors ${
+                `hover:text-green-600 transition-colors whitespace-nowrap ${
                   isActive ? 'text-green-600' : 'text-gray-700'
                 }`
               }
@@ -60,7 +70,7 @@ export default function Navbar() {
             <NavLink 
               to="/reports" 
               className={({ isActive }) => 
-                `hover:text-green-600 transition-colors ${
+                `hover:text-green-600 transition-colors whitespace-nowrap ${
                   isActive ? 'text-green-600' : 'text-gray-700'
                 }`
               }
@@ -72,11 +82,11 @@ export default function Navbar() {
 
         {/* Right side: Add Activity + User info */}
         <div className="flex items-center gap-4">
-          {/* Add Activity Button - Prominent in navbar */}
+          {/* Add Activity Button */}
           {user && (
             <button
               onClick={() => navigate('/add')}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
             >
               <PlusCircle className="w-4 h-4" />
               <span className="hidden sm:inline">Add Activity</span>

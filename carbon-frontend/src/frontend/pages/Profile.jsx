@@ -27,7 +27,7 @@ import {
   Car,
   Apple
 } from "lucide-react";
-import { activityAPI } from '../../services/api';
+import { activityAPI, authAPI } from '../../services/api';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -135,7 +135,7 @@ export default function Profile() {
     }
   };
 
-  const handleProfileUpdate = (e) => {
+  const handleProfileUpdate = async (e) => {
     e.preventDefault();
     
     const newErrors = {};
@@ -148,15 +148,29 @@ export default function Profile() {
       return;
     }
 
-    const updatedUser = { ...user, ...profileForm };
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    setEditing(false);
-    setErrors({});
-    showSuccessMessage("Profile updated successfully!");
+    try {
+      // Update via API
+      await authAPI.updateDetails({
+        name: profileForm.name,
+        email: profileForm.email,
+        phone: profileForm.phone,
+        location: profileForm.location,
+        bio: profileForm.bio
+      });
+      
+      const updatedUser = { ...user, ...profileForm };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      setEditing(false);
+      setErrors({});
+      showSuccessMessage("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      showSuccessMessage("Failed to update profile");
+    }
   };
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = async (e) => {
     e.preventDefault();
     
     const newErrors = {};
@@ -172,17 +186,49 @@ export default function Profile() {
       return;
     }
 
-    setShowPasswordModal(false);
-    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    setErrors({});
-    showSuccessMessage("Password changed successfully!");
+    try {
+      await authAPI.updatePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      });
+      
+      setShowPasswordModal(false);
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setErrors({});
+      showSuccessMessage("Password changed successfully!");
+    } catch (error) {
+      console.error("Error changing password:", error);
+      showSuccessMessage(error.response?.data?.message || "Failed to change password");
+    }
   };
 
   const handleDeleteAccount = () => {
+    // Clear all user data
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     localStorage.removeItem("carbon_activities");
     localStorage.removeItem("current_session_answers");
+    
+    // Clear Remember Me flags
+    localStorage.removeItem("rememberedEmail");
+    localStorage.removeItem("rememberMe");
+    localStorage.removeItem("adminAuth");
+    localStorage.removeItem("rememberedAdmin");
+    
+    navigate("/login");
+  };
+
+  const handleSignOut = () => {
+    // Clear all user data
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    
+    // Clear Remember Me flags
+    localStorage.removeItem("rememberedEmail");
+    localStorage.removeItem("rememberMe");
+    localStorage.removeItem("adminAuth");
+    localStorage.removeItem("rememberedAdmin");
+    
     navigate("/login");
   };
 
@@ -369,11 +415,7 @@ export default function Profile() {
                 </button>
                 
                 <button
-                  onClick={() => {
-                    localStorage.removeItem("user");
-                    localStorage.removeItem("token");
-                    navigate("/login");
-                  }}
+                  onClick={handleSignOut}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200"
                 >
                   <LogOut className="w-4 h-4" />
@@ -493,7 +535,7 @@ export default function Profile() {
                         value={profileForm.phone}
                         onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
-                        placeholder="+1 234 567 890"
+                        placeholder="Enter your phone number"
                       />
                     </div>
                     
@@ -552,7 +594,7 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Activity Summary - Updated Categories */}
+            {/* Activity Summary */}
             {Object.keys(stats.categories).length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Activity Summary</h2>
