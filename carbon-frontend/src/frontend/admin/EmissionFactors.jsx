@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { 
   Search, 
-  Plus, 
   AlertCircle,
   Edit2,
   Trash2,
@@ -41,7 +40,6 @@ export default function EmissionFactors() {
   }, []);
 
   useEffect(() => {
-    // Filter factors based on search
     const filtered = factors.filter(factor => 
       factor.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       factor.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,16 +113,10 @@ export default function EmissionFactors() {
 
     try {
       if (editingFactor) {
-        // Update
         await adminAPI.updateEmissionFactor(editingFactor._id, formData);
         showSuccessMessage("Emission factor updated successfully!");
-      } else {
-        // Create
-        await adminAPI.createEmissionFactor(formData);
-        showSuccessMessage("Emission factor created successfully!");
       }
       
-      // Refresh list and close modal
       await fetchFactors();
       setShowModal(false);
       resetForm();
@@ -175,7 +167,6 @@ export default function EmissionFactors() {
     setFormErrors({});
   };
 
-  // Updated categories for the new structure
   const categories = [
     { value: "transport", label: "Transport", color: "purple" },
     { value: "electricity", label: "Electricity", color: "blue" },
@@ -183,7 +174,6 @@ export default function EmissionFactors() {
     { value: "food", label: "Food", color: "amber" }
   ];
 
-  // Helper to get category color class
   const getCategoryColorClass = (categoryValue) => {
     const category = categories.find(c => c.value === categoryValue);
     if (!category) return "bg-gray-100 text-gray-700";
@@ -236,26 +226,14 @@ export default function EmissionFactors() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Emission Factors</h1>
-          <p className="text-gray-600 mt-1">
-            {hasFactors 
-              ? `Managing ${factors.length} carbon conversion factors`
-              : "Add emission factors to enable carbon calculations"}
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          Add New Factor
-        </button>
+      {/* Header - Removed Add New Factor button */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Emission Factors</h1>
+        <p className="text-gray-600 mt-1">
+          {hasFactors 
+            ? `Managing ${factors.length} carbon conversion factors`
+            : "No emission factors found"}
+        </p>
       </div>
 
       {/* Search */}
@@ -278,78 +256,71 @@ export default function EmissionFactors() {
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-10 h-10 text-gray-400" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Emission Factors Yet</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Emission Factors Found</h2>
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            Emission factors are used to convert user activities into carbon emissions. Add your first factor to get started.
+            No emission factors are currently available in the database.
           </p>
-          <button
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-            className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
-          >
-            Add Your First Factor
-          </button>
         </div>
       ) : (
         /* Table View */
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Activity ID</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Name</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Category</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Factor</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Unit</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredFactors.map((factor) => {
-                return (
-                  <tr key={factor._id} className="hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm font-mono text-gray-600">
-                      {factor.activityId}
-                    </td>
-                    <td className="py-3 px-4 text-sm font-medium text-gray-900">
-                      {factor.name}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColorClass(factor.category)}`}>
-                        {factor.category.charAt(0).toUpperCase() + factor.category.slice(1)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-sm font-medium text-gray-900">
-                      {factor.factor}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                      {factor.unit}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEdit(factor)}
-                          className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(factor._id)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Activity ID</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Name</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Category</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Factor</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Unit</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredFactors.map((factor) => {
+                  return (
+                    <tr key={factor._id} className="hover:bg-gray-50">
+                      <td className="py-3 px-4 text-sm font-mono text-gray-600">
+                        {factor.activityId}
+                      </td>
+                      <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                        {factor.name}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColorClass(factor.category)}`}>
+                          {factor.category.charAt(0).toUpperCase() + factor.category.slice(1)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                        {factor.factor}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {factor.unit}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEdit(factor)}
+                            className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(factor._id)}
+                            className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                       </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
           
           {/* Table Footer */}
           <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 text-sm text-gray-600">
@@ -358,13 +329,13 @@ export default function EmissionFactors() {
         </div>
       )}
 
-      {/* Add/Edit Modal */}
+      {/* Edit Modal (Add New Factor functionality removed - only edit) */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
               <h2 className="text-xl font-bold text-gray-900">
-                {editingFactor ? "Edit Emission Factor" : "Add New Emission Factor"}
+                Edit Emission Factor
               </h2>
               <button
                 onClick={() => {
@@ -378,7 +349,7 @@ export default function EmissionFactors() {
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Activity ID */}
+              {/* Activity ID - Disabled for edit */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Activity ID <span className="text-red-500">*</span>
@@ -388,15 +359,10 @@ export default function EmissionFactors() {
                   name="activityId"
                   value={formData.activityId}
                   onChange={handleInputChange}
-                  disabled={editingFactor}
-                  className={`w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    formErrors.activityId ? 'border-red-300' : 'border-gray-300'
-                  } ${editingFactor ? 'bg-gray-100' : ''}`}
+                  disabled
+                  className="w-full p-3 border border-gray-300 rounded-xl bg-gray-100 text-gray-500"
                   placeholder="e.g., car_sedan_petrol"
                 />
-                {formErrors.activityId && (
-                  <p className="mt-1 text-sm text-red-600">{formErrors.activityId}</p>
-                )}
               </div>
 
               {/* Name */}
@@ -518,7 +484,7 @@ export default function EmissionFactors() {
                   className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium"
                 >
                   <Save className="w-4 h-4 inline mr-2" />
-                  {editingFactor ? "Update Factor" : "Create Factor"}
+                  Update Factor
                 </button>
                 <button
                   type="button"

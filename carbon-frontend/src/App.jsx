@@ -13,10 +13,12 @@ import Profile from "./frontend/pages/Profile";
 import SignUp from "./frontend/pages/SignUp";
 import ForgotPassword from "./frontend/pages/ForgotPassword";
 import Leaderboard from "./frontend/pages/Leaderboard";  
+
 import AdminForgotPassword from "./frontend/admin/AdminForgotPassword";
 import AdminLayout from "./frontend/admin/AdminLayout";
 import AdminLogin from "./frontend/admin/AdminLogin";
 import AdminDashboard from "./frontend/admin/AdminDashboard";
+import AdminProfile from "./frontend/admin/AdminProfile";
 import EmissionFactors from "./frontend/admin/EmissionFactors";
 import Users from "./frontend/admin/Users";
 
@@ -63,12 +65,13 @@ export default function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />  {/* ← ADD THIS */}
+        <Route path="/leaderboard" element={<Leaderboard />} />
 
         {/* Admin */}
         <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>
+        <Route path="profile" element={<AdminProfile />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="emission-factors" element={<EmissionFactors />} />
           <Route path="users" element={<Users />} />

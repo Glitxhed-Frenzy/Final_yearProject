@@ -19,7 +19,6 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
-  // Get admin user info
   const adminUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   const navItems = [
@@ -94,33 +93,31 @@ export default function AdminLayout() {
           ))}
         </nav>
 
-        {/* Admin Profile Section - Improved */}
+        {/* Admin Profile Section */}
         <div className="p-4 border-t border-green-700 mt-auto">
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-            {/* Admin Avatar and Name */}
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
                 <p className="text-white font-semibold text-sm">{adminUser.name || 'Admin User'}</p>
-                <p className="text-green-300 text-xs truncate">{adminUser.email || 'admin@example.com'}</p>
+                <p className="text-green-300 text-sm truncate">{adminUser.email || 'admin@example.com'}</p>
               </div>
             </div>
 
-            {/* Divider */}
             <div className="h-px bg-white/20 my-3"></div>
 
-            {/* Admin Actions */}
             <div className="space-y-2">
+              {/* Updated: Navigate to /admin/profile instead of /profile */}
               <button 
                 onClick={() => {
-                  navigate('/profile');
+                  navigate('/admin/profile');
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-200 hover:bg-white/10 rounded-lg transition-colors group"
               >
                 <User className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                <span>Profile Settings</span>
+                <span>Admin Profile</span>
               </button>
               <button 
                 onClick={handleLogout}

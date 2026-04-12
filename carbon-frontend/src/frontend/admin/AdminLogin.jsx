@@ -13,7 +13,6 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   // Validate email domain (only Gmail, Yahoo, Outlook)
   const validateEmailDomain = (email) => {
@@ -27,6 +26,7 @@ export default function AdminLogin() {
     setIsLoading(true);
     setError("");
 
+    // Client-side email domain validation
     if (!validateEmailDomain(credentials.email)) {
       setError("Only Gmail, Yahoo, and Outlook email addresses are allowed for admin access.");
       setIsLoading(false);
@@ -38,23 +38,20 @@ export default function AdminLogin() {
       
       const { token, user } = response.data;
       
+      // Check if user has admin role
       if (user.role !== 'admin') {
         throw new Error('Access denied. Admin privileges required.');
       }
       
+      // Double-check email domain on client side
       if (!validateEmailDomain(user.email)) {
         throw new Error('Invalid admin email domain. Only Gmail, Yahoo, and Outlook allowed.');
       }
       
+      // Store tokens
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("adminAuth", "true");
-      
-      if (rememberMe) {
-        localStorage.setItem("rememberedAdmin", credentials.email);
-      } else {
-        localStorage.removeItem("rememberedAdmin");
-      }
       
       navigate("/admin/dashboard");
     } catch (error) {
@@ -68,14 +65,6 @@ export default function AdminLogin() {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    const rememberedEmail = localStorage.getItem("rememberedAdmin");
-    if (rememberedEmail) {
-      setCredentials(prev => ({ ...prev, email: rememberedEmail }));
-      setRememberMe(true);
-    }
-  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4">
@@ -120,7 +109,7 @@ export default function AdminLogin() {
                   value={credentials.email}
                   onChange={(e) => setCredentials({...credentials, email: e.target.value})}
                   className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all"
-                  placeholder="admin@gmail.com"
+                  placeholder="Enter your email address"
                   disabled={isLoading}
                 />
               </div>
@@ -157,17 +146,8 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={rememberMe} 
-                  onChange={(e) => setRememberMe(e.target.checked)} 
-                  className="w-4 h-4 text-green-500 border-gray-300 rounded focus:ring-green-400 bg-gray-50" 
-                />
-                <span className="ml-2 text-sm text-gray-600">Remember me</span>
-              </label>
+            {/* Forgot Password Link */}
+            <div className="flex justify-end">
               <Link to="/admin/forgot-password" className="text-sm text-green-600 hover:text-green-700 transition-colors">
                 Forgot password?
               </Link>

@@ -9,8 +9,7 @@ import {
   Car,
   Utensils,
   Trash2,
-  AlertCircle,
-  Calendar
+  AlertCircle
 } from "lucide-react";
 import DonutPlaceholder from "../components/DonutPlaceholder";
 import { adminAPI } from '../../services/api';
@@ -204,9 +203,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Emissions by Category - Pie Chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Emissions by Category</h2>
           <div className="h-80">
             <DonutPlaceholder
@@ -258,39 +257,45 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Activities - Scrollable Table */}
       {stats.recentActivities && stats.recentActivities.length > 0 && (
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h2>
-          <div className="space-y-4">
-            {stats.recentActivities.slice(0, 10).map((activity) => (
-              <div key={activity._id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    {activity.user?.name?.charAt(0) || 'U'}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{activity.user?.name || 'Unknown User'}</p>
-                    <p className="text-sm text-gray-600">
-                      Added {activity.totalEmissions} kg CO₂
-                    </p>
-                    <div className="flex gap-1 mt-1">
-                      {activity.categories?.slice(0, 2).map(cat => (
-                        <span key={cat} className="text-xs px-2 py-0.5 bg-gray-100 rounded-full capitalize">
-                          {getCategoryDisplayName(cat)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">
-                    {new Date(activity.date).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            ))}
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h2>
+          <div className="overflow-x-auto max-h-80 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 sticky top-0">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emissions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {stats.recentActivities.slice(0, 15).map((activity) => (
+                  <tr key={activity._id} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-gray-900">
+                      {activity.user?.name || 'Unknown User'}
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-1 text-xs rounded-full ${getCategoryColor(activity.categories?.[0] || 'general')}`}>
+                        {getCategoryDisplayName(activity.categories?.[0] || 'general')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 font-medium text-gray-900">
+                      {activity.totalEmissions} kg
+                    </td>
+                    <td className="px-4 py-2 text-gray-500">
+                      {new Date(activity.date).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+          {stats.recentActivities.length > 15 && (
+            <p className="text-xs text-gray-400 mt-3 text-center">Showing last 15 activities</p>
+          )}
         </div>
       )}
     </div>
