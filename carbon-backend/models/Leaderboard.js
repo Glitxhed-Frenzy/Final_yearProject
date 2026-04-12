@@ -8,7 +8,7 @@ const leaderboardSchema = new mongoose.Schema({
     required: true
   },
   month: {
-    type: String,  // Format: "2026-04" (Year-Month)
+    type: String,  
     required: true
   },
   totalEmissions: {
@@ -25,10 +25,8 @@ const leaderboardSchema = new mongoose.Schema({
   }
 });
 
-// Compound index for unique user per month
 leaderboardSchema.index({ userId: 1, month: 1 }, { unique: true });
 
-// Index for sorting by emissions (lower is better)
 leaderboardSchema.index({ month: 1, totalEmissions: 1 });
 
 module.exports = mongoose.model('Leaderboard', leaderboardSchema);

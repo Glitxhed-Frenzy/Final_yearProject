@@ -11,7 +11,6 @@ const {
 } = require('../controllers/activityController');
 const { protect } = require('../middleware/auth');
 
-// All activity routes are protected
 router.use(protect);
 
 router.route('/')

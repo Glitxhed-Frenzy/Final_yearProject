@@ -135,7 +135,6 @@ exports.getAdminStats = async (req, res) => {
       .limit(10)
       .populate('user', 'name email');
 
-    // FIXED: Updated category totals for new 4 categories
     const categoryTotals = {
       transport: 0,
       electricity: 0,
@@ -145,26 +144,21 @@ exports.getAdminStats = async (req, res) => {
 
     activities.forEach(activity => {
       if (activity.categoryTotals) {
-        // Transport
         if (activity.categoryTotals.transport) {
           categoryTotals.transport += activity.categoryTotals.transport;
         }
-        // Electricity
         if (activity.categoryTotals.electricity) {
           categoryTotals.electricity += activity.categoryTotals.electricity;
         }
-        // Waste
         if (activity.categoryTotals.waste) {
           categoryTotals.waste += activity.categoryTotals.waste;
         }
-        // Food
         if (activity.categoryTotals.food) {
           categoryTotals.food += activity.categoryTotals.food;
         }
       }
     });
 
-    // Round all values to 2 decimal places
     Object.keys(categoryTotals).forEach(key => {
       categoryTotals[key] = Math.round(categoryTotals[key] * 100) / 100;
     });

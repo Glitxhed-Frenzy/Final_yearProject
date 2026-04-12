@@ -3,27 +3,22 @@ const Leaderboard = require('../models/Leaderboard');
 const User = require('../models/User');
 const Activity = require('../models/Activity');
 
-// Helper: Get current month in YYYY-MM format
 const getCurrentMonth = () => {
   const date = new Date();
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 };
 
-// Helper: Check if user is eligible for leaderboard (at least 7 days old AND has activities)
 const isUserEligibleForLeaderboard = async (userId) => {
   const user = await User.findById(userId);
   if (!user) return false;
   
-  // Get the cutoff date (when we removed the 7-day requirement)
   const cutoffDate = new Date('2026-04-10'); // Change this to today's date
   
-  // If user joined BEFORE the cutoff date, they are automatically eligible
   if (new Date(user.createdAt) < cutoffDate) {
     console.log(`User ${user.name} joined before cutoff - automatically eligible`);
     return true;
   }
   
-  // For users who joined AFTER cutoff, apply 7-day rule
   const accountAge = Date.now() - new Date(user.createdAt).getTime();
   const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
   
@@ -32,7 +27,6 @@ const isUserEligibleForLeaderboard = async (userId) => {
     return false;
   }
   
-  // User must have at least one activity
   const activityCount = await Activity.countDocuments({ user: userId });
   if (activityCount === 0) {
     console.log(`User ${user.name} has no activities - not eligible`);
@@ -58,8 +52,6 @@ exports.updateMonthlyLeaderboard = async () => {
     const userEmissions = [];
     
     for (const user of users) {
-      // REMOVED: 7-day account age check
-      // REMOVED: activity count check
       
       const activities = await Activity.find({
         user: user._id,

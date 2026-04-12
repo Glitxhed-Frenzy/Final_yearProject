@@ -26,7 +26,6 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Auto-login check on app startup
   useEffect(() => {
     const token = localStorage.getItem("token");
     const user = localStorage.getItem("user");
@@ -57,7 +56,6 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Welcome />} />
 
-        {/* User */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/add" element={<AddActivity />} />
         <Route path="/reports" element={<Reports />} />
@@ -67,7 +65,6 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
 
-        {/* Admin */}
         <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>

@@ -20,7 +20,6 @@ exports.validateEmailDomain = (req, res, next) => {
   next();
 };
 
-// For admin specific validation
 exports.validateAdminEmailDomain = (req, res, next) => {
   const email = req.body.email;
   

@@ -63,7 +63,6 @@ export const missionAPI = {
   getLeaderboard: (type = 'all_time', limit = 50) => api.get(`/missions/leaderboard?type=${type}&limit=${limit}`)
 };
 
-// ========== LEADERBOARD APIs  ==========
 export const leaderboardAPI = {
   getLeaderboard: (limit = 50) => api.get(`/leaderboard?limit=${limit}`),
   getUserHistory: () => api.get('/leaderboard/history')

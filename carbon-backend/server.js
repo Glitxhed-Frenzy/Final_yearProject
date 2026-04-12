@@ -5,7 +5,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
 
-// Import routes
 const authRoutes = require('./routes/auth');
 const activityRoutes = require('./routes/activities');
 const adminRoutes = require('./routes/admin');
@@ -14,29 +13,24 @@ const leaderboardRoutes = require('./routes/leaderboard');
 
 const app = express();
 
-// Middleware
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-// Database connection
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/emission-factors', emissionFactorRoutes);
 app.use('/api/leaderboard', leaderboardRoutes); 
 
-// Basic route for testing
 app.get('/', (req, res) => {
   res.json({ message: 'Carbon Footprint API is running' });
 });
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
