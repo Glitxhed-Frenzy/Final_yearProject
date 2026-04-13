@@ -8,7 +8,6 @@ import Dashboard from "./frontend/pages/Dashboard";
 import AddActivity from "./frontend/pages/AddActivity";
 import Reports from "./frontend/pages/Reports";
 import Login from "./frontend/pages/Login";
-import NotFound from "./frontend/pages/NotFound";
 import Profile from "./frontend/pages/Profile";
 import SignUp from "./frontend/pages/SignUp";
 import ForgotPassword from "./frontend/pages/ForgotPassword";
@@ -73,9 +72,9 @@ export default function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>
         <Route path="profile" element={<AdminProfile />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="emission-factors" element={<EmissionFactors />} />
-          <Route path="users" element={<Users />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="emission-factors" element={<EmissionFactors />} />
+        <Route path="users" element={<Users />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
