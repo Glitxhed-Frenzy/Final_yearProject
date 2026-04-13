@@ -4,12 +4,8 @@ const Activity = require('../models/Activity');
 const generateToken = require('../utils/generateToken');
 const crypto = require('crypto');
 
-// Allowed domains for admin
 const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com'];
 
-// @desc    Register user
-// @route   POST /api/auth/register
-// @access  Public
 exports.register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -48,9 +44,6 @@ exports.register = async (req, res) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -105,9 +98,6 @@ exports.login = async (req, res) => {
   }
 };
 
-// @desc    Get current logged in user
-// @route   GET /api/auth/me
-// @access  Private
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -123,9 +113,6 @@ exports.getMe = async (req, res) => {
   }
 };
 
-// @desc    Update user details
-// @route   PUT /api/auth/updatedetails
-// @access  Private
 exports.updateDetails = async (req, res) => {
   try {
     const fieldsToUpdate = {
@@ -155,10 +142,8 @@ exports.updateDetails = async (req, res) => {
 
 exports.deleteAccount = async (req, res) => {
   try {
-    // Delete all user activities
     await Activity.deleteMany({ user: req.user.id });
     
-    // Delete user
     await User.findByIdAndDelete(req.user.id);
     
     res.status(200).json({
@@ -173,9 +158,6 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
-// @desc    Update password
-// @route   PUT /api/auth/updatepassword
-// @access  Private
 exports.updatePassword = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('+password');
@@ -202,13 +184,6 @@ exports.updatePassword = async (req, res) => {
   }
 };
 
-// =============================================
-// FORGOT PASSWORD - SIMPLE VERSION
-// =============================================
-
-// @desc    Verify email/phone and reset password
-// @route   POST /api/auth/verify-and-reset
-// @access  Public
 exports.verifyAndResetPassword = async (req, res) => {
   try {
     const { email, phone, newPassword, confirmPassword } = req.body;
@@ -242,7 +217,6 @@ exports.verifyAndResetPassword = async (req, res) => {
       });
     }
 
-    // Find user
     const user = await User.findOne(query);
 
     if (!user) {
@@ -252,12 +226,9 @@ exports.verifyAndResetPassword = async (req, res) => {
       });
     }
 
-    // Update password
     user.password = newPassword;
     await user.save();
 
-    // REMOVED: token generation - user must login manually
-    // REMOVED: auto-login
 
     res.status(200).json({
       success: true,

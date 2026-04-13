@@ -4,9 +4,6 @@ const router = express.Router();
 const EmissionFactor = require('../models/EmissionFactor');
 const { protect, authorize } = require('../middleware/auth');
 
-// @desc    Get all emission factors (public - needed for calculations)
-// @route   GET /api/emission-factors
-// @access  Public
 router.get('/', async (req, res) => {
   try {
     const factors = await EmissionFactor.find().select('-__v');
@@ -23,9 +20,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @desc    Get single emission factor by activityId
-// @route   GET /api/emission-factors/:activityId
-// @access  Public
 router.get('/:activityId', async (req, res) => {
   try {
     const factor = await EmissionFactor.findOne({ 
@@ -51,9 +45,6 @@ router.get('/:activityId', async (req, res) => {
   }
 });
 
-// @desc    Create new emission factor (admin only)
-// @route   POST /api/emission-factors
-// @access  Private/Admin
 router.post('/', protect, authorize('admin'), async (req, res) => {
   try {
     const factor = await EmissionFactor.create(req.body);
@@ -69,9 +60,6 @@ router.post('/', protect, authorize('admin'), async (req, res) => {
   }
 });
 
-// @desc    Update emission factor (admin only)
-// @route   PUT /api/emission-factors/:id
-// @access  Private/Admin
 router.put('/:id', protect, authorize('admin'), async (req, res) => {
   try {
     const factor = await EmissionFactor.findByIdAndUpdate(
@@ -99,9 +87,6 @@ router.put('/:id', protect, authorize('admin'), async (req, res) => {
   }
 });
 
-// @desc    Delete emission factor (admin only)
-// @route   DELETE /api/emission-factors/:id
-// @access  Private/Admin
 router.delete('/:id', protect, authorize('admin'), async (req, res) => {
   try {
     const factor = await EmissionFactor.findByIdAndDelete(req.params.id);

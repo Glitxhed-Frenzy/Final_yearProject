@@ -13,7 +13,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Selected date state - default to today
   const [selectedDate, setSelectedDate] = useState(() => {
     return new Date().toISOString().split('T')[0];
   });
@@ -37,7 +36,6 @@ export default function Dashboard() {
     loadDashboardData();
   }, []);
 
-  // Filter activities when selected date changes
   useEffect(() => {
     if (activities.length > 0) {
       filterActivitiesByDate();
@@ -58,7 +56,6 @@ export default function Dashboard() {
   };
 
   const filterActivitiesByDate = () => {
-    // Create date range for the selected day (start to end of day)
     const start = new Date(selectedDate);
     start.setHours(0, 0, 0, 0);
     
@@ -117,7 +114,6 @@ export default function Dashboard() {
 
     setStats(newStats);
     
-    // Prepare chart data
     const chartData = [];
     if (newStats.transport > 0) chartData.push({ name: "Transport", value: newStats.transport });
     if (newStats.electricity > 0) chartData.push({ name: "Electricity", value: newStats.electricity });
@@ -193,7 +189,6 @@ export default function Dashboard() {
     const today = new Date();
     const selected = new Date(selectedDate);
     
-    // Check if the activity date matches the selected date
     if (date.toDateString() === selected.toDateString()) {
       return formatTime(date);
     }
@@ -278,7 +273,6 @@ export default function Dashboard() {
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            {/* Previous Day Button */}
             <button
               onClick={goToPreviousDay}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -287,7 +281,6 @@ export default function Dashboard() {
               <ChevronLeft className="w-5 h-5 text-gray-600" />
             </button>
 
-            {/* Date Display with Calendar */}
             <div className="relative">
               <button
                 onClick={() => setShowCalendar(!showCalendar)}
@@ -297,7 +290,6 @@ export default function Dashboard() {
                 <span className="text-gray-700 font-medium">{formatSelectedDate()}</span>
               </button>
 
-              {/* Calendar Dropdown */}
               {showCalendar && (
                 <>
                   <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-200 p-4 z-50">
@@ -325,7 +317,6 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Next Day Button */}
             <button
               onClick={goToNextDay}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -334,7 +325,6 @@ export default function Dashboard() {
               <ChevronRight className="w-5 h-5 text-gray-600" />
             </button>
 
-            {/* Today Button */}
             <button
               onClick={goToToday}
               className="px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 rounded-lg transition-colors"
@@ -343,7 +333,6 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {/* Activity count indicator */}
           <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             <span>{formatSelectedDate()}</span>
@@ -356,7 +345,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         <MetricCard 
           title="Total CO₂" 
@@ -392,7 +380,6 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Charts and Activities */}
       <div className="space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
@@ -444,7 +431,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Recent Activities */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 h-full">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">

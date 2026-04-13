@@ -3,12 +3,10 @@ const Activity = require('../models/Activity');
 const EmissionFactor = require('../models/EmissionFactor');
 const { updateMonthlyLeaderboard } = require('./leaderboardController');
 
-// Cache for emission factors (load once and reuse)
 let factorCache = null;
 let lastCacheUpdate = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Helper function to load factors from database
 const loadFactorsFromDB = async () => {
   const now = Date.now();
   if (factorCache && (now - lastCacheUpdate) < CACHE_DURATION) {
@@ -27,27 +25,21 @@ const loadFactorsFromDB = async () => {
   return factorCache;
 };
 
-// Get a single factor
 const getFactor = async (activityId) => {
   const factors = await loadFactorsFromDB();
   return factors[activityId] || null;
 };
 
-// Car factor helper
 const getCarFactorFromDB = async (carType, carFuel) => {
   const activityId = `car_${carType}_${carFuel}`;
   return await getFactor(activityId);
 };
 
-// Train factor helper
 const getTrainFactorFromDB = async (trainType) => {
   const activityId = `train_${trainType}`;
   return await getFactor(activityId);
 };
 
-// @desc    Create new activity
-// @route   POST /api/activities
-// @access  Private
 exports.createActivity = async (req, res) => {
   try {
     console.log('📥 Received:', JSON.stringify(req.body, null, 2));
@@ -71,7 +63,6 @@ exports.createActivity = async (req, res) => {
       let numValue = typeof value === 'string' ? parseFloat(value) : value;
       if (isNaN(numValue) || numValue <= 0) continue;
       
-      // ========== TRANSPORT ==========
       if (activityId === "car_km" && selectedCarType && selectedCarFuel) {
         const factor = await getCarFactorFromDB(selectedCarType, selectedCarFuel);
         if (factor) {
@@ -140,7 +131,6 @@ exports.createActivity = async (req, res) => {
         continue;
       }
       
-      // ========== ELECTRICITY ==========
       if (activityId === "ac_hours") {
         const factor = await getFactor('ac_hours');
         if (factor) {
@@ -209,7 +199,6 @@ exports.createActivity = async (req, res) => {
         continue;
       }
       
-      // ========== WASTE (per day) ==========
       if (activityId === "food_waste_kg") {
         const factor = await getFactor('food_waste_kg');
         if (factor) {
@@ -261,7 +250,6 @@ exports.createActivity = async (req, res) => {
         continue;
       }
       
-      // ========== FOOD (per day) ==========
       if (activityId === "chicken_servings") {
         const factor = await getFactor('chicken_servings');
         if (factor) {
@@ -331,7 +319,6 @@ exports.createActivity = async (req, res) => {
       }
     }
     
-    // Store selected metadata
     if (selectedCarType && selectedCarFuel) {
       answers.car_selected = { type: selectedCarType, fuel: selectedCarFuel, category: "transport" };
     }
@@ -339,7 +326,6 @@ exports.createActivity = async (req, res) => {
       answers.train_selected = { type: selectedTrainType, category: "transport" };
     }
     
-    // Round totals
     totalEmissions = Math.round(totalEmissions * 100) / 100;
     Object.keys(categoryTotals).forEach(cat => {
       categoryTotals[cat] = Math.round(categoryTotals[cat] * 100) / 100;
@@ -349,7 +335,6 @@ exports.createActivity = async (req, res) => {
     
     const categoriesList = Object.keys(categoryTotals).filter(cat => categoryTotals[cat] > 0);
     
-    // Create activity
     const activity = await Activity.create({
       user: req.user.id,
       date: new Date(),
@@ -362,14 +347,12 @@ exports.createActivity = async (req, res) => {
     console.log('✅ Activity saved with ID:', activity._id);
     console.log('✅ Total emissions:', totalEmissions, 'kg CO₂');
     
-    // ========== UPDATE LEADERBOARD ==========
     try {
       await updateMonthlyLeaderboard();
       console.log('✅ Leaderboard updated');
     } catch (err) {
       console.log('⚠️ Leaderboard update error:', err.message);
     }
-    // ========== END LEADERBOARD UPDATE ==========
     
     res.status(201).json({
       success: true,
@@ -385,9 +368,6 @@ exports.createActivity = async (req, res) => {
   }
 };
 
-// @desc    Get all activities for logged in user
-// @route   GET /api/activities
-// @access  Private
 exports.getActivities = async (req, res) => {
   try {
     const activities = await Activity.find({ user: req.user.id })
@@ -406,9 +386,6 @@ exports.getActivities = async (req, res) => {
   }
 };
 
-// @desc    Get single activity
-// @route   GET /api/activities/:id
-// @access  Private
 exports.getActivity = async (req, res) => {
   try {
     const activity = await Activity.findById(req.params.id);
@@ -439,9 +416,6 @@ exports.getActivity = async (req, res) => {
   }
 };
 
-// @desc    Update activity
-// @route   PUT /api/activities/:id
-// @access  Private
 exports.updateActivity = async (req, res) => {
   try {
     let activity = await Activity.findById(req.params.id);
@@ -477,9 +451,6 @@ exports.updateActivity = async (req, res) => {
   }
 };
 
-// @desc    Delete activity
-// @route   DELETE /api/activities/:id
-// @access  Private
 exports.deleteActivity = async (req, res) => {
   try {
     const activity = await Activity.findById(req.params.id);
@@ -500,7 +471,6 @@ exports.deleteActivity = async (req, res) => {
 
     await activity.deleteOne();
     
-    // ========== UPDATE LEADERBOARD AFTER DELETE ==========
     try {
       const { updateMonthlyLeaderboard } = require('./leaderboardController');
       await updateMonthlyLeaderboard();
@@ -522,9 +492,6 @@ exports.deleteActivity = async (req, res) => {
   }
 };
 
-// @desc    Get activity statistics
-// @route   GET /api/activities/stats
-// @access  Private
 exports.getStats = async (req, res) => {
   try {
     const activities = await Activity.find({ user: req.user.id });

@@ -48,7 +48,6 @@ const activitySchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// FIXED: Remove 'next' parameter and use async function
 activitySchema.pre('save', function() {
   if (this.date) {
     const date = new Date(this.date);

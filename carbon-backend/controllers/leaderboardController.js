@@ -36,8 +36,6 @@ const isUserEligibleForLeaderboard = async (userId) => {
   return true;
 };
 
-// @desc    Calculate and update leaderboard for current month
-// @access  Internal (called when activity is added)
 exports.updateMonthlyLeaderboard = async () => {
   try {
     const month = getCurrentMonth();
@@ -95,9 +93,6 @@ exports.updateMonthlyLeaderboard = async () => {
   }
 };
 
-// @desc    Get current month leaderboard
-// @route   GET /api/leaderboard
-// @access  Private
 exports.getLeaderboard = async (req, res) => {
   try {
     const month = getCurrentMonth();
@@ -146,9 +141,6 @@ exports.getLeaderboard = async (req, res) => {
   }
 };
 
-// @desc    Force refresh leaderboard (admin only)
-// @route   POST /api/leaderboard/refresh
-// @access  Private/Admin
 exports.refreshLeaderboard = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {

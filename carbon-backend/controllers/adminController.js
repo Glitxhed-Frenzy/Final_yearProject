@@ -3,9 +3,6 @@ const User = require('../models/User');
 const Activity = require('../models/Activity');
 const EmissionFactor = require('../models/EmissionFactor');
 
-// @desc    Get all users
-// @route   GET /api/admin/users
-// @access  Private/Admin
 exports.getUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
@@ -22,9 +19,6 @@ exports.getUsers = async (req, res) => {
   }
 };
 
-// @desc    Get single user
-// @route   GET /api/admin/users/:id
-// @access  Private/Admin
 exports.getUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
@@ -48,9 +42,6 @@ exports.getUser = async (req, res) => {
   }
 };
 
-// @desc    Delete user
-// @route   DELETE /api/admin/users/:id
-// @access  Private/Admin
 exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -62,10 +53,8 @@ exports.deleteUser = async (req, res) => {
       });
     }
 
-    // Delete all user activities
     await Activity.deleteMany({ user: req.params.id });
     
-    // Delete user
     await user.deleteOne();
 
     res.status(200).json({
@@ -80,9 +69,6 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-// @desc    Update user role
-// @route   PUT /api/admin/users/:id/role
-// @access  Private/Admin
 exports.updateUserRole = async (req, res) => {
   try {
     const { role } = req.body;
@@ -119,9 +105,6 @@ exports.updateUserRole = async (req, res) => {
   }
 };
 
-// @desc    Get admin dashboard stats
-// @route   GET /api/admin/stats
-// @access  Private/Admin
 exports.getAdminStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
@@ -183,9 +166,6 @@ exports.getAdminStats = async (req, res) => {
   }
 };
 
-// @desc    Get all emission factors
-// @route   GET /api/admin/emission-factors
-// @access  Private/Admin
 exports.getEmissionFactors = async (req, res) => {
   try {
     const factors = await EmissionFactor.find();
@@ -201,9 +181,6 @@ exports.getEmissionFactors = async (req, res) => {
   }
 };
 
-// @desc    Create emission factor
-// @route   POST /api/admin/emission-factors
-// @access  Private/Admin
 exports.createEmissionFactor = async (req, res) => {
   try {
     req.body.updatedBy = req.user.id;
@@ -221,9 +198,6 @@ exports.createEmissionFactor = async (req, res) => {
   }
 };
 
-// @desc    Update emission factor
-// @route   PUT /api/admin/emission-factors/:id
-// @access  Private/Admin
 exports.updateEmissionFactor = async (req, res) => {
   try {
     req.body.lastUpdated = Date.now();
@@ -254,9 +228,6 @@ exports.updateEmissionFactor = async (req, res) => {
   }
 };
 
-// @desc    Delete emission factor
-// @route   DELETE /api/admin/emission-factors/:id
-// @access  Private/Admin
 exports.deleteEmissionFactor = async (req, res) => {
   try {
     const factor = await EmissionFactor.findById(req.params.id);
