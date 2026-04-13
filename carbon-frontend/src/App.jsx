@@ -77,7 +77,6 @@ export default function App() {
         <Route path="users" element={<Users />} />
         </Route>
 
-        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
   );

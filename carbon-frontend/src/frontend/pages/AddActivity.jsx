@@ -773,10 +773,8 @@ export default function AddActivity() {
             )}
           </div>
 
-          {/* RIGHT COLUMN - Summary & Tips */}
           <div className="lg:col-span-1">
             <div className="space-y-6">
-              {/* Summary Card */}
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-6">
                 <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
                   <AlertCircle className="w-5 h-5" />
@@ -809,9 +807,8 @@ export default function AddActivity() {
                 )}
               </div>
 
-              {/* Tips Section - Now uses today's stats only */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <CarbonTips stats={hasTodayData ? todayStats : null} activities={activities} />
+                <CarbonTips stats={hasTodayData ? todayStats : null} activities={activities} currentValues={values} />
               </div>
             </div>
           </div>
