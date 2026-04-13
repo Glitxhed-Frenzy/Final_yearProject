@@ -12,7 +12,9 @@ import NotFound from "./frontend/pages/NotFound";
 import Profile from "./frontend/pages/Profile";
 import SignUp from "./frontend/pages/SignUp";
 import ForgotPassword from "./frontend/pages/ForgotPassword";
-import Leaderboard from "./frontend/pages/Leaderboard";  
+import Leaderboard from "./frontend/pages/Leaderboard";
+import Privacy from "./frontend/pages/Privacy";
+import Terms from "./frontend/pages/Terms";  
 
 import AdminForgotPassword from "./frontend/admin/AdminForgotPassword";
 import AdminLayout from "./frontend/admin/AdminLayout";
@@ -64,6 +66,8 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
 
         <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
         <Route path="/admin/login" element={<AdminLogin />} />
