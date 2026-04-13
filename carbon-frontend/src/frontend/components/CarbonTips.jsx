@@ -24,190 +24,185 @@ export default function CarbonTips({ stats, activities }) {
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   useEffect(() => {
-    if (stats) {
+    if (stats && stats.total && stats.total > 0) {
       generateTips();
+    } else {
+      setTips([]);
     }
   }, [stats, selectedCategory]);
 
   const generateTips = () => {
     const newTips = [];
     
-    // Skip if no data
-    if (!stats.total) {
+    if (!stats.total || stats.total === 0) {
       setTips([]);
       return;
     }
     
-    // ========== TRANSPORT TIPS ==========
-    if (stats.transport > 100) {
+    if (stats.transport > 30) {
       newTips.push({
         id: 1,
         category: "transport",
         icon: <Car className="w-5 h-5" />,
         title: "🚗 High Transport Emissions",
-        message: `Your transport emissions (${stats.transport.toFixed(1)} kg) are higher than average. Consider carpooling or using public transport.`,
+        message: `Your transport emissions today (${stats.transport.toFixed(1)} kg) are high. Consider carpooling or using public transport.`,
         impact: "Could save up to 50% on transport emissions",
         action: "Try carpooling twice a week",
         color: "purple"
       });
-    } else if (stats.transport > 50) {
+    } else if (stats.transport > 15) {
       newTips.push({
         id: 2,
         category: "transport",
         icon: <Car className="w-5 h-5" />,
         title: "🚌 Moderate Transport",
-        message: "You're doing okay! Try combining trips or walking for short distances.",
+        message: "Your transport emissions today are moderate. Try combining trips or walking for short distances.",
         impact: "Save 10-20% on fuel costs",
         action: "Walk for trips under 1 km",
         color: "blue"
       });
-    } else if (stats.transport > 0) {
+    } else if (stats.transport > 0 && stats.transport <= 15) {
       newTips.push({
         id: 3,
         category: "transport",
         icon: <Car className="w-5 h-5" />,
         title: "🚲 Low Transport",
-        message: "Great job! You're keeping transport emissions low. Keep it up!",
-        impact: "You're an eco-friendly traveler!",
+        message: "Great job! You're keeping transport emissions low today. Keep it up!",
+        impact: "You're an eco-friendly traveler today!",
         action: "Share your tips with friends",
         color: "green"
       });
     }
 
-    // ========== ELECTRICITY TIPS ==========
-    if (stats.electricity > 500) {
+    if (stats.electricity > 20) {
       newTips.push({
         id: 4,
         category: "electricity",
         icon: <Zap className="w-5 h-5" />,
         title: "⚡ High Electricity Usage",
-        message: `Your electricity usage (${stats.electricity.toFixed(1)} kg) is high. Consider LED bulbs and better insulation.`,
+        message: `Your electricity usage today (${stats.electricity.toFixed(1)} kg) is high. Consider LED bulbs and reducing AC usage.`,
         impact: "Save up to 30% on electricity bills",
-        action: "Switch to LED bulbs today",
+        action: "Set AC to 24°C and use fans",
         color: "red"
       });
-    } else if (stats.electricity > 200) {
+    } else if (stats.electricity > 10) {
       newTips.push({
         id: 5,
         category: "electricity",
         icon: <Zap className="w-5 h-5" />,
         title: "💡 Moderate Electricity",
-        message: "Try setting your AC 2 degrees higher and unplug devices when not in use.",
+        message: "Your electricity usage today is moderate. Try setting your AC 2 degrees higher and unplug devices when not in use.",
         impact: "Save 10-20% on electricity",
         action: "Unplug idle electronics",
         color: "amber"
       });
-    } else if (stats.electricity > 0) {
+    } else if (stats.electricity > 0 && stats.electricity <= 10) {
       newTips.push({
         id: 6,
         category: "electricity",
         icon: <Zap className="w-5 h-5" />,
         title: "🌟 Good Electricity Usage",
-        message: "You're doing well with electricity consumption! Keep using energy-efficient practices.",
-        impact: "You're saving money and the planet!",
+        message: "You're doing well with electricity consumption today! Keep using energy-efficient practices.",
+        impact: "You're saving money and the planet today!",
         action: "Maintain your habits",
         color: "green"
       });
     }
 
-    // ========== WASTE TIPS ==========
-    if (stats.waste > 50) {
+    if (stats.waste > 5) {
       newTips.push({
         id: 7,
         category: "waste",
         icon: <Trash2 className="w-5 h-5" />,
         title: "🗑️ High Waste Generation",
-        message: `Your waste generation (${stats.waste.toFixed(1)} kg) is high. Start recycling and composting.`,
+        message: `Your waste generation today (${stats.waste.toFixed(1)} kg) is high. Start recycling and composting.`,
         impact: "Reduce landfill waste by 50%",
         action: "Start composting food waste",
         color: "red"
       });
-    } else if (stats.waste > 20) {
+    } else if (stats.waste > 2) {
       newTips.push({
         id: 8,
         category: "waste",
         icon: <Trash2 className="w-5 h-5" />,
         title: "♻️ Moderate Waste",
-        message: "You're generating moderate waste. Try reducing single-use plastics and recycling more.",
+        message: "You're generating moderate waste today. Try reducing single-use plastics and recycling more.",
         impact: "Lower your carbon footprint",
         action: "Use reusable bags and bottles",
         color: "amber"
       });
-    } else if (stats.waste > 0) {
+    } else if (stats.waste > 0 && stats.waste <= 2) {
       newTips.push({
         id: 9,
         category: "waste",
         icon: <Trash2 className="w-5 h-5" />,
         title: "🌟 Good Waste Management",
-        message: "You're keeping waste low! Consider aiming for zero waste.",
-        impact: "You're helping reduce landfill emissions",
+        message: "You're keeping waste low today! Consider aiming for zero waste.",
+        impact: "You're helping reduce landfill emissions today!",
         action: "Share your waste reduction tips",
         color: "green"
       });
     }
 
-    // ========== FOOD TIPS ==========
-    if (stats.food > 100) {
+    if (stats.food > 15) {
       newTips.push({
         id: 10,
         category: "food",
         icon: <Apple className="w-5 h-5" />,
         title: "🍔 High Food Emissions",
-        message: `Your food emissions (${stats.food.toFixed(1)} kg) are high. Try incorporating more plant-based meals.`,
+        message: `Your food emissions today (${stats.food.toFixed(1)} kg) are high. Try incorporating more plant-based meals.`,
         impact: "Reduce food emissions by 50%",
         action: "Try 2 meat-free days per week",
         color: "amber"
       });
-    } else if (stats.food > 50) {
+    } else if (stats.food > 5) {
       newTips.push({
         id: 11,
         category: "food",
         icon: <Apple className="w-5 h-5" />,
         title: "🥗 Moderate Food Impact",
-        message: "You're doing okay! Buy local and seasonal produce to reduce your food footprint.",
+        message: "Your food impact today is moderate. Buy local and seasonal produce to reduce your food footprint.",
         impact: "Support local farmers",
         action: "Visit farmers market",
         color: "blue"
       });
-    } else if (stats.food > 0) {
+    } else if (stats.food > 0 && stats.food <= 5) {
       newTips.push({
         id: 12,
         category: "food",
         icon: <Apple className="w-5 h-5" />,
         title: "🌱 Low Food Emissions",
-        message: "Great job! Your food choices are environmentally friendly.",
-        impact: "You're making a difference!",
+        message: "Great job! Your food choices today are environmentally friendly.",
+        impact: "You're making a difference today!",
         action: "Keep it up!",
         color: "green"
       });
     }
 
-    // ========== GENERAL TIPS ==========
-    if (stats.total > 1000) {
+    if (stats.total > 100) {
       newTips.push({
         id: 13,
         category: "general",
         icon: <AlertTriangle className="w-5 h-5" />,
         title: "⚠️ High Overall Footprint",
-        message: "Your total footprint is above average. Small changes add up!",
+        message: `Your total footprint today (${stats.total.toFixed(1)} kg) is above average. Small changes add up!`,
         impact: "Pick one tip to start",
         action: "Review category tips",
         color: "red"
       });
-    } else if (stats.total > 0 && stats.total < 500) {
+    } else if (stats.total > 0 && stats.total < 30) {
       newTips.push({
         id: 14,
         category: "general",
         icon: <CheckCircle className="w-5 h-5" />,
         title: "🌟 Great Job!",
-        message: "You're keeping your carbon footprint low!",
-        impact: "You're making a difference!",
+        message: `Your total footprint today (${stats.total.toFixed(1)} kg) is low. You're making a real difference!`,
+        impact: "You're a climate champion today!",
         action: "Keep it up!",
         color: "green"
       });
     }
 
-    // Add specific category tips based on highest contributor
     const categories = [
       { name: "transport", value: stats.transport, label: "Transport", icon: <Car className="w-4 h-4" /> },
       { name: "electricity", value: stats.electricity, label: "Electricity", icon: <Zap className="w-4 h-4" /> },
@@ -219,7 +214,6 @@ export default function CarbonTips({ stats, activities }) {
       (cat.value > max.value) ? cat : max, { value: 0 });
 
     if (highestCategory.value > 0 && highestCategory.name !== "general") {
-      // Add a specific tip for the highest category if not already added
       const alreadyHasTip = newTips.some(tip => tip.category === highestCategory.name);
       if (!alreadyHasTip) {
         let tipMessage = "";
@@ -228,22 +222,22 @@ export default function CarbonTips({ stats, activities }) {
         
         switch(highestCategory.name) {
           case "transport":
-            tipMessage = "Your highest impact is from transport. Consider switching to public transport or carpooling.";
+            tipMessage = "Your highest impact today is from transport. Consider switching to public transport or carpooling.";
             tipAction = "Try carpooling once a week";
             tipColor = "purple";
             break;
           case "electricity":
-            tipMessage = "Your highest impact is from electricity. Unplug devices when not in use.";
+            tipMessage = "Your highest impact today is from electricity. Unplug devices when not in use.";
             tipAction = "Switch to energy-efficient appliances";
             tipColor = "blue";
             break;
           case "waste":
-            tipMessage = "Your highest impact is from waste. Start recycling and composting.";
+            tipMessage = "Your highest impact today is from waste. Start recycling and composting.";
             tipAction = "Start a compost bin";
             tipColor = "emerald";
             break;
           case "food":
-            tipMessage = "Your highest impact is from food. Try reducing meat consumption.";
+            tipMessage = "Your highest impact today is from food. Try reducing meat consumption.";
             tipAction = "Try one meat-free day per week";
             tipColor = "amber";
             break;
@@ -255,14 +249,13 @@ export default function CarbonTips({ stats, activities }) {
           icon: highestCategory.icon,
           title: `🎯 Focus on ${highestCategory.label}`,
           message: tipMessage,
-          impact: "Target your biggest impact area",
+          impact: "Target your biggest impact area today",
           action: tipAction,
           color: tipColor
         });
       }
     }
 
-    // Filter by selected category
     const filteredTips = selectedCategory === "all" 
       ? newTips 
       : newTips.filter(tip => tip.category === selectedCategory);
@@ -298,7 +291,9 @@ export default function CarbonTips({ stats, activities }) {
         <Leaf className="w-12 h-12 text-green-400 mx-auto mb-3" />
         <h3 className="text-lg font-semibold text-green-800 mb-2">No Tips Yet</h3>
         <p className="text-green-600">
-          Add more activities to get personalized tips!
+          {stats === null || stats?.total === 0 
+            ? "No activities added for today. Add activities to get personalized tips!" 
+            : "Add more activities to get personalized tips!"}
         </p>
       </div>
     );
@@ -370,7 +365,7 @@ export default function CarbonTips({ stats, activities }) {
       <div className="mt-4 pt-4 border-t border-gray-100 text-center">
         <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
           <Leaf className="w-3 h-3 text-green-500" />
-          Small changes add up to big impact
+          Small changes today add up to big impact tomorrow
           <Leaf className="w-3 h-3 text-green-500" />
         </p>
       </div>

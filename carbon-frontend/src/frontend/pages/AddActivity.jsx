@@ -382,6 +382,36 @@ export default function AddActivity() {
     }
   };
 
+  // Calculate today's stats for Smart Tips
+  const getTodayStats = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const todayActivities = activities.filter(activity => {
+      const activityDate = new Date(activity.date);
+      activityDate.setHours(0, 0, 0, 0);
+      return activityDate.getTime() === today.getTime();
+    });
+    
+    let total = 0;
+    let transport = 0;
+    let electricity = 0;
+    let waste = 0;
+    let food = 0;
+    
+    todayActivities.forEach(activity => {
+      total += activity.totalEmissions || 0;
+      if (activity.categoryTotals) {
+        transport += activity.categoryTotals.transport || 0;
+        electricity += activity.categoryTotals.electricity || 0;
+        waste += activity.categoryTotals.waste || 0;
+        food += activity.categoryTotals.food || 0;
+      }
+    });
+    
+    return { total, transport, electricity, waste, food };
+  };
+
   const handleInputChange = (questionId, value, question) => {
     setValues(prev => ({
       ...prev,
@@ -533,6 +563,9 @@ export default function AddActivity() {
       ?.find(opt => opt.value === value);
     return trainType?.label || value;
   };
+
+  const todayStats = getTodayStats();
+  const hasTodayData = todayStats.total > 0;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -743,6 +776,7 @@ export default function AddActivity() {
           {/* RIGHT COLUMN - Summary & Tips */}
           <div className="lg:col-span-1">
             <div className="space-y-6">
+              {/* Summary Card */}
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-6">
                 <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
                   <AlertCircle className="w-5 h-5" />
@@ -775,11 +809,10 @@ export default function AddActivity() {
                 )}
               </div>
 
-              {stats && stats.total !== null && (
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                  <CarbonTips stats={stats} activities={activities} />
-                </div>
-              )}
+              {/* Tips Section - Now uses today's stats only */}
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <CarbonTips stats={hasTodayData ? todayStats : null} activities={activities} />
+              </div>
             </div>
           </div>
         </div>
