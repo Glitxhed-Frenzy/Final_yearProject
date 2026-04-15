@@ -13,13 +13,6 @@ import {
   FileSpreadsheet,
   FileText,
   ChevronDown,
-  Printer,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar as CalendarIcon,
-  Activity,
   Share2,
   Twitter,
   Facebook,
@@ -38,11 +31,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer
 } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { toPng } from 'html-to-image';
 
 const COLORS = ['#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
 
@@ -64,9 +57,10 @@ export default function Reports() {
   const [categoryData, setCategoryData] = useState([]);
   const [user, setUser] = useState(null);
 
-  // Refs for capturing charts
+  // Refs for capturing charts and the share container
   const pieChartRef = useRef(null);
   const barChartRef = useRef(null);
+  const shareContainerRef = useRef(null); // hidden container for share image
 
   const socialPlatforms = [
     { name: 'Twitter', icon: <Twitter className="w-5 h-5" />, color: 'bg-black', shareUrl: 'https://twitter.com/intent/tweet', getIntent: (text, url) => `?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}` },
@@ -137,7 +131,7 @@ export default function Reports() {
     }
   };
 
-  // Helper to capture chart as image
+  // Helper to capture chart as image (SVG to PNG) – used for PDF
   const captureChart = async (chartContainer) => {
     if (!chartContainer) return null;
     
@@ -250,7 +244,7 @@ export default function Reports() {
     setShowExportMenu(false);
   };
 
-  // PDF Export (Main function - used by both Export and Share)
+  // PDF Export (Main function - used by Export)
   const generatePDF = async (forShare = false, platformName = null) => {
     const pieImage = await captureChart(pieChartRef.current);
     const barImage = await captureChart(barChartRef.current);
@@ -477,52 +471,73 @@ export default function Reports() {
     }
   };
 
-  // Social Media Share Function (uses same PDF generation)
+  // Social Media Share Function – captures a dedicated container as PNG (includes user info, summary cards, and charts)
   const shareOnSocialMedia = async (platform) => {
     setSharing(true);
     setShowShareMenu(false);
     
     const loadingToast = document.createElement('div');
-    loadingToast.innerHTML = `📤 Generating PDF for ${platform.name}...`;
+    loadingToast.innerHTML = `📸 Preparing share image for ${platform.name}...`;
     loadingToast.className = 'fixed top-4 right-4 bg-purple-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
     document.body.appendChild(loadingToast);
     
     try {
-      const doc = await generatePDF(true, platform.name);
-      const pdfBlob = doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      
-      const shareMessage = `🌍 My carbon footprint report: ${stats.totalEmissions?.toFixed(1) || 0} kg CO₂ from ${stats.totalActivities || 0} activities! Track yours with CarbonWise 🌿`;
-      
-      if (platform.name === 'WhatsApp') {
-        if (navigator.share) {
+      // Ensure the share container is populated with current data
+      if (shareContainerRef.current) {
+        // Temporarily make the container visible, capture, then hide again
+        const container = shareContainerRef.current;
+        container.style.display = 'block';
+        
+        // Wait a tick for any re-renders
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const imageDataUrl = await toPng(container, { quality: 0.95, backgroundColor: '#ffffff' });
+        
+        // Hide again
+        container.style.display = 'none';
+        
+        const blob = await (await fetch(imageDataUrl)).blob();
+        const imageFile = new File([blob], 'carbon-stats.png', { type: 'image/png' });
+        
+        const shareMessage = `🌍 My carbon footprint report: ${stats.totalEmissions?.toFixed(1) || 0} kg CO₂ from ${stats.totalActivities || 0} activities! Track yours with CarbonWise 🌿`;
+        
+        if (platform.name === 'WhatsApp' && navigator.share) {
           try {
             await navigator.share({
               title: 'My Carbon Footprint Report',
               text: shareMessage,
-              files: [new File([pdfBlob], 'carbon-report.pdf', { type: 'application/pdf' })]
+              files: [imageFile]
             });
           } catch (err) {
-            window.open(`${platform.shareUrl}${platform.getIntent(shareMessage, pdfUrl)}`, '_blank');
+            window.open(`${platform.shareUrl}${platform.getIntent(shareMessage, window.location.href)}`, '_blank');
+            const link = document.createElement('a');
+            link.download = 'carbon-stats.png';
+            link.href = imageDataUrl;
+            link.click();
           }
-        } else {
-          window.open(`${platform.shareUrl}${platform.getIntent(shareMessage, pdfUrl)}`, '_blank');
+        } 
+        else if (platform.name !== 'Instagram') {
+          const link = document.createElement('a');
+          link.download = 'carbon-stats.png';
+          link.href = imageDataUrl;
+          link.click();
+          
+          window.open(`${platform.shareUrl}${platform.getIntent(shareMessage, window.location.href)}`, '_blank', 'width=600,height=400');
+          alert(`📸 Your carbon stats image has been downloaded. You can attach it to your ${platform.name} post.`);
+        } 
+        else if (platform.name === 'Instagram') {
+          const link = document.createElement('a');
+          link.download = 'carbon-stats.png';
+          link.href = imageDataUrl;
+          link.click();
+          alert(`📸 To share on Instagram:\n\n1. Your carbon stats image has been downloaded\n2. Open Instagram and share it with this caption:\n\n"${shareMessage}"\n\n#CarbonWise #CarbonFootprint #SustainableLiving`);
         }
-      } else if (platform.name !== 'Instagram') {
-        const tempLink = window.location.href;
-        window.open(`${platform.shareUrl}${platform.getIntent(shareMessage, tempLink)}`, '_blank', 'width=600,height=400');
-        alert(`📄 Your carbon report PDF has been generated!\n\nShare your achievement: "${shareMessage}"`);
-        doc.save(`carbon-report-${user?.name?.replace(/\s/g, '_') || 'user'}-${new Date().toISOString().split('T')[0]}.pdf`);
-      } else if (platform.name === 'Instagram') {
-        alert(`📸 To share on Instagram:\n\n1. Your carbon report PDF has been generated\n2. Take a screenshot of your stats or download the PDF\n3. Open Instagram and share it with this caption:\n\n"${shareMessage}"\n\n#CarbonWise #CarbonFootprint #SustainableLiving`);
-        doc.save(`carbon-report-${user?.name?.replace(/\s/g, '_') || 'user'}-${new Date().toISOString().split('T')[0]}.pdf`);
+      } else {
+        throw new Error('Share container not found');
       }
-      
-      URL.revokeObjectURL(pdfUrl);
-      
     } catch (error) {
       console.error('Share error:', error);
-      alert('Failed to generate shareable report. Please try again.');
+      alert('Failed to generate shareable image. Please try again.');
     } finally {
       document.body.removeChild(loadingToast);
       setSharing(false);
@@ -683,6 +698,99 @@ export default function Reports() {
           )}
         </div>
 
+        {/* Hidden Share Container – will be captured as PNG */}
+        <div ref={shareContainerRef} style={{ display: 'none', position: 'absolute', top: 0, left: 0, width: '800px', background: 'white', padding: '24px', fontFamily: 'sans-serif' }}>
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <h1 style={{ fontSize: '28px', color: '#059669', margin: 0 }}>CarbonWise</h1>
+            <h2 style={{ fontSize: '20px', margin: '5px 0' }}>Carbon Footprint Report</h2>
+            <p style={{ fontSize: '12px', color: '#666' }}>Generated: {new Date().toLocaleString()} | Timeframe: {timeframe} view</p>
+          </div>
+          
+          {/* User Information */}
+          <div style={{ background: '#f0fdf4', padding: '12px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #059669' }}>
+            <h3 style={{ fontSize: '16px', color: '#059669', marginBottom: '8px' }}>User Information</h3>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '12px' }}>
+              <div><strong>Name:</strong> {user?.name || 'N/A'}</div>
+              <div><strong>Email:</strong> {user?.email || 'N/A'}</div>
+              <div><strong>Phone:</strong> {user?.phone || 'N/A'}</div>
+              <div><strong>Location:</strong> {user?.location || 'N/A'}</div>
+              <div><strong>Member Since:</strong> {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</div>
+              <div><strong>Total Activities:</strong> {stats.totalActivities || 0}</div>
+            </div>
+          </div>
+          
+          {/* Summary Cards */}
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, background: '#059669', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px' }}>Total CO₂</div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{stats.totalEmissions?.toFixed(1) || 0} kg</div>
+            </div>
+            <div style={{ flex: 1, background: '#10b981', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px' }}>Activities</div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{stats.totalActivities || 0}</div>
+            </div>
+            <div style={{ flex: 1, background: '#34d399', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px' }}>Avg per Activity</div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{stats.averagePerActivity?.toFixed(1) || 0} kg</div>
+            </div>
+            <div style={{ flex: 1, background: '#6ee7b7', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px' }}>Carbon Intensity</div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{(stats.totalEmissions / (stats.totalActivities || 1)).toFixed(1)} kg/act</div>
+            </div>
+          </div>
+          
+          {/* Charts */}
+          <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ fontSize: '14px', textAlign: 'center' }}>Emissions by Category</h3>
+              <div style={{ width: '100%', height: '250px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ fontSize: '14px', textAlign: 'center' }}>Category Comparison</h3>
+              <div style={{ width: '100%', height: '250px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={categoryData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#059669" name="CO₂ (kg)">
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+          
+          <div style={{ textAlign: 'center', fontSize: '10px', color: '#999', marginTop: '16px' }}>
+            CarbonWise – Track. Reduce. Make a Difference.
+          </div>
+        </div>
+
+        {/* Main visible content – unchanged */}
         {!hasData ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
             <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -729,7 +837,7 @@ export default function Reports() {
               </div>
             </div>
 
-            {/* Charts Grid - Removed Emission Trends */}
+            {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               
               {/* Category Pie Chart */}
