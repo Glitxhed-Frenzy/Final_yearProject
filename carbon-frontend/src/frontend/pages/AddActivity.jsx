@@ -247,18 +247,6 @@ const questions = {
         helpText: "How many chicken meals per day?"
       },
       {
-        id: "fish_servings",
-        text: "Fish Servings",
-        type: "number",
-        unit: "per day",
-        min: 0,
-        max: 10,
-        step: 1,
-        factor: 0.5,
-        icon: <Apple className="w-5 h-5" />,
-        helpText: "How many fish meals per day?"
-      },
-      {
         id: "dairy_servings",
         text: "Dairy Servings (Milk, Cheese, Yogurt)",
         type: "number",
@@ -382,7 +370,6 @@ export default function AddActivity() {
     }
   };
 
-  // Calculate today's stats for Smart Tips
   const getTodayStats = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -578,17 +565,6 @@ export default function AddActivity() {
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Add Activity</h1>
-            <p className="text-gray-600 mt-2">Enter your daily usage below</p>
-          </div>
-          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900">
-            <ArrowLeft className="w-4 h-4" />
-            Dashboard
-          </button>
-        </div>
-
         <div className="mb-6 flex flex-wrap gap-3">
           <button
             onClick={saveActivity}
@@ -658,7 +634,6 @@ export default function AddActivity() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* LEFT COLUMN - Questionnaire Form + Recent Activities */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-6">
@@ -757,7 +732,6 @@ export default function AddActivity() {
               </div>
             </div>
 
-            {/* Recent Activities */}
             {activities.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-8">
                 <h3 className="font-semibold text-gray-900 mb-4">Recent</h3>

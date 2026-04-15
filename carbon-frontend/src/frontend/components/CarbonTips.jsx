@@ -16,8 +16,7 @@ export default function CarbonTips({ stats, activities, currentValues = {} }) {
   const generateTips = () => {
     const newTips = [];
 
-    // ---------- PER-ACTIVITY TIPS (based on currentValues) ----------
-
+  
     if (currentValues.car_km > 50) {
       newTips.push({
         id: "car_high",
@@ -87,7 +86,7 @@ export default function CarbonTips({ stats, activities, currentValues = {} }) {
         category: "electricity",
         icon: <Thermometer className="w-5 h-5" />,
         title: "❄️ High AC Usage",
-        message: `${currentValues.ac_hours} hours of AC today. Set to 24°C and use fans.`,
+        message: `${currentValues.ac_hours} hours of AC today. Use fans`,
         impact: "Save up to 30% on electricity",
         action: "Use timer and sleep mode",
         color: "red"
@@ -215,19 +214,6 @@ export default function CarbonTips({ stats, activities, currentValues = {} }) {
         impact: "Good step",
         action: "Add one meat‑free day",
         color: "blue"
-      });
-    }
-
-    if (currentValues.fish_servings > 3) {
-      newTips.push({
-        id: "fish_high",
-        category: "food",
-        icon: <Apple className="w-5 h-5" />,
-        title: "🐟 High Fish Consumption",
-        message: `${currentValues.fish_servings} fish servings. Choose sustainably sourced fish.`,
-        impact: "Protect marine life",
-        action: "Look for MSC label",
-        color: "amber"
       });
     }
 

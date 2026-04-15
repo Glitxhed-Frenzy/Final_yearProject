@@ -266,24 +266,7 @@ exports.createActivity = async (req, res) => {
         }
         continue;
       }
-      
-      if (activityId === "fish_servings") {
-        const factor = await getFactor('fish_servings');
-        if (factor) {
-          const emission = numValue * factor;
-          answers.fish_servings = { 
-            value: numValue, 
-            emission: Math.round(emission * 100) / 100, 
-            category: "food", 
-            factor: factor 
-          };
-          categoryTotals.food += emission;
-          totalEmissions += emission;
-          console.log(`✅ Fish: ${numValue} servings × ${factor} = ${emission.toFixed(2)} kg CO₂`);
-        }
-        continue;
-      }
-      
+    
       if (activityId === "dairy_servings") {
         const factor = await getFactor('dairy_servings');
         if (factor) {

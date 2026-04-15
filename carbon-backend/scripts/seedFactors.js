@@ -36,7 +36,6 @@ const factors = [
   { activityId: 'paper_waste_kg', category: 'waste', name: 'Paper/Cardboard Waste', factor: 0.114, unit: 'kg CO₂ per kg/day', source: 'EPA 2026' },
 
   { activityId: 'chicken_servings', category: 'food', name: 'Chicken', factor: 0.986, unit: 'kg CO₂ per serving/day', source: 'FAO 2026' },
-  { activityId: 'fish_servings', category: 'food', name: 'Fish', factor: 0.5, unit: 'kg CO₂ per serving/day', source: 'FAO 2026' },
   { activityId: 'dairy_servings', category: 'food', name: 'Dairy', factor: 0.357, unit: 'kg CO₂ per serving/day', source: 'FAO 2026' },
   { activityId: 'vegetarian_meals', category: 'food', name: 'Vegetarian Meal', factor: 0.286, unit: 'kg CO₂ per meal/day', source: 'FAO 2026' }
 ];
@@ -74,7 +73,6 @@ async function seedDatabase() {
     console.log('');
     console.log('🍎 FOOD (per day):');
     console.log(`   - Chicken: 0.986 kg CO₂ per serving/day`);
-    console.log(`   - Fish: 0.5 kg CO₂ per serving/day`);
     console.log(`   - Dairy: 0.357 kg CO₂ per serving/day`);
     console.log(`   - Vegetarian: 0.286 kg CO₂ per meal/day`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
