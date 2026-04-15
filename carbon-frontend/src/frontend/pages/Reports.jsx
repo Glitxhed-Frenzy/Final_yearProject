@@ -18,7 +18,8 @@ import {
   Facebook,
   Instagram,
   MessageCircle,
-  Linkedin
+  Linkedin,
+  X
 } from "lucide-react";
 import { activityAPI } from '../../services/api';
 import {
@@ -56,11 +57,13 @@ export default function Reports() {
   const [activities, setActivities] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
   const [user, setUser] = useState(null);
+  const [selectedActivity, setSelectedActivity] = useState(null);
+  const [showActivityModal, setShowActivityModal] = useState(false);
 
-  // Refs for capturing charts and the share container
+  // Refs for capturing charts and share container
   const pieChartRef = useRef(null);
   const barChartRef = useRef(null);
-  const shareContainerRef = useRef(null); // hidden container for share image
+  const shareContainerRef = useRef(null);
 
   const socialPlatforms = [
     { name: 'Twitter', icon: <Twitter className="w-5 h-5" />, color: 'bg-black', shareUrl: 'https://twitter.com/intent/tweet', getIntent: (text, url) => `?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}` },
@@ -129,6 +132,16 @@ export default function Reports() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const viewActivityDetails = (activity) => {
+    setSelectedActivity(activity);
+    setShowActivityModal(true);
+  };
+
+  const closeModal = () => {
+    setShowActivityModal(false);
+    setSelectedActivity(null);
   };
 
   // Helper to capture chart as image (SVG to PNG) – used for PDF
@@ -471,7 +484,7 @@ export default function Reports() {
     }
   };
 
-  // Social Media Share Function – captures a dedicated container as PNG (includes user info, summary cards, and charts)
+  // Social Media Share Function – captures dedicated container as PNG
   const shareOnSocialMedia = async (platform) => {
     setSharing(true);
     setShowShareMenu(false);
@@ -482,18 +495,11 @@ export default function Reports() {
     document.body.appendChild(loadingToast);
     
     try {
-      // Ensure the share container is populated with current data
       if (shareContainerRef.current) {
-        // Temporarily make the container visible, capture, then hide again
         const container = shareContainerRef.current;
         container.style.display = 'block';
-        
-        // Wait a tick for any re-renders
         await new Promise(resolve => setTimeout(resolve, 100));
-        
         const imageDataUrl = await toPng(container, { quality: 0.95, backgroundColor: '#ffffff' });
-        
-        // Hide again
         container.style.display = 'none';
         
         const blob = await (await fetch(imageDataUrl)).blob();
@@ -521,7 +527,6 @@ export default function Reports() {
           link.download = 'carbon-stats.png';
           link.href = imageDataUrl;
           link.click();
-          
           window.open(`${platform.shareUrl}${platform.getIntent(shareMessage, window.location.href)}`, '_blank', 'width=600,height=400');
           alert(`📸 Your carbon stats image has been downloaded. You can attach it to your ${platform.name} post.`);
         } 
@@ -698,7 +703,7 @@ export default function Reports() {
           )}
         </div>
 
-        {/* Hidden Share Container – will be captured as PNG */}
+        {/* Hidden Share Container */}
         <div ref={shareContainerRef} style={{ display: 'none', position: 'absolute', top: 0, left: 0, width: '800px', background: 'white', padding: '24px', fontFamily: 'sans-serif' }}>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <h1 style={{ fontSize: '28px', color: '#059669', margin: 0 }}>CarbonWise</h1>
@@ -706,7 +711,6 @@ export default function Reports() {
             <p style={{ fontSize: '12px', color: '#666' }}>Generated: {new Date().toLocaleString()} | Timeframe: {timeframe} view</p>
           </div>
           
-          {/* User Information */}
           <div style={{ background: '#f0fdf4', padding: '12px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #059669' }}>
             <h3 style={{ fontSize: '16px', color: '#059669', marginBottom: '8px' }}>User Information</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '12px' }}>
@@ -719,7 +723,6 @@ export default function Reports() {
             </div>
           </div>
           
-          {/* Summary Cards */}
           <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, background: '#059669', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
               <div style={{ fontSize: '12px' }}>Total CO₂</div>
@@ -739,7 +742,6 @@ export default function Reports() {
             </div>
           </div>
           
-          {/* Charts */}
           <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
             <div style={{ flex: 1 }}>
               <h3 style={{ fontSize: '14px', textAlign: 'center' }}>Emissions by Category</h3>
@@ -790,7 +792,7 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* Main visible content – unchanged */}
+        {/* Main visible content */}
         {!hasData ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
             <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -839,8 +841,6 @@ export default function Reports() {
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              
-              {/* Category Pie Chart */}
               <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Emissions by Category</h2>
                 <div className="h-80" ref={pieChartRef}>
@@ -867,7 +867,6 @@ export default function Reports() {
                 </div>
               </div>
 
-              {/* Bar Chart */}
               <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Category Comparison</h2>
                 <div className="h-80" ref={barChartRef}>
@@ -888,7 +887,7 @@ export default function Reports() {
               </div>
             </div>
 
-            {/* Recent Activities Table */}
+            {/* Recent Activities Table with View button */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">Recent Activities</h2>
               <div className="overflow-x-auto">
@@ -914,7 +913,10 @@ export default function Reports() {
                           {activity.totalEmissions?.toFixed(1)} kg
                         </td>
                         <td className="px-4 py-3 text-sm">
-                          <button className="text-green-600 hover:text-green-700">
+                          <button
+                            onClick={() => viewActivityDetails(activity)}
+                            className="text-green-600 hover:text-green-700 font-medium"
+                          >
                             View
                           </button>
                         </td>
@@ -922,6 +924,85 @@ export default function Reports() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Activity Detail Modal */}
+        {showActivityModal && selectedActivity && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+                <h2 className="text-xl font-bold text-gray-900">Activity Details</h2>
+                <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-lg">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Date</p>
+                    <p className="font-medium">{new Date(selectedActivity.date).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Total Emissions</p>
+                    <p className="font-medium text-green-600">{selectedActivity.totalEmissions} kg CO₂</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-sm text-gray-500">Categories</p>
+                    <div className="flex gap-2 mt-1">
+                      {selectedActivity.categories?.map(cat => (
+                        <span key={cat} className="px-2 py-1 bg-gray-100 rounded-lg text-sm capitalize">
+                          {getCategoryDisplayName(cat)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-4">
+                  <p className="text-sm text-gray-500 mb-2">Activity Breakdown</p>
+                  <div className="space-y-2">
+                    {selectedActivity.answers && Object.entries(selectedActivity.answers).map(([key, value]) => {
+                      // Skip metadata fields
+                      if (key === 'car_selected' || key === 'train_selected') return null;
+                      // Format the key name
+                      let displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                      if (key === 'car_km') displayKey = 'Car (km)';
+                      if (key === 'bus_km') displayKey = 'Bus (km)';
+                      if (key === 'train_km') displayKey = 'Train (km)';
+                      if (key === 'plane_km') displayKey = 'Plane (km)';
+                      if (key === 'ac_hours') displayKey = 'AC (hours)';
+                      if (key === 'heater_hours') displayKey = 'Heater (hours)';
+                      if (key === 'laptop_hours') displayKey = 'Laptop (hours)';
+                      if (key === 'tv_hours') displayKey = 'TV (hours)';
+                      if (key === 'food_waste_kg') displayKey = 'Food Waste (kg)';
+                      if (key === 'plastic_waste_kg') displayKey = 'Plastic Waste (kg)';
+                      if (key === 'paper_waste_kg') displayKey = 'Paper Waste (kg)';
+                      if (key === 'chicken_servings') displayKey = 'Chicken (servings)';
+                      if (key === 'dairy_servings') displayKey = 'Dairy (servings)';
+                      if (key === 'vegetarian_meals') displayKey = 'Vegetarian Meals';
+                      if (key === 'car_type') displayKey = 'Car Type';
+                      if (key === 'car_fuel') displayKey = 'Fuel Type';
+                      if (key === 'train_type') displayKey = 'Train Type';
+                      
+                      return (
+                        <div key={key} className="flex justify-between text-sm">
+                          <span className="text-gray-600">{displayKey}</span>
+                          <span className="font-medium">
+                            {value.value !== undefined ? `${value.value} ${value.unit || ''}` : value}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 border-t border-gray-200">
+                <button onClick={closeModal} className="w-full py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200">
+                  Close
+                </button>
               </div>
             </div>
           </div>
