@@ -89,7 +89,6 @@ export default function Users() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Users</h1>
         <p className="text-gray-600 mt-1">
@@ -97,7 +96,6 @@ export default function Users() {
         </p>
       </div>
 
-      {/* Users Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">

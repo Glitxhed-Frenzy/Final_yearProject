@@ -380,7 +380,6 @@ export default function CarbonTips({ stats, activities, currentValues = {} }) {
         </button>
       </div>
 
-      {/* Category Filter */}
       <div className="flex flex-wrap gap-2 mb-4">
         {categories.map(cat => (
           <button
@@ -419,7 +418,6 @@ export default function CarbonTips({ stats, activities, currentValues = {} }) {
         ))}
       </div>
 
-      {/* Motivational footer */}
       <div className="mt-4 pt-4 border-t border-gray-100 text-center">
         <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
           <Leaf className="w-3 h-3 text-green-500" />

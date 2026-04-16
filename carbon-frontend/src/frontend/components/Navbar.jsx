@@ -42,7 +42,6 @@ export default function Navbar() {
   return (
     <header className="bg-white/80 backdrop-blur border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        {/* Logo - Clickable */}
         <h1 
           onClick={goToDashboard}
           className="text-xl font-bold text-green-600 cursor-pointer hover:text-green-700 transition-colors whitespace-nowrap"
@@ -50,7 +49,6 @@ export default function Navbar() {
           CarbonWise
         </h1>
 
-        {/* Navigation Links - Only show when user is logged in */}
         {user && (
           <nav className="flex items-center gap-6 text-sm font-medium">
             <NavLink 
@@ -86,9 +84,7 @@ export default function Navbar() {
           </nav>
         )}
 
-        {/* Right side: Add Activity + User info */}
         <div className="flex items-center gap-4">
-          {/* Add Activity Button */}
           {user && (
             <button
               onClick={() => navigate('/add')}

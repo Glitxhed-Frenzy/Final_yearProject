@@ -66,7 +66,6 @@ export default function AdminLogin() {
       <div className="absolute inset-0 bg-grid-green-500/[0.03] bg-[size:50px_50px]"></div>
       
       <div className="relative z-10 w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-3xl mb-4 shadow-lg border border-green-100">
             <Leaf className="w-10 h-10 text-green-600" />
@@ -76,10 +75,8 @@ export default function AdminLogin() {
           <p className="text-green-600 text-xs mt-1">Only @gmail.com, @yahoo.com, @outlook.com allowed</p>
         </div>
 
-        {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Error Message */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                 <div className="flex items-start gap-2">
@@ -89,7 +86,6 @@ export default function AdminLogin() {
               </div>
             )}
 
-            {/* Email Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address <span className="text-red-400">*</span>
@@ -113,7 +109,6 @@ export default function AdminLogin() {
               </p>
             </div>
 
-            {/* Password Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password <span className="text-red-400">*</span>
@@ -141,14 +136,12 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            {/* Forgot Password Link */}
             <div className="flex justify-end">
               <Link to="/admin/forgot-password" className="text-sm text-green-600 hover:text-green-700 transition-colors">
                 Forgot password?
               </Link>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -168,8 +161,7 @@ export default function AdminLogin() {
             </button>
           </form>
 
-          {/* Security Notice */}
-          <div className="mt-6 text-center">
+          \<div className="mt-6 text-center">
             <p className="text-xs text-gray-400">
               This area is restricted to authorized personnel only.
               <br />Only Gmail, Yahoo, and Outlook email addresses are permitted.

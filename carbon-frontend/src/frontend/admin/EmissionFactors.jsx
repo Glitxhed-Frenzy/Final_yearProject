@@ -217,7 +217,6 @@ export default function EmissionFactors() {
 
   return (
     <div className="space-y-6">
-      {/* Success Notification */}
       {showSuccess && (
         <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl shadow-lg z-50 flex items-center gap-2">
           <CheckCircle className="w-5 h-5" />
@@ -225,7 +224,6 @@ export default function EmissionFactors() {
         </div>
       )}
 
-      {/* Header - Removed Add New Factor button */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Emission Factors</h1>
         <p className="text-gray-600 mt-1">
@@ -235,7 +233,6 @@ export default function EmissionFactors() {
         </p>
       </div>
 
-      {/* Search */}
       {hasFactors && (
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -249,7 +246,6 @@ export default function EmissionFactors() {
         </div>
       )}
 
-      {/* Empty State */}
       {!hasFactors ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -261,7 +257,6 @@ export default function EmissionFactors() {
           </p>
         </div>
       ) : (
-        /* Table View */
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -321,14 +316,12 @@ export default function EmissionFactors() {
             </table>
           </div>
           
-          {/* Table Footer */}
           <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 text-sm text-gray-600">
             Showing {filteredFactors.length} of {factors.length} factors
           </div>
         </div>
       )}
 
-      {/* Edit Modal (Add New Factor functionality removed - only edit) */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -348,7 +341,6 @@ export default function EmissionFactors() {
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Activity ID - Disabled for edit */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Activity ID <span className="text-red-500">*</span>
@@ -364,7 +356,6 @@ export default function EmissionFactors() {
                 />
               </div>
 
-              {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Name <span className="text-red-500">*</span>
@@ -384,7 +375,6 @@ export default function EmissionFactors() {
                 )}
               </div>
 
-              {/* Category */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category <span className="text-red-500">*</span>
@@ -403,7 +393,6 @@ export default function EmissionFactors() {
                 </select>
               </div>
 
-              {/* Factor and Unit */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -446,7 +435,6 @@ export default function EmissionFactors() {
                 </div>
               </div>
 
-              {/* Source (Optional) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Source
@@ -461,7 +449,6 @@ export default function EmissionFactors() {
                 />
               </div>
 
-              {/* Description (Optional) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Description
@@ -476,7 +463,6 @@ export default function EmissionFactors() {
                 />
               </div>
 
-              {/* Form Actions */}
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"

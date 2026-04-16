@@ -243,7 +243,6 @@ export default function SignUp() {
             
             {step === 1 && (
               <>
-                {/* Full Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Full Name <span className="text-red-500">*</span>
