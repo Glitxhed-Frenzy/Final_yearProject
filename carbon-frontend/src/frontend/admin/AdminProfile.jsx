@@ -145,7 +145,6 @@ export default function AdminProfile() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Success Notification */}
       {showSuccess && (
         <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl shadow-lg z-50 flex items-center gap-2 animate-slide-down">
           <CheckCircle className="w-5 h-5" />
@@ -153,7 +152,6 @@ export default function AdminProfile() {
         </div>
       )}
 
-      {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <Shield className="w-8 h-8 text-green-600" />
@@ -162,7 +160,6 @@ export default function AdminProfile() {
         <p className="text-gray-600">Manage your administrator account</p>
       </div>
 
-      {/* Profile Card */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Profile Information</h2>
@@ -265,7 +262,6 @@ export default function AdminProfile() {
         )}
       </div>
 
-      {/* Password Card */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
         <div className="flex items-center justify-between">
           <div>
@@ -281,7 +277,6 @@ export default function AdminProfile() {
         </div>
       </div>
 
-      {/* Password Change Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-8">

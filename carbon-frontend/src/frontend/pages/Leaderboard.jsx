@@ -119,7 +119,6 @@ export default function Leaderboard() {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Header */}
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
@@ -135,7 +134,7 @@ export default function Leaderboard() {
           </p>
         </div>
 
-        {/* Current User Card */}
+        
 {currentUser && (
   <div className="mb-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 text-white">
     {currentUser.rank ? (
@@ -188,7 +187,6 @@ export default function Leaderboard() {
   </div>
 )}
 
-        {/* Leaderboard Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -257,7 +255,6 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* Info Section */}
         <div className="mt-8 bg-blue-50 rounded-2xl p-6 border border-blue-200">
           <div className="flex items-start gap-3">
             <TrendingDown className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />

@@ -37,7 +37,6 @@ export default function MetricCard({ title, value, subtitle, highlight, trend, t
             </p>
           )}
           
-          {/* Trend indicator */}
           {trend && trendValue && (
             <div className="flex items-center mt-3">
               <span className={`inline-flex items-center text-sm ${highlight ? "text-white" : trend === "up" ? "text-red-600" : "text-green-600"}`}>
@@ -50,7 +49,6 @@ export default function MetricCard({ title, value, subtitle, highlight, trend, t
           )}
         </div>
         
-        {/* Icon */}
         {icon && (
           <div className={`p-3 rounded-xl ${highlight ? "bg-white/20" : "bg-gray-100"}`}>
             <span className="text-xl">{icon}</span>

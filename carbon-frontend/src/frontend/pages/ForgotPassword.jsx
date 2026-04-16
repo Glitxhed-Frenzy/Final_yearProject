@@ -154,7 +154,6 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
@@ -169,7 +168,6 @@ export default function ForgotPassword() {
           </p>
         </div>
 
-        {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -179,7 +177,6 @@ export default function ForgotPassword() {
               </div>
             )}
 
-            {/* Verification Method Toggle */}
             <div className="flex gap-2 p-1 bg-gray-100 rounded-xl">
               <button
                 type="button"
@@ -207,7 +204,6 @@ export default function ForgotPassword() {
               </button>
             </div>
 
-            {/* Email or Phone Field */}
             {verificationMethod === "email" ? (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -255,7 +251,6 @@ export default function ForgotPassword() {
               </div>
             )}
 
-            {/* New Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 New Password
@@ -281,7 +276,6 @@ export default function ForgotPassword() {
                 </button>
               </div>
 
-              {/* Password Strength Meter */}
               {newPassword && (
                 <div className="mt-3">
                   <div className="flex items-center gap-2 mb-2">
@@ -308,7 +302,6 @@ export default function ForgotPassword() {
               )}
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Confirm New Password
@@ -335,7 +328,6 @@ export default function ForgotPassword() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}

@@ -106,7 +106,6 @@ export default function Welcome() {
   return (
     <div className="min-h-screen bg-white">
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Animated Background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50"></div>
           <div className="absolute top-0 left-0 w-full h-full">
@@ -128,7 +127,6 @@ export default function Welcome() {
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          {/* Logo Animation */}
           <div className="flex justify-center mb-8 animate-bounce">
             <div className="relative">
               <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-green-500/30">
@@ -497,7 +495,6 @@ export default function Welcome() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             
-            {/* Logo and description */}
             <div className="flex items-center gap-2">
               <Leaf className="w-5 h-5 text-green-400" />
               <span className="text-lg font-bold text-white">CarbonWise</span>

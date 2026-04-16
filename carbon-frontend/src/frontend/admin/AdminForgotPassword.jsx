@@ -129,7 +129,6 @@ export default function AdminForgotPassword() {
           </p>
         </div>
 
-        {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -141,7 +140,6 @@ export default function AdminForgotPassword() {
               </div>
             )}
 
-            {/* Email Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Admin Email Address
@@ -164,7 +162,6 @@ export default function AdminForgotPassword() {
               </p>
             </div>
 
-            {/* New Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 New Password
@@ -193,7 +190,6 @@ export default function AdminForgotPassword() {
                 </button>
               </div>
 
-              {/* Password Strength */}
               {newPassword && (
                 <div className="mt-3">
                   <div className="flex items-center gap-2 mb-2">
@@ -208,7 +204,6 @@ export default function AdminForgotPassword() {
               )}
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Confirm New Password
@@ -235,7 +230,6 @@ export default function AdminForgotPassword() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -251,7 +245,6 @@ export default function AdminForgotPassword() {
               )}
             </button>
 
-            {/* Back to Login */}
             <div className="text-center">
               <Link
                 to="/admin/login"

@@ -166,7 +166,6 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
@@ -181,9 +180,7 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-          {/* Login Error Message */}
           {loginError && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -195,7 +192,6 @@ export default function Login() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address <span className="text-red-500">*</span>
@@ -235,7 +231,6 @@ export default function Login() {
               )}
             </div>
 
-            {/* Password Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password <span className="text-red-500">*</span>
@@ -282,7 +277,6 @@ export default function Login() {
               )}
             </div>
 
-            {/* Password Requirements Hint */}
             {touched.password && formData.password && (
               <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
                 <p className="font-medium text-gray-700 mb-1">Password requirements:</p>
@@ -305,7 +299,6 @@ export default function Login() {
               </div>
             )}
 
-            {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
               <label className="flex items-center cursor-pointer">
                 <input 
@@ -321,7 +314,6 @@ export default function Login() {
               </Link>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading || Object.keys(errors).length > 0}
@@ -340,7 +332,6 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Sign Up Link */}
           <div className="mt-8 text-center">
             <p className="text-gray-600">
               Don't have an account?{" "}

@@ -36,7 +36,6 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Mobile sidebar toggle */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-green-600 text-white rounded-lg shadow-lg"
@@ -44,7 +43,6 @@ export default function AdminLayout() {
         {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
-      {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-40
         w-72 bg-gradient-to-b from-green-800 to-green-900 text-white
@@ -52,7 +50,6 @@ export default function AdminLayout() {
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         flex flex-col shadow-2xl
       `}>
-        {/* Logo Area */}
         <div className="p-6 border-b border-green-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -65,7 +62,6 @@ export default function AdminLayout() {
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
@@ -93,7 +89,6 @@ export default function AdminLayout() {
           ))}
         </nav>
 
-        {/* Admin Profile Section */}
         <div className="p-4 border-t border-green-700 mt-auto">
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
             <div className="flex items-center gap-3 mb-3">
@@ -109,7 +104,6 @@ export default function AdminLayout() {
             <div className="h-px bg-white/20 my-3"></div>
 
             <div className="space-y-2">
-              {/* Updated: Navigate to /admin/profile instead of /profile */}
               <button 
                 onClick={() => {
                   navigate('/admin/profile');
@@ -131,14 +125,12 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 overflow-x-hidden">
         <div className="min-h-screen p-4 lg:p-8">
           <Outlet />
         </div>
       </main>
 
-      {/* Overlay for mobile */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"

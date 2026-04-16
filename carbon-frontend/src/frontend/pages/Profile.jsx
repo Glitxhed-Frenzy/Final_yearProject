@@ -512,7 +512,6 @@ export default function Profile() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Column - Profile Card */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 sticky top-24">
               <div className="text-center mb-8">
@@ -569,7 +568,6 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Action Buttons with Export Dropdown */}
               <div className="space-y-3 mt-8">
                 <div className="relative">
                   <button
@@ -625,10 +623,8 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Right Column - Content */}
           <div className="lg:col-span-2 space-y-8">
             
-            {/* Profile Information Card */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">Profile Information</h2>
@@ -772,7 +768,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Password Card */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
               <div className="flex items-center justify-between">
                 <div>
@@ -788,7 +783,6 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Activity Summary */}
             {Object.keys(stats.categories).length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Activity Summary</h2>
@@ -804,7 +798,6 @@ export default function Profile() {
               </div>
             )}
 
-            {/* Danger Zone */}
             <div className="bg-white rounded-2xl border border-red-200 shadow-sm p-8">
               <h2 className="text-xl font-semibold text-red-600 mb-3">Danger Zone</h2>
               <p className="text-gray-600 mb-6">Permanently delete your account and all associated data</p>

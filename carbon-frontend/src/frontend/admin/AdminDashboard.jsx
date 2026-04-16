@@ -132,7 +132,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
@@ -150,7 +149,6 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <div className="flex justify-between items-start">
@@ -201,9 +199,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Emissions by Category - Pie Chart */}
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Emissions by Category</h2>
           <div className="h-80">
@@ -214,7 +210,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Category Breakdown */}
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm overflow-y-auto max-h-[500px]">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Category Breakdown</h2>
           <div className="space-y-4">
@@ -256,7 +251,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activities - Scrollable Table */}
       {stats.recentActivities && stats.recentActivities.length > 0 && (
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h2>
