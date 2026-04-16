@@ -118,7 +118,6 @@ export default function AdminDashboard() {
 
   const hasData = stats.totalActivities > 0;
 
-  // Prepare chart data
   const chartData = [];
   if (stats.categoryTotals) {
     Object.entries(stats.categoryTotals).forEach(([category, value]) => {

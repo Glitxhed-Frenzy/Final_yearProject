@@ -60,7 +60,6 @@ export default function Reports() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [showActivityModal, setShowActivityModal] = useState(false);
 
-  // Refs for capturing charts and share container
   const pieChartRef = useRef(null);
   const barChartRef = useRef(null);
   const shareContainerRef = useRef(null);
@@ -144,7 +143,6 @@ export default function Reports() {
     setSelectedActivity(null);
   };
 
-  // Helper to capture chart as image (SVG to PNG) – used for PDF
   const captureChart = async (chartContainer) => {
     if (!chartContainer) return null;
     
@@ -185,7 +183,6 @@ export default function Reports() {
     }
   };
 
-  // JSON Export
   const exportJSON = () => {
     const exportData = {
       user: user,
@@ -207,7 +204,6 @@ export default function Reports() {
     setShowExportMenu(false);
   };
 
-  // CSV Export
   const exportCSV = () => {
     const csvRows = [];
     
@@ -257,7 +253,6 @@ export default function Reports() {
     setShowExportMenu(false);
   };
 
-  // PDF Export (Main function - used by Export)
   const generatePDF = async (forShare = false, platformName = null) => {
     const pieImage = await captureChart(pieChartRef.current);
     const barImage = await captureChart(barChartRef.current);
@@ -272,7 +267,6 @@ export default function Reports() {
     const pageHeight = doc.internal.pageSize.getHeight();
     let yPos = 20;
     
-    // Header
     doc.setFontSize(24);
     doc.setTextColor(5, 150, 105);
     doc.text('CarbonWise', pageWidth / 2, yPos, { align: 'center' });
@@ -294,7 +288,6 @@ export default function Reports() {
     }
     yPos += 15;
     
-    // User Information Section
     doc.setFillColor(240, 253, 244);
     doc.rect(14, yPos, pageWidth - 28, 45, 'F');
     doc.setDrawColor(5, 150, 105);
@@ -318,7 +311,6 @@ export default function Reports() {
     
     yPos += 55;
     
-    // Summary Cards
     doc.setFillColor(5, 150, 105);
     doc.roundedRect(14, yPos, 85, 30, 3, 3, 'F');
     doc.setFontSize(9);
@@ -353,7 +345,6 @@ export default function Reports() {
     yPos += 50;
     doc.setTextColor(0, 0, 0);
     
-    // Pie Chart
     if (pieImage && categoryData.length > 0) {
       if (yPos > pageHeight - 80) {
         doc.addPage();
@@ -381,7 +372,6 @@ export default function Reports() {
       yPos += 85;
     }
     
-    // Category Breakdown Table
     if (yPos > pageHeight - 60) {
       doc.addPage();
       yPos = 20;
@@ -408,7 +398,6 @@ export default function Reports() {
     
     yPos = doc.lastAutoTable.finalY + 15;
     
-    // Bar Chart
     if (barImage && categoryData.length > 0) {
       if (yPos > pageHeight - 80) {
         doc.addPage();
@@ -422,7 +411,6 @@ export default function Reports() {
       yPos += 85;
     }
     
-    // Recent Activities Table
     if (activities.length > 0) {
       if (yPos > pageHeight - 60) {
         doc.addPage();
@@ -449,7 +437,6 @@ export default function Reports() {
       });
     }
     
-    // Footer
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -484,7 +471,6 @@ export default function Reports() {
     }
   };
 
-  // Social Media Share Function – captures dedicated container as PNG
   const shareOnSocialMedia = async (platform) => {
     setSharing(true);
     setShowShareMenu(false);
@@ -622,7 +608,6 @@ export default function Reports() {
                 <option value="year">Last 12 months</option>
               </select>
               
-              {/* Share Button */}
               <div className="relative">
                 <button
                   onClick={() => setShowShareMenu(!showShareMenu)}
@@ -656,7 +641,6 @@ export default function Reports() {
                 )}
               </div>
               
-              {/* Export Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setShowExportMenu(!showExportMenu)}
@@ -703,7 +687,6 @@ export default function Reports() {
           )}
         </div>
 
-        {/* Hidden Share Container */}
         <div ref={shareContainerRef} style={{ display: 'none', position: 'absolute', top: 0, left: 0, width: '800px', background: 'white', padding: '24px', fontFamily: 'sans-serif' }}>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <h1 style={{ fontSize: '28px', color: '#059669', margin: 0 }}>CarbonWise</h1>
@@ -792,7 +775,6 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* Main visible content */}
         {!hasData ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
             <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -810,7 +792,6 @@ export default function Reports() {
         ) : (
           <div className="space-y-8">
             
-            {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <p className="text-sm text-gray-600 mb-2">Total Emissions</p>
@@ -839,7 +820,6 @@ export default function Reports() {
               </div>
             </div>
 
-            {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Emissions by Category</h2>
@@ -887,7 +867,6 @@ export default function Reports() {
               </div>
             </div>
 
-            {/* Recent Activities Table with View button */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">Recent Activities</h2>
               <div className="overflow-x-auto">
@@ -929,7 +908,6 @@ export default function Reports() {
           </div>
         )}
 
-        {/* Activity Detail Modal */}
         {showActivityModal && selectedActivity && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -965,9 +943,7 @@ export default function Reports() {
                   <p className="text-sm text-gray-500 mb-2">Activity Breakdown</p>
                   <div className="space-y-2">
                     {selectedActivity.answers && Object.entries(selectedActivity.answers).map(([key, value]) => {
-                      // Skip metadata fields
                       if (key === 'car_selected' || key === 'train_selected') return null;
-                      // Format the key name
                       let displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                       if (key === 'car_km') displayKey = 'Car (km)';
                       if (key === 'bus_km') displayKey = 'Bus (km)';

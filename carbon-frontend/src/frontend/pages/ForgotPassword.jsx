@@ -98,7 +98,6 @@ export default function ForgotPassword() {
       const response = await authAPI.verifyAndReset(payload);
       
       setSuccess(true);
-      // No auto-login - user will click button to go to login page
       
     } catch (error) {
       setError(error.response?.data?.message || "Failed to reset password. Please check your information.");

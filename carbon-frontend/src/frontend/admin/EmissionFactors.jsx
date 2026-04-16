@@ -22,7 +22,6 @@ export default function EmissionFactors() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Form state
   const [formData, setFormData] = useState({
     activityId: "",
     category: "transport",

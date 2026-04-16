@@ -14,7 +14,6 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Validate email domain (only Gmail, Yahoo, Outlook)
   const validateEmailDomain = (email) => {
     const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com'];
     const domain = email.split('@')[1]?.toLowerCase();
@@ -26,7 +25,6 @@ export default function AdminLogin() {
     setIsLoading(true);
     setError("");
 
-    // Client-side email domain validation
     if (!validateEmailDomain(credentials.email)) {
       setError("Only Gmail, Yahoo, and Outlook email addresses are allowed for admin access.");
       setIsLoading(false);
@@ -38,17 +36,14 @@ export default function AdminLogin() {
       
       const { token, user } = response.data;
       
-      // Check if user has admin role
       if (user.role !== 'admin') {
         throw new Error('Access denied. Admin privileges required.');
       }
       
-      // Double-check email domain on client side
       if (!validateEmailDomain(user.email)) {
         throw new Error('Invalid admin email domain. Only Gmail, Yahoo, and Outlook allowed.');
       }
       
-      // Store tokens
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("adminAuth", "true");

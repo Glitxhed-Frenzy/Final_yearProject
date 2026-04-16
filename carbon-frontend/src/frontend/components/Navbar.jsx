@@ -16,21 +16,17 @@ export default function Navbar() {
     }
   }, []);
 
-  // Don't render navbar on login page and signup page
   if (location.pathname === '/login' || location.pathname === '/' || location.pathname === '/signup') {
     return null;
   }
 
   const handleLogout = () => {
-    // Clear user data
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     
-    // Clear Remember Me flags
     localStorage.removeItem("rememberedEmail");
     localStorage.removeItem("rememberMe");
     
-    // Clear admin flags (if any)
     localStorage.removeItem("adminAuth");
     localStorage.removeItem("rememberedAdmin");
     

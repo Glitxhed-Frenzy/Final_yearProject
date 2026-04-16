@@ -18,7 +18,6 @@ import { authAPI } from '../../services/api'
 export default function SignUp() {
   const navigate = useNavigate();
   
-  // Form state
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -28,7 +27,6 @@ export default function SignUp() {
     agreeTerms: false
   });
 
-  // UI state
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -42,7 +40,6 @@ export default function SignUp() {
     hasUpper: false
   });
 
-  // Password strength checker
   const checkPasswordStrength = (password) => {
     const strength = {
       score: 0,
@@ -207,7 +204,6 @@ export default function SignUp() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-4">
       <div className="w-full max-w-2xl">
-        {/* Header */}
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
@@ -222,7 +218,6 @@ export default function SignUp() {
           </p>
         </div>
 
-        {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-center gap-2">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
@@ -243,11 +238,9 @@ export default function SignUp() {
           </div>
         </div>
 
-        {/* Sign Up Form */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
           <form onSubmit={step === 1 ? handleNextStep : handleSubmit} className="space-y-6">
             
-            {/* Step 1: Basic Information */}
             {step === 1 && (
               <>
                 {/* Full Name */}
@@ -279,7 +272,6 @@ export default function SignUp() {
                   )}
                 </div>
 
-                {/* Email */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email Address <span className="text-red-500">*</span>
@@ -311,7 +303,6 @@ export default function SignUp() {
                   )}
                 </div>
 
-                {/* Phone (Optional) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Phone Number <span className="text-gray-400">(optional)</span>
@@ -342,7 +333,6 @@ export default function SignUp() {
                   <p className="text-xs text-gray-500 mt-1">Enter 10-digit mobile number</p>
                 </div>
 
-                {/* Next Button */}
                 <button
                   type="button"
                   onClick={handleNextStep}
@@ -354,10 +344,8 @@ export default function SignUp() {
               </>
             )}
 
-            {/* Step 2: Account Setup */}
             {step === 2 && (
               <>
-                {/* Password */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Password <span className="text-red-500">*</span>
@@ -386,7 +374,6 @@ export default function SignUp() {
                     </button>
                   </div>
 
-                  {/* Password Strength Meter */}
                   {formData.password && (
                     <div className="mt-3">
                       <div className="flex items-center gap-2 mb-2">
@@ -441,7 +428,6 @@ export default function SignUp() {
                   )}
                 </div>
 
-                {/* Confirm Password */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Confirm Password <span className="text-red-500">*</span>
@@ -477,7 +463,6 @@ export default function SignUp() {
                   )}
                 </div>
 
-                {/* Terms Agreement */}
                 <div className="flex items-start">
                   <div className="flex items-center h-5">
                     <input
@@ -507,7 +492,6 @@ export default function SignUp() {
                   </div>
                 )}
 
-                {/* Navigation Buttons */}
                 <div className="flex gap-3">
                   <button
                     type="button"
@@ -538,9 +522,6 @@ export default function SignUp() {
             )}
           </form>
 
-          {/* Divider and Social Login - REMOVED */}
-
-          {/* Sign In Link */}
           <div className="mt-8 text-center">
             <p className="text-gray-600">
               Already have an account?{" "}
@@ -554,7 +535,6 @@ export default function SignUp() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
             By signing up, you agree to our{" "}

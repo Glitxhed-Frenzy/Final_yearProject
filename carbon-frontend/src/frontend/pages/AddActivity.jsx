@@ -10,7 +10,6 @@ import {
 import { activityAPI } from '../../services/api';
 import CarbonTips from "../components/CarbonTips";
 
-// Categories
 const categories = [
   { id: 'transport', label: 'Transportation', icon: <Car className="w-5 h-5" />, color: 'purple' },
   { id: 'electricity', label: 'Electricity', icon: <Zap className="w-5 h-5" />, color: 'blue' },
@@ -18,7 +17,6 @@ const categories = [
   { id: 'food', label: 'Food', icon: <Apple className="w-5 h-5" />, color: 'amber' }
 ];
 
-// Questions
 const questions = {
   transport: {
     title: "Transportation",
@@ -434,11 +432,35 @@ export default function AddActivity() {
     return Object.keys(values).some(key => values[key] > 0);
   };
 
+  const validateForm = () => {
+    if (values.car_km && values.car_km > 0) {
+      if (!selectedCarType) {
+        alert("Please select a Car Type for the car distance entered.");
+        return false;
+      }
+      if (!selectedCarFuel) {
+        alert("Please select a Fuel Type for the car distance entered.");
+        return false;
+      }
+    }
+    
+    if (values.train_km && values.train_km > 0) {
+      if (!selectedTrainType) {
+        alert("Please select a Train Type for the train distance entered.");
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
   const saveActivity = async () => {
     if (!hasAnyData()) {
       alert("Please add some data first");
       return;
     }
+
+    if (!validateForm()) return;
 
     setIsLoading(true);
 

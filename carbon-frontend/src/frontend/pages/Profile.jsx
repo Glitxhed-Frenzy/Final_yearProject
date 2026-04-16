@@ -54,7 +54,6 @@ export default function Profile() {
     categories: {}
   });
 
-  // Form states
   const [profileForm, setProfileForm] = useState({
     name: "",
     email: "",
@@ -77,7 +76,6 @@ export default function Profile() {
 
   const [errors, setErrors] = useState({});
 
-  // Load user data
   useEffect(() => {
     loadUserData();
   }, []);
@@ -250,7 +248,6 @@ export default function Profile() {
     return names[category] || category;
   };
 
-  // JSON Export
   const exportJSON = () => {
     const exportData = {
       user: user,
@@ -273,7 +270,6 @@ export default function Profile() {
     setShowExportMenu(false);
   };
 
-  // CSV Export
   const exportCSV = () => {
     const csvRows = [];
     
@@ -316,7 +312,6 @@ export default function Profile() {
     setShowExportMenu(false);
   };
 
-  // PDF Export
   const exportPDF = async () => {
     const loadingToast = document.createElement('div');
     loadingToast.innerHTML = '📄 Generating PDF with your data...';

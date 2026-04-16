@@ -5,8 +5,7 @@ const { updateMonthlyLeaderboard } = require('./leaderboardController');
 
 let factorCache = null;
 let lastCacheUpdate = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
+const CACHE_DURATION = 5 * 60 * 1000;
 const loadFactorsFromDB = async () => {
   const now = Date.now();
   if (factorCache && (now - lastCacheUpdate) < CACHE_DURATION) {
@@ -461,7 +460,6 @@ exports.deleteActivity = async (req, res) => {
     } catch (err) {
       console.log('⚠️ Leaderboard update error:', err.message);
     }
-    // ========== END LEADERBOARD UPDATE ==========
 
     res.status(200).json({
       success: true,

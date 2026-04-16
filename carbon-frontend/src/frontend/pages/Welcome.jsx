@@ -45,7 +45,6 @@ export default function Welcome() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Actual categories that match the app
   const categories = [
     { icon: <Car className="w-6 h-6" />, name: "Transport", color: "purple", desc: "Track car, bus, train & plane emissions with real-time calculation" },
     { icon: <Zap className="w-6 h-6" />, name: "Electricity", color: "blue", desc: "Monitor AC, heater, laptop & TV electricity consumption" },
@@ -53,14 +52,12 @@ export default function Welcome() {
     { icon: <Apple className="w-6 h-6" />, name: "Food", color: "amber", desc: "Log chicken, fish, dairy & vegetarian meals" }
   ];
 
-  // Impact stats
   const impacts = [
     { icon: <TreePine className="w-8 h-8" />, title: "CO₂ Tracked", value: "125+ tons", desc: "Collectively monitored by our community" },
     { icon: <Wind className="w-8 h-8" />, title: "Active Users", value: "5,234+", desc: "Eco-conscious individuals making a difference" },
     { icon: <Sun className="w-8 h-8" />, title: "Activities Logged", value: "50K+", desc: "Daily activities tracked globally" }
   ];
 
-  // Updated features based on actual functionality
   const features = [
     {
       icon: <Activity className="w-7 h-7" />,
@@ -108,10 +105,6 @@ export default function Welcome() {
 
   return (
     <div className="min-h-screen bg-white">
-      
-      {/* ============================================ */}
-      {/* HERO SECTION */}
-      {/* ============================================ */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0">
@@ -134,7 +127,6 @@ export default function Welcome() {
           </div>
         </div>
 
-        {/* Hero Content */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           {/* Logo Animation */}
           <div className="flex justify-center mb-8 animate-bounce">
@@ -148,7 +140,6 @@ export default function Welcome() {
             </div>
           </div>
 
-          {/* Headline */}
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
             Welcome to
             <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent block mt-2">
@@ -156,13 +147,11 @@ export default function Welcome() {
             </span>
           </h1>
 
-          {/* Subheadline */}
           <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
             Track your carbon footprint across Transport, Electricity, Waste, and Food. 
             Get insights, export reports, and make a difference for our planet.
           </p>
 
-          {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
             <Link
               to="/signup"
@@ -182,7 +171,6 @@ export default function Welcome() {
             </Link>
           </div>
 
-          {/* Category Showcase - Updated to match actual categories */}
           <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-8 shadow-xl border border-gray-100 max-w-4xl mx-auto">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">Track 4 Key Categories</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -201,7 +189,6 @@ export default function Welcome() {
           </div>
         </div>
 
-        {/* Scroll Indicator */}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
           <div className="w-6 h-10 border-2 border-gray-400 rounded-full flex justify-center">
             <div className="w-1 h-2 bg-gray-400 rounded-full mt-2 animate-pulse"></div>
@@ -209,9 +196,6 @@ export default function Welcome() {
         </div>
       </section>
 
-      {/* ============================================ */}
-      {/* IMPACT SECTION - INSPIRATIONAL QUOTES */}
-      {/* ============================================ */}
       <section className="py-24 bg-gradient-to-br from-green-600 to-emerald-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
@@ -226,7 +210,6 @@ export default function Welcome() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             
-            {/* Quote 1 - Wangari Maathai */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-1">
               <div className="text-5xl text-green-300 mb-2">"</div>
               <p className="text-white text-lg italic mb-6">
@@ -243,7 +226,6 @@ export default function Welcome() {
               </div>
             </div>
 
-            {/* Quote 2 - David Attenborough */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-1">
               <div className="text-5xl text-green-300 mb-2">"</div>
               <p className="text-white text-lg italic mb-6">
@@ -260,7 +242,6 @@ export default function Welcome() {
               </div>
             </div>
 
-            {/* Quote 3 - Greta Thunberg */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-1">
               <div className="text-5xl text-green-300 mb-2">"</div>
               <p className="text-white text-lg italic mb-6">
@@ -278,10 +259,8 @@ export default function Welcome() {
             </div>
           </div>
 
-          {/* Second row of quotes */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
             
-            {/* Quote 4 - John Muir */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-1">
               <div className="text-5xl text-green-300 mb-2">"</div>
               <p className="text-white text-lg italic mb-6">
@@ -298,7 +277,6 @@ export default function Welcome() {
               </div>
             </div>
 
-            {/* Quote 5 - Jacques Cousteau */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-1">
               <div className="text-5xl text-green-300 mb-2">"</div>
               <p className="text-white text-lg italic mb-6">
@@ -316,7 +294,6 @@ export default function Welcome() {
             </div>
           </div>
 
-          {/* Inspirational footer */}
           <div className="mt-12 text-center border-t border-white/20 pt-8">
             <p className="text-green-200 text-lg flex items-center justify-center gap-2">
               <Leaf className="w-5 h-5" />
@@ -327,9 +304,6 @@ export default function Welcome() {
         </div>
       </section>
 
-      {/* ============================================ */}
-      {/* FEATURES SECTION - Updated to match actual functionality */}
-      {/* ============================================ */}
       <section className="py-24 bg-gray-50">
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     
@@ -395,9 +369,6 @@ export default function Welcome() {
   </div>
 </section>
 
-      {/* ============================================ */}
-      {/* HOW IT WORKS SECTION */}
-      {/* ============================================ */}
       <section className="py-24 bg-white">
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     
@@ -408,7 +379,6 @@ export default function Welcome() {
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
       
-      {/* Step 1 */}
       <div className="text-center">
         <div className="w-20 h-20 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
           <span className="absolute -top-3 -right-3 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">
@@ -422,7 +392,6 @@ export default function Welcome() {
         </p>
       </div>
 
-      {/* Step 2 */}
       <div className="text-center">
         <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
           <span className="absolute -top-3 -right-3 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
@@ -436,7 +405,6 @@ export default function Welcome() {
         </p>
       </div>
 
-      {/* Step 3 */}
       <div className="text-center">
         <div className="w-20 h-20 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
           <span className="absolute -top-3 -right-3 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">
@@ -453,10 +421,7 @@ export default function Welcome() {
   </div>
 </section>
 
-  {/* ============================================ */}
-{/* LEADERBOARD SECTION */}
-{/* ============================================ */}
-<section className="py-20 bg-gray-50">
+  <section className="py-20 bg-gray-50">
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
     
     <div className="flex justify-center mb-4">
@@ -503,9 +468,6 @@ export default function Welcome() {
   </div>
 </section>
 
-      {/* ============================================ */}
-      {/* FINAL CTA SECTION */}
-      {/* ============================================ */}
       <section className="py-24 bg-gradient-to-br from-green-600 to-emerald-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-white mb-6">
@@ -531,7 +493,6 @@ export default function Welcome() {
         </div>
       </section>
 
-      {/* FOOTER -*/}
       <footer className="bg-gray-900 text-gray-300 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -543,13 +504,11 @@ export default function Welcome() {
               <span className="text-xs text-gray-500 ml-2">Track. Reduce. Make a Difference.</span>
             </div>
 
-            {/* Links */}
             <div className="flex gap-6 text-sm">
               <Link to="/privacy" className="hover:text-green-400 transition">Privacy Policy</Link>
               <Link to="/terms" className="hover:text-green-400 transition">Terms of Service</Link>
             </div>
 
-            {/* Copyright */}
             <div className="text-sm text-gray-500">
               © 2026 CarbonWise
             </div>

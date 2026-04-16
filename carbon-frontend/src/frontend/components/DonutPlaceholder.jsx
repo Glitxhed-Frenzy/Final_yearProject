@@ -4,12 +4,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 const COLORS = ["#16a34a", "#22c55e", "#86efac", "#bbf7d0", "#059669", "#10b981"];
 
 export default function DonutPlaceholder({ data, centerLabel }) {
-  // Filter out "No Data" placeholder if there's actual data
   const chartData = data.length === 1 && data[0].name === "No Data" && centerLabel === "0 kg" 
     ? [{ name: "No Data", value: 1 }]
     : data.filter(item => item.value > 0);
   
-  // If no valid data, show empty state
   if (chartData.length === 0) {
     return (
       <div className="relative bg-white rounded-2xl shadow-sm border p-4 h-64 flex items-center justify-center">

@@ -188,7 +188,6 @@ exports.verifyAndResetPassword = async (req, res) => {
   try {
     const { email, phone, newPassword, confirmPassword } = req.body;
 
-    // Check if passwords match
     if (newPassword !== confirmPassword) {
       return res.status(400).json({
         success: false,
@@ -196,7 +195,6 @@ exports.verifyAndResetPassword = async (req, res) => {
       });
     }
 
-    // Validate password strength
     if (!newPassword || newPassword.length < 6) {
       return res.status(400).json({
         success: false,
@@ -204,7 +202,6 @@ exports.verifyAndResetPassword = async (req, res) => {
       });
     }
 
-    // Build query
     let query = {};
     if (email) {
       query.email = email;
@@ -233,8 +230,7 @@ exports.verifyAndResetPassword = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Password reset successful! Please login with your new password.'
-      // NO token field here anymore
-    });
+      });
 
   } catch (error) {
     console.error('Verify and reset error:', error);

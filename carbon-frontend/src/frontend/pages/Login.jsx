@@ -26,14 +26,12 @@ export default function Login() {
   
   const navigate = useNavigate();
 
-  // Real-time validation
   useEffect(() => {
     if (Object.keys(touched).length > 0) {
       validateForm();
     }
   }, [formData, touched]);
 
-  // Load remembered email and check if Remember Me was active
   useEffect(() => {
     const rememberedEmail = localStorage.getItem("rememberedEmail");
     const rememberMeFlag = localStorage.getItem("rememberMe");
@@ -47,7 +45,6 @@ export default function Login() {
   const validateForm = () => {
     const newErrors = {};
 
-    // Email validation with domain restrictions
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -55,7 +52,6 @@ export default function Login() {
     } else if (formData.email.length > 50) {
       newErrors.email = "Email must be less than 50 characters";
     } else {
-      // Check allowed domains
       const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com'];
       const domain = formData.email.split('@')[1]?.toLowerCase();
       
@@ -64,7 +60,6 @@ export default function Login() {
       }
     }
 
-    // Password validation
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
@@ -121,11 +116,9 @@ export default function Login() {
       
       const { token, user } = response.data;
       
-      // Store token and user
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       
-      // If Remember Me is checked, store flags to keep logged in
       if (rememberMe) {
         localStorage.setItem("rememberedEmail", formData.email);
         localStorage.setItem("rememberMe", "true");
@@ -134,7 +127,6 @@ export default function Login() {
         localStorage.removeItem("rememberMe");
       }
       
-      // Verify and navigate
       const verifyUser = localStorage.getItem("user");
       const verifyToken = localStorage.getItem("token");
       
