@@ -1,13 +1,14 @@
-import { NavLink, useNavigate } from "react-router-dom";
+// src/frontend/components/Navbar.jsx
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { User, LogOut, ChevronDown } from "lucide-react";
+import { User, LogOut, ChevronDown, PlusCircle } from "lucide-react";
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // Check if user is logged in
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
@@ -15,18 +16,39 @@ export default function Navbar() {
     }
   }, []);
 
+  if (location.pathname === '/login' || location.pathname === '/' || location.pathname === '/signup') {
+    return null;
+  }
+
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    
+    localStorage.removeItem("rememberedEmail");
+    localStorage.removeItem("rememberMe");
+    
+    localStorage.removeItem("adminAuth");
+    localStorage.removeItem("rememberedAdmin");
+    
     setUser(null);
     setShowDropdown(false);
     navigate("/login");
   };
 
+  const goToDashboard = () => {
+    navigate("/dashboard");
+  };
+
   return (
     <header className="bg-white/80 backdrop-blur border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-green-600">Carbon Tracker</h1>
+        {/* Logo - Clickable */}
+        <h1 
+          onClick={goToDashboard}
+          className="text-xl font-bold text-green-600 cursor-pointer hover:text-green-700 transition-colors whitespace-nowrap"
+        >
+          CarbonWise
+        </h1>
 
         {/* Navigation Links - Only show when user is logged in */}
         {user && (
@@ -34,41 +56,51 @@ export default function Navbar() {
             <NavLink 
               to="/dashboard" 
               className={({ isActive }) => 
-                `hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                `hover:text-green-600 transition-colors whitespace-nowrap ${
+                  isActive ? 'text-green-600' : 'text-gray-700'
+                }`
               }
             >
               Dashboard
             </NavLink>
             <NavLink 
-              to="/add" 
-              className={({ isActive }) => 
-                `hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
-              }
-            >
-              Add Activity
-            </NavLink>
-            <NavLink 
               to="/reports" 
               className={({ isActive }) => 
-                `hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                `hover:text-green-600 transition-colors whitespace-nowrap ${
+                  isActive ? 'text-green-600' : 'text-gray-700'
+                }`
               }
             >
               Reports
             </NavLink>
+            <NavLink 
+              to="/leaderboard" 
+              className={({ isActive }) => 
+                `hover:text-green-600 transition-colors whitespace-nowrap ${
+                  isActive ? 'text-green-600' : 'text-gray-700'
+                }`
+              }
+            >
+              Leaderboard
+            </NavLink>
           </nav>
         )}
 
-        {/* Right side: User info or Sign In button */}
+        {/* Right side: Add Activity + User info */}
         <div className="flex items-center gap-4">
-          {/* Show total emissions only when logged in */}
+          {/* Add Activity Button */}
           {user && (
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full border border-green-200">
-              <span className="text-sm font-medium">1240 kg CO₂</span>
-            </div>
+            <button
+              onClick={() => navigate('/add')}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Activity</span>
+              <span className="sm:hidden">Add</span>
+            </button>
           )}
           
           {user ? (
-            /* User dropdown when logged in */
             <div className="relative">
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
@@ -83,7 +115,6 @@ export default function Navbar() {
                 <ChevronDown className="w-4 h-4 text-gray-500" />
               </button>
               
-              {/* Dropdown Menu */}
               {showDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
@@ -94,7 +125,7 @@ export default function Navbar() {
                   <button
                     onClick={() => {
                       setShowDropdown(false);
-                      navigate("/profile"); // Add profile page if needed
+                      navigate("/profile");
                     }}
                     className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-3"
                   >
@@ -112,19 +143,10 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-          ) : (
-            /* Sign In button when not logged in */
-            <NavLink
-              to="/login"
-              className="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition font-medium"
-            >
-              Sign In
-            </NavLink>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {/* Close dropdown when clicking outside */}
       {showDropdown && (
         <div 
           className="fixed inset-0 z-40" 

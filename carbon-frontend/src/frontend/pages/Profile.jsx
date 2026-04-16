@@ -1,0 +1,963 @@
+// src/frontend/pages/Profile.jsx
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  User,
+  Mail,
+  Lock,
+  Calendar,
+  MapPin,
+  Phone,
+  Edit2,
+  Save,
+  X,
+  Trash2,
+  LogOut,
+  AlertCircle,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  Download,
+  Activity,
+  Award,
+  TrendingDown,
+  Clock,
+  Zap,
+  Trash2 as TrashIcon,
+  Car,
+  Apple,
+  FileJson,
+  FileSpreadsheet,
+  FileText,
+  ChevronDown
+} from "lucide-react";
+import { activityAPI, authAPI,adminAPI } from '../../services/api';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+export default function Profile() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [activities, setActivities] = useState([]);
+  const [stats, setStats] = useState({
+    totalActivities: 0,
+    totalEmissions: 0,
+    averagePerActivity: 0,
+    joinDate: null,
+    categories: {}
+  });
+
+  const [profileForm, setProfileForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    bio: ""
+  });
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
+
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadUserStats();
+    }
+  }, [user]);
+
+  const loadUserData = () => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      setUser(parsed);
+      setProfileForm({
+        name: parsed.name || "",
+        email: parsed.email || "",
+        phone: parsed.phone || "",
+        location: parsed.location || "",
+        bio: parsed.bio || ""
+      });
+    } else {
+      navigate("/login");
+    }
+    setLoading(false);
+  };
+
+  const loadUserStats = async () => {
+    try {
+      const response = await activityAPI.getAll();
+      const activitiesData = response.data.data || [];
+      setActivities(activitiesData);
+      
+      const statsRes = await activityAPI.getStats();
+      const statsData = statsRes.data.data || {};
+      
+      const categoryCounts = {};
+      activitiesData.forEach(act => {
+        if (act.categories) {
+          act.categories.forEach(cat => {
+            categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+          });
+        }
+      });
+
+      setStats({
+        totalActivities: activitiesData.length,
+        totalEmissions: statsData.totalEmissions || 0,
+        averagePerActivity: statsData.averagePerActivity || 0,
+        joinDate: user?.createdAt || new Date().toISOString(),
+        categories: categoryCounts
+      });
+    } catch (error) {
+      console.error("Error loading stats:", error);
+      setStats({
+        totalActivities: 0,
+        totalEmissions: 0,
+        averagePerActivity: 0,
+        joinDate: user?.createdAt || new Date().toISOString(),
+        categories: {}
+      });
+    }
+  };
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    
+    const newErrors = {};
+    if (!profileForm.name.trim()) newErrors.name = "Name is required";
+    if (!profileForm.email.trim()) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(profileForm.email)) newErrors.email = "Email is invalid";
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    try {
+      await authAPI.updateDetails({
+        name: profileForm.name,
+        email: profileForm.email,
+        phone: profileForm.phone,
+        location: profileForm.location,
+        bio: profileForm.bio
+      });
+      
+      const updatedUser = { ...user, ...profileForm };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      setEditing(false);
+      setErrors({});
+      showSuccessMessage("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      showSuccessMessage("Failed to update profile");
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    
+    const newErrors = {};
+    if (!passwordForm.currentPassword) newErrors.currentPassword = "Current password is required";
+    if (!passwordForm.newPassword) newErrors.newPassword = "New password is required";
+    else if (passwordForm.newPassword.length < 6) newErrors.newPassword = "Password must be at least 6 characters";
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    try {
+      await authAPI.updatePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      });
+      
+      setShowPasswordModal(false);
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setErrors({});
+      showSuccessMessage("Password changed successfully!");
+    } catch (error) {
+      console.error("Error changing password:", error);
+      showSuccessMessage(error.response?.data?.message || "Failed to change password");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+  if (window.confirm("Are you absolutely sure? This action cannot be undone!")) {
+    try {
+      await authAPI.deleteAccount();
+      
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("rememberedEmail");
+      localStorage.removeItem("rememberMe");
+      localStorage.removeItem("adminAuth");
+      localStorage.removeItem("rememberedAdmin");
+      
+      alert("Your account has been permanently deleted.");
+      navigate("/");
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      alert(error.response?.data?.message || "Failed to delete account");
+     }
+    }
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("rememberedEmail");
+    localStorage.removeItem("rememberMe");
+    localStorage.removeItem("adminAuth");
+    localStorage.removeItem("rememberedAdmin");
+    navigate("/login");
+  };
+
+  const getCategoryDisplayName = (category) => {
+    const names = {
+      transport: "Transport",
+      electricity: "Electricity",
+      waste: "Waste",
+      food: "Food"
+    };
+    return names[category] || category;
+  };
+
+  const exportJSON = () => {
+    const exportData = {
+      user: user,
+      activities: activities,
+      stats: stats,
+      exportDate: new Date().toISOString(),
+      reportType: 'JSON Export'
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `carbon-footprint-export-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    showSuccessMessage("JSON exported successfully!");
+    setShowExportMenu(false);
+  };
+
+  const exportCSV = () => {
+    const csvRows = [];
+    
+    csvRows.push('"USER INFORMATION"');
+    csvRows.push(`"Name",${user?.name || 'N/A'}`);
+    csvRows.push(`"Email",${user?.email || 'N/A'}`);
+    csvRows.push(`"Phone",${user?.phone || 'N/A'}`);
+    csvRows.push(`"Location",${user?.location || 'N/A'}`);
+    csvRows.push(`"Member Since",${user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}`);
+    csvRows.push('');
+    
+    const headers = ['Date', 'Categories', 'Total Emissions (kg CO₂)'];
+    csvRows.push(headers.join(','));
+    
+    activities.forEach(activity => {
+      const row = [
+        new Date(activity.date).toLocaleDateString(),
+        `"${activity.categories?.map(cat => getCategoryDisplayName(cat)).join(', ') || 'General'}"`,
+        activity.totalEmissions?.toFixed(2) || '0'
+      ];
+      csvRows.push(row.join(','));
+    });
+    
+    csvRows.push('');
+    csvRows.push('"SUMMARY STATISTICS"');
+    csvRows.push(`"Total Emissions (kg CO₂)",${stats.totalEmissions?.toFixed(2) || 0}`);
+    csvRows.push(`"Total Activities",${stats.totalActivities || 0}`);
+    csvRows.push(`"Average per Activity (kg CO₂)",${stats.averagePerActivity?.toFixed(2) || 0}`);
+    
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `carbon-footprint-export-${new Date().toISOString().split('T')[0]}.csv`);
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    showSuccessMessage("CSV exported successfully!");
+    setShowExportMenu(false);
+  };
+
+  const exportPDF = async () => {
+    const loadingToast = document.createElement('div');
+    loadingToast.innerHTML = '📄 Generating PDF with your data...';
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+    document.body.appendChild(loadingToast);
+    
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let yPos = 20;
+      
+      doc.setFontSize(24);
+      doc.setTextColor(5, 150, 105);
+      doc.text('CarbonWise', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 8;
+      
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.text('My Carbon Footprint Report', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+      
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 15;
+      
+      doc.setFillColor(240, 253, 244);
+      doc.rect(14, yPos, pageWidth - 28, 45, 'F');
+      doc.setDrawColor(5, 150, 105);
+      doc.setLineWidth(0.5);
+      doc.rect(14, yPos, pageWidth - 28, 45, 'D');
+      
+      doc.setFontSize(12);
+      doc.setTextColor(5, 150, 105);
+      doc.text('User Information', 20, yPos + 8);
+      
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      
+      doc.text(`Name: ${user?.name || 'N/A'}`, 20, yPos + 18);
+      doc.text(`Email: ${user?.email || 'N/A'}`, 20, yPos + 26);
+      doc.text(`Phone: ${user?.phone || 'N/A'}`, 20, yPos + 34);
+      
+      doc.text(`Location: ${user?.location || 'N/A'}`, pageWidth / 2 + 10, yPos + 18);
+      doc.text(`Member Since: ${user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}`, pageWidth / 2 + 10, yPos + 26);
+      doc.text(`Total Activities: ${stats.totalActivities || 0}`, pageWidth / 2 + 10, yPos + 34);
+      
+      yPos += 55;
+      
+      doc.setFillColor(5, 150, 105);
+      doc.roundedRect(14, yPos, 85, 30, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Total CO₂', 20, yPos + 8);
+      doc.setFontSize(16);
+      doc.text(`${stats.totalEmissions?.toFixed(1) || 0} kg`, 20, yPos + 22);
+      
+      doc.setFillColor(16, 185, 129);
+      doc.roundedRect(103, yPos, 85, 30, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.text('Activities', 109, yPos + 8);
+      doc.setFontSize(16);
+      doc.text(`${stats.totalActivities || 0}`, 109, yPos + 22);
+      
+      yPos += 40;
+      
+      doc.setFillColor(52, 211, 153);
+      doc.roundedRect(14, yPos, 85, 30, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.text('Avg per Activity', 20, yPos + 8);
+      doc.setFontSize(16);
+      doc.text(`${stats.averagePerActivity?.toFixed(1) || 0} kg`, 20, yPos + 22);
+      
+      yPos += 50;
+      
+      if (activities.length > 0) {
+        if (yPos > pageHeight - 60) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(14);
+        doc.text('Recent Activities', 14, yPos);
+        yPos += 10;
+        
+        const activitiesData = activities.slice(0, 10).map(activity => [
+          new Date(activity.date).toLocaleDateString(),
+          activity.categories?.map(cat => getCategoryDisplayName(cat)).join(', ') || 'General',
+          `${activity.totalEmissions?.toFixed(2) || 0} kg`
+        ]);
+        
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Date', 'Categories', 'Emissions']],
+          body: activitiesData,
+          theme: 'striped',
+          headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255] },
+          margin: { left: 14, right: 14 }
+        });
+      }
+      
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Page ${i} of ${pageCount} - CarbonWise Report | ${new Date().toLocaleDateString()}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
+      
+      doc.save(`carbon-report-${user?.name?.replace(/\s/g, '_') || 'user'}-${new Date().toISOString().split('T')[0]}.pdf`);
+      showSuccessMessage("PDF exported successfully!");
+      
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Error: ' + error.message);
+    } finally {
+      document.body.removeChild(loadingToast);
+      setShowExportMenu(false);
+    }
+  };
+
+  const showSuccessMessage = (message) => {
+    setSuccessMessage(message);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const getCategoryIcon = (category) => {
+    const icons = {
+      transport: <Car className="w-5 h-5" />,
+      electricity: <Zap className="w-5 h-5" />,
+      waste: <TrashIcon className="w-5 h-5" />,
+      food: <Apple className="w-5 h-5" />
+    };
+    return icons[category] || <Activity className="w-5 h-5" />;
+  };
+
+  const formatJoinDate = (dateString) => {
+    if (!dateString) return "Just now";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Just now";
+      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    } catch {
+      return "Just now";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="animate-pulse space-y-8">
+            <div className="h-8 bg-gray-200 rounded w-48"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-2xl p-6 h-64"></div>
+              </div>
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-white rounded-2xl p-6 h-48"></div>
+                <div className="bg-white rounded-2xl p-6 h-32"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {showSuccess && (
+          <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl shadow-lg z-50 flex items-center gap-2 animate-slide-down">
+            <CheckCircle className="w-5 h-5" />
+            {successMessage}
+          </div>
+        )}
+
+        <div className="mb-12">
+          <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+          <p className="text-gray-600 mt-2 text-lg">
+            Manage your account and track your carbon footprint journey
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Column - Profile Card */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 sticky top-24">
+              <div className="text-center mb-8">
+                <div className="w-28 h-28 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mx-auto mb-5 flex items-center justify-center shadow-lg">
+                  <span className="text-4xl font-bold text-white">
+                    {user?.name?.charAt(0) || "U"}
+                  </span>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">{user?.name}</h2>
+                <p className="text-gray-500 mt-2">{user?.email}</p>
+                
+                {!editing && (
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Edit Profile
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-5 pt-6 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Calendar className="w-4 h-4" />
+                    <span>Member since</span>
+                  </div>
+                  <span className="font-semibold text-gray-900">
+                    {formatJoinDate(stats.joinDate)}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Activity className="w-4 h-4" />
+                    <span>Activities</span>
+                  </div>
+                  <span className="font-semibold text-gray-900">{stats.totalActivities}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <TrendingDown className="w-4 h-4" />
+                    <span>Total CO₂</span>
+                  </div>
+                  <span className="font-semibold text-green-600">{stats.totalEmissions} kg</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Award className="w-4 h-4" />
+                    <span>Avg per activity</span>
+                  </div>
+                  <span className="font-semibold text-gray-900">{stats.averagePerActivity} kg</span>
+                </div>
+              </div>
+
+              {/* Action Buttons with Export Dropdown */}
+              <div className="space-y-3 mt-8">
+                <div className="relative">
+                  <button
+                    onClick={() => setShowExportMenu(!showExportMenu)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 rounded-xl hover:bg-green-100 transition-colors border border-green-200"
+                  >
+                    <Download className="w-4 h-4" />
+                    Export My Data
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                  
+                  {showExportMenu && (
+                    <>
+                      <div className="absolute bottom-full left-0 mb-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                        <button
+                          onClick={exportJSON}
+                          className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <FileJson className="w-4 h-4 text-blue-600" />
+                          Export as JSON
+                        </button>
+                        <button
+                          onClick={exportCSV}
+                          className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                          Export as CSV
+                        </button>
+                        <button
+                          onClick={exportPDF}
+                          className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <FileText className="w-4 h-4 text-red-600" />
+                          Export as PDF
+                        </button>
+                      </div>
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowExportMenu(false)}
+                      />
+                    </>
+                  )}
+                </div>
+                
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Content */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Profile Information Card */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Profile Information</h2>
+                {editing && (
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </button>
+                )}
+              </div>
+
+              {!editing ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                  <div>
+                    <label className="text-sm text-gray-500 flex items-center gap-2 mb-1">
+                      <User className="w-4 h-4" />
+                      Full Name
+                    </label>
+                    <p className="text-lg text-gray-900">{user?.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500 flex items-center gap-2 mb-1">
+                      <Mail className="w-4 h-4" />
+                      Email Address
+                    </label>
+                    <p className="text-lg text-gray-900">{user?.email}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500 flex items-center gap-2 mb-1">
+                      <Phone className="w-4 h-4" />
+                      Phone
+                    </label>
+                    <p className="text-lg text-gray-900">{user?.phone || <span className="text-gray-400">Not added</span>}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500 flex items-center gap-2 mb-1">
+                      <MapPin className="w-4 h-4" />
+                      Location
+                    </label>
+                    <p className="text-lg text-gray-900">{user?.location || <span className="text-gray-400">Not added</span>}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-sm text-gray-500 flex items-center gap-2 mb-1">
+                      <User className="w-4 h-4" />
+                      Bio
+                    </label>
+                    <p className="text-lg text-gray-900">{user?.bio || <span className="text-gray-400">No bio added yet</span>}</p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleProfileUpdate} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={profileForm.name}
+                        onChange={(e) => {
+                          setProfileForm({...profileForm, name: e.target.value});
+                          setErrors({...errors, name: ""});
+                        }}
+                        className={`w-full p-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg ${
+                          errors.name ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                      />
+                      {errors.name && <p className="mt-2 text-sm text-red-600">{errors.name}</p>}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        value={profileForm.email}
+                        onChange={(e) => {
+                          setProfileForm({...profileForm, email: e.target.value});
+                          setErrors({...errors, email: ""});
+                        }}
+                        className={`w-full p-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg ${
+                          errors.email ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                      />
+                      {errors.email && <p className="mt-2 text-sm text-red-600">{errors.email}</p>}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        value={profileForm.phone}
+                        onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
+                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                        placeholder="Enter your phone number"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={profileForm.location}
+                        onChange={(e) => setProfileForm({...profileForm, location: e.target.value})}
+                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                        placeholder="Mumbai, India"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bio
+                    </label>
+                    <textarea
+                      value={profileForm.bio}
+                      onChange={(e) => setProfileForm({...profileForm, bio: e.target.value})}
+                      rows="4"
+                      className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                      placeholder="Tell us a bit about yourself and your sustainability goals..."
+                    />
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <button
+                      type="submit"
+                      className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium text-lg"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* Password Card */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Password</h2>
+                  <p className="text-gray-600 mt-2">Change your password regularly to keep your account secure</p>
+                </div>
+                <button
+                  onClick={() => setShowPasswordModal(true)}
+                  className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                >
+                  Change Password
+                </button>
+              </div>
+            </div>
+
+            {/* Activity Summary */}
+            {Object.keys(stats.categories).length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">Activity Summary</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {Object.entries(stats.categories).map(([category, count]) => (
+                    <div key={category} className="p-5 bg-gray-50 rounded-xl">
+                      <div className="text-3xl mb-3">{getCategoryIcon(category)}</div>
+                      <p className="font-semibold text-gray-900 capitalize text-lg">{getCategoryDisplayName(category)}</p>
+                      <p className="text-gray-600">{count} {count === 1 ? 'activity' : 'activities'}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Danger Zone */}
+            <div className="bg-white rounded-2xl border border-red-200 shadow-sm p-8">
+              <h2 className="text-xl font-semibold text-red-600 mb-3">Danger Zone</h2>
+              <p className="text-gray-600 mb-6">Permanently delete your account and all associated data</p>
+              
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors border border-red-200"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  Delete Account
+                </button>
+              ) : (
+                <div className="bg-red-50 rounded-xl p-6">
+                  <p className="text-red-700 font-medium mb-3 text-lg">Are you absolutely sure?</p>
+                  <p className="text-red-600 mb-6">
+                    This action cannot be undone. All your data will be permanently deleted.
+                  </p>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={handleDeleteAccount}
+                      className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium"
+                    >
+                      Yes, Delete Everything
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Change Password</h3>
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                  setErrors({});
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordChange} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Current Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPasswords.current ? "text" : "password"}
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                    className={`w-full p-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent pr-12 text-lg ${
+                      errors.currentPassword ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({...showPasswords, current: !showPasswords.current})}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  >
+                    {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.currentPassword && <p className="mt-2 text-sm text-red-600">{errors.currentPassword}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPasswords.new ? "text" : "password"}
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                    className={`w-full p-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent pr-12 text-lg ${
+                      errors.newPassword ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({...showPasswords, new: !showPasswords.new})}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  >
+                    {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.newPassword && <p className="mt-2 text-sm text-red-600">{errors.newPassword}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPasswords.confirm ? "text" : "password"}
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                    className={`w-full p-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent pr-12 text-lg ${
+                      errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({...showPasswords, confirm: !showPasswords.confirm})}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  >
+                    {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.confirmPassword && <p className="mt-2 text-sm text-red-600">{errors.confirmPassword}</p>}
+              </div>
+
+              <div className="flex gap-4 mt-8">
+                <button
+                  type="submit"
+                  className="flex-1 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-medium text-lg"
+                >
+                  Update Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                    setErrors({});
+                  }}
+                  className="flex-1 py-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium text-lg"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

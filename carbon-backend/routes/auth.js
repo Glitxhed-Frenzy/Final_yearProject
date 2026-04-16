@@ -1,0 +1,27 @@
+// routes/auth.js
+const express = require('express');
+const router = express.Router();
+const {
+  register,
+  login,
+  getMe,
+  updateDetails,
+  updatePassword,
+  verifyAndResetPassword,
+  deleteAccount
+} = require('../controllers/authController');
+const { protect } = require('../middleware/auth');
+const { validateEmailDomain } = require('../middleware/validateEmail');
+
+router.post('/register', validateEmailDomain, register);
+router.post('/login', login);
+
+router.delete('/deleteaccount', protect, deleteAccount);
+
+router.get('/me', protect, getMe);
+router.put('/updatedetails', protect, updateDetails);
+router.put('/updatepassword', protect, updatePassword);
+
+router.post('/verify-and-reset', verifyAndResetPassword);
+
+module.exports = router;
