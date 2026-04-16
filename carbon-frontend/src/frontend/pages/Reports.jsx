@@ -144,44 +144,20 @@ export default function Reports() {
   };
 
   const captureChart = async (chartContainer) => {
-    if (!chartContainer) return null;
-    
-    try {
-      const svg = chartContainer.querySelector('svg');
-      if (!svg) return null;
-      
-      const width = svg.clientWidth || 500;
-      const height = svg.clientHeight || 300;
-      
-      const clonedSvg = svg.cloneNode(true);
-      clonedSvg.setAttribute('width', width);
-      clonedSvg.setAttribute('height', height);
-      clonedSvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-      
-      const serializer = new XMLSerializer();
-      let svgString = serializer.serializeToString(clonedSvg);
-      svgString = svgString.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
-      
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.fillStyle = 'white';
-          ctx.fillRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = () => resolve(null);
-        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
-      });
-    } catch (error) {
-      console.error('Error capturing chart:', error);
-      return null;
-    }
-  };
+  if (!chartContainer) return null;
+  try {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const dataUrl = await toPng(chartContainer, {
+      quality: 0.95,
+      backgroundColor: '#ffffff',
+      pixelRatio: 2, 
+    });
+    return dataUrl;
+  } catch (error) {
+    console.error('Error capturing chart:', error);
+    return null;
+  }
+};
 
   const exportJSON = () => {
     const exportData = {
